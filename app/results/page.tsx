@@ -26,13 +26,22 @@ export default function ResultsPage() {
         if (!cancelled) {
           setRows(data);
           
-          const counts: Record<string, number> = {};
-          for (const row of data) {
+          const countPromises = data.map(async (row) => {
             if (row.venue_id) {
               const count = await fetchGoingCount({ matchId, venueId: row.venue_id });
-              counts[row.venue_id] = count;
+              return { venueId: row.venue_id, count };
             }
-          }
+            return null;
+          });
+
+          const countResults = await Promise.all(countPromises);
+          const counts: Record<string, number> = {};
+          countResults.forEach((result) => {
+            if (result) {
+              counts[result.venueId] = result.count;
+            }
+          });
+
           if (!cancelled) setGoingCounts(counts);
         }
       } catch (err: any) {

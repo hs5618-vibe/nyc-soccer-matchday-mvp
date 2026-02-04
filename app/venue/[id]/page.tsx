@@ -1,56 +1,66 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { fetchGoingCount, insertGoing, hasUserGone } from "@/lib/going";
+import { fetchVenueById } from "@/lib/venues";
+import { supabase } from "@/lib/supabaseClient";
 
 type Venue = {
   id: string;
   name: string;
   neighborhood: string;
-  barType: "Club-Specific" | "General Sports Bar";
-  clubName?: string;
-  peopleGoing: number;
-  status: "Showing" | "Not showing";
+  bar_type: string;
+  club_name: string | null;
 };
-
-const venues: Venue[] = [
-  {
-    id: "red-lion",
-    name: "The Red Lion",
-    neighborhood: "East Village",
-    barType: "Club-Specific",
-    clubName: "Liverpool",
-    peopleGoing: 14,
-    status: "Showing",
-  },
-  {
-    id: "legends",
-    name: "Legends",
-    neighborhood: "Midtown",
-    barType: "General Sports Bar",
-    peopleGoing: 8,
-    status: "Showing",
-  },
-  {
-    id: "football-factory",
-    name: "Football Factory",
-    neighborhood: "Lower East Side",
-    barType: "General Sports Bar",
-    peopleGoing: 5,
-    status: "Not showing",
-  },
-];
 
 export default function VenuePage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = typeof params?.id === "string" ? params.id : "";
   const matchId = searchParams.get("match") || "man-utd-v-liverpool";
   
-  const [isGoing, setIsGoing] = useState(false);
+  const [venue, setVenue] = useState<Venue | null>(null);
+  const [userAlreadyGoing, setUserAlreadyGoing] = useState(false);
+  const [goingCount, setGoingCount] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [buttonDisabled, setButtonDisabled] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const venue = venues.find((v) => v.id === id);
+  useEffect(() => {
+    async function loadVenueAndGoingData() {
+      if (!id) return;
+
+      const venueData = await fetchVenueById(id);
+      setVenue(venueData);
+      setLoading(false);
+
+      if (!venueData) return;
+
+      const count = await fetchGoingCount({ matchId, venueId: venueData.id });
+      setGoingCount(count);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+
+      if (user?.id) {
+        const alreadyGoing = await hasUserGone({ matchId, venueId: venueData.id, userId: user.id });
+        setUserAlreadyGoing(alreadyGoing);
+      }
+    }
+
+    loadVenueAndGoingData();
+  }, [id, matchId]);
+
+  if (loading) {
+    return (
+      <main className="p-6 font-sans max-w-2xl">
+        <p className="text-gray-600">Loading...</p>
+      </main>
+    );
+  }
 
   if (!venue) {
     return (
@@ -65,14 +75,38 @@ export default function VenuePage() {
   }
 
   const barTypeDisplay =
-    venue.barType === "Club-Specific" && venue.clubName
-      ? `Club-Specific: ${venue.clubName}`
-      : venue.barType;
+    venue.bar_type === "club" && venue.club_name
+      ? `Club-Specific: ${venue.club_name}`
+      : "General Sports Bar";
 
-  const handleGoing = () => {
-    console.log(`User clicked "I'm going" for ${venue.name}`);
-    setIsGoing(true);
+  const handleGoing = async () => {
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+
+    setGoingCount((prev) => prev + 1);
+    setButtonDisabled(true);
+
+    try {
+      await insertGoing({ matchId, venueId: venue.id, userId });
+      setUserAlreadyGoing(true);
+      const refreshedCount = await fetchGoingCount({ matchId, venueId: venue.id });
+      setGoingCount(refreshedCount);
+    } catch (error) {
+      console.error("Error marking as going:", error);
+      setGoingCount((prev) => prev - 1);
+      setButtonDisabled(false);
+    }
   };
+
+  const getButtonLabel = () => {
+    if (!userId) return "Log in to mark going";
+    if (userAlreadyGoing) return "You're going ✅";
+    return "I'm going";
+  };
+
+  const isButtonDisabled = buttonDisabled || userAlreadyGoing;
 
   return (
     <main className="p-6 font-sans max-w-2xl">
@@ -90,16 +124,15 @@ export default function VenuePage() {
       </div>
 
       <div className="mt-6">
-        <p className="font-medium">Status: {venue.status}</p>
-        <p className="font-medium mt-2">{venue.peopleGoing} people going</p>
+        <p className="font-medium">{goingCount} going</p>
       </div>
 
       <button
         onClick={handleGoing}
-        disabled={isGoing}
+        disabled={isButtonDisabled}
         className="mt-6 bg-blue-600 text-white px-6 py-3 rounded font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isGoing ? "You're going ✅" : "I'm going"}
+        {getButtonLabel()}
       </button>
     </main>
   );

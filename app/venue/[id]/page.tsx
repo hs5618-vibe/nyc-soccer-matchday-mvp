@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 type Venue = {
   id: string;
@@ -43,7 +44,11 @@ const venues: Venue[] = [
 
 export default function VenuePage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = typeof params?.id === "string" ? params.id : "";
+  const matchId = searchParams.get("match") || "man-utd-v-liverpool";
+  
+  const [isGoing, setIsGoing] = useState(false);
 
   const venue = venues.find((v) => v.id === id);
 
@@ -51,8 +56,8 @@ export default function VenuePage() {
     return (
       <main className="p-6 font-sans max-w-2xl">
         <h1 className="text-2xl font-bold">Venue not found</h1>
-        <p className="mt-4 text-gray-600">Sorry, we couldn’t find that venue.</p>
-        <Link href="/results" className="mt-4 inline-block text-blue-600 underline">
+        <p className="mt-4 text-gray-600">Sorry, we couldn't find that venue.</p>
+        <Link href={`/results?match=${matchId}`} className="mt-4 inline-block text-blue-600 underline">
           ← Back to results
         </Link>
       </main>
@@ -66,12 +71,12 @@ export default function VenuePage() {
 
   const handleGoing = () => {
     console.log(`User clicked "I'm going" for ${venue.name}`);
-    alert("Thanks for letting us know you're going!");
+    setIsGoing(true);
   };
 
   return (
     <main className="p-6 font-sans max-w-2xl">
-      <Link href="/results" className="text-blue-600 text-sm underline">
+      <Link href={`/results?match=${matchId}`} className="text-blue-600 text-sm underline">
         ← Back to results
       </Link>
 
@@ -80,7 +85,7 @@ export default function VenuePage() {
       <p className="text-sm text-gray-500 mt-2">{barTypeDisplay}</p>
 
       <div className="mt-8 border-t pt-6">
-        <h2 className="font-semibold text-lg">Today’s Match</h2>
+        <h2 className="font-semibold text-lg">Today's Match</h2>
         <p className="mt-2">Manchester United vs Liverpool — Sat 3:00 PM</p>
       </div>
 
@@ -91,9 +96,10 @@ export default function VenuePage() {
 
       <button
         onClick={handleGoing}
-        className="mt-6 bg-blue-600 text-white px-6 py-3 rounded font-medium hover:bg-blue-700"
+        disabled={isGoing}
+        className="mt-6 bg-blue-600 text-white px-6 py-3 rounded font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        I&apos;m going
+        {isGoing ? "You're going ✅" : "I'm going"}
       </button>
     </main>
   );

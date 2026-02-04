@@ -19,7 +19,7 @@ type ShowingRowRaw = {
   venue_id: any;
   status: any;
   note: any;
-  venues: VenueJoin[];
+  venue: VenueJoin | null;
 };
 
 export async function fetchShowingsForMatch(matchId: string): Promise<ShowingRow[]> {
@@ -30,7 +30,7 @@ export async function fetchShowingsForMatch(matchId: string): Promise<ShowingRow
       venue_id,
       status,
       note,
-      venues (
+      venue:venues!showings_venue_id_fkey (
         id,
         name,
         neighborhood,
@@ -49,6 +49,6 @@ export async function fetchShowingsForMatch(matchId: string): Promise<ShowingRow
     venue_id: r.venue_id,
     status: r.status,
     note: r.note,
-    venue: r.venues?.[0] ?? null,
+    venue: r.venue ?? null,
   }));
 }

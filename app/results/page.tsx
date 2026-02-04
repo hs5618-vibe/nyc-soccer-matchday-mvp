@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { fetchShowingsForMatch, type ShowingRow } from "../../lib/showings";
+import { fetchGoingCount } from "../../lib/going";
 
 export default function ResultsPage() {
   const searchParams = useSearchParams();
   const matchId = useMemo(() => searchParams.get("match") ?? "man-utd-v-liverpool", [searchParams]);
 
   const [rows, setRows] = useState<ShowingRow[]>([]);
+  const [goingCounts, setGoingCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -21,7 +23,18 @@ export default function ResultsPage() {
         setLoading(true);
         setErrorMsg(null);
         const data = await fetchShowingsForMatch(matchId);
-        if (!cancelled) setRows(data);
+        if (!cancelled) {
+          setRows(data);
+          
+          const counts: Record<string, number> = {};
+          for (const row of data) {
+            if (row.venue_id) {
+              const count = await fetchGoingCount({ matchId, venueId: row.venue_id });
+              counts[row.venue_id] = count;
+            }
+          }
+          if (!cancelled) setGoingCounts(counts);
+        }
       } catch (err: any) {
         if (!cancelled) setErrorMsg(err?.message ?? "Failed to load bars for this match");
       } finally {
@@ -75,23 +88,25 @@ export default function ResultsPage() {
             const v = r.venue;
             if (!v) return null;
             
-
             const barType =
               v.bar_type === "club" && v.club_name
                 ? `Club-Specific: ${v.club_name}`
                 : "General Sports Bar";
 
             const statusLabel = r.status === "showing" ? "Showing ✅" : "Not showing ❌";
+            const goingCount = goingCounts[r.venue_id] ?? 0;
 
             return (
               <li key={`${r.venue_id}`} className="border p-4 rounded">
-                <Link href={`/venue/${v.id}`} className="underline text-blue-600">
+                <Link href={`/venue/${v.id}?match=${matchId}`} className="underline text-blue-600">
                   {v.name} — {v.neighborhood}
                 </Link>
 
                 <div className="mt-2 text-sm text-gray-600">{barType}</div>
 
                 <div className="mt-2 text-sm font-medium">{statusLabel}</div>
+
+                <div className="mt-2 text-sm font-medium">{goingCount} going</div>
 
                 {r.note && <div className="mt-2 text-sm text-gray-700">Note: {r.note}</div>}
               </li>

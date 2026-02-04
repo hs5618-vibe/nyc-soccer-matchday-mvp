@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import AuthStatusClient from "@/components/AuthStatusClient";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <header className="border-b">
+          <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div className="font-bold">NYC Soccer Matchday</div>
+            <AuthStatusClient />
+          </div>
+        </header>
         {children}
       </body>
     </html>

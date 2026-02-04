@@ -13,9 +13,13 @@ export default function LoginPage() {
     setLoading(true);
     setMsg(null);
 
+    const redirectTo = typeof window !== "undefined" 
+      ? `${window.location.origin}`
+      : "http://localhost:3000";
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: "http://localhost:3000" },
+      options: { emailRedirectTo: redirectTo },
     });
 
     if (error) setMsg(error.message);

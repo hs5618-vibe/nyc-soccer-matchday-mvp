@@ -15,6 +15,13 @@ type Venue = {
   club_name: string | null;
 };
 
+type Update = {
+  id: string;
+  message: string;
+  created_at: string;
+  user_id: string;
+};
+
 export default function VenuePage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -28,6 +35,9 @@ export default function VenuePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [updates, setUpdates] = useState<Update[]>([]);
+  const [updateMessage, setUpdateMessage] = useState("");
+  const [postingUpdate, setPostingUpdate] = useState(false);
 
   useEffect(() => {
     async function loadVenueAndGoingData() {
@@ -49,10 +59,54 @@ export default function VenuePage() {
         const alreadyGoing = await hasUserGone({ matchId, venueId: venueData.id, userId: user.id });
         setUserAlreadyGoing(alreadyGoing);
       }
+
+      await loadUpdates(venueData.id);
     }
 
     loadVenueAndGoingData();
   }, [id, matchId]);
+
+  async function loadUpdates(venueId: string) {
+    const { data, error } = await supabase
+      .from("updates")
+      .select("id, message, created_at, user_id")
+      .eq("match_id", matchId)
+      .eq("venue_id", venueId)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (error) {
+      console.error("Error fetching updates:", error);
+      return;
+    }
+
+    setUpdates(data || []);
+  }
+
+  async function handlePostUpdate() {
+    if (!userId || !venue) return;
+
+    setPostingUpdate(true);
+
+    const { error } = await supabase
+      .from("updates")
+      .insert({
+        match_id: matchId,
+        venue_id: venue.id,
+        user_id: userId,
+        message: updateMessage,
+      });
+
+    if (error) {
+      console.error("Error posting update:", error);
+      alert("Failed to post update");
+    } else {
+      setUpdateMessage("");
+      await loadUpdates(venue.id);
+    }
+
+    setPostingUpdate(false);
+  }
 
   if (loading) {
     return (
@@ -134,6 +188,50 @@ export default function VenuePage() {
       >
         {getButtonLabel()}
       </button>
+
+      <div className="mt-8 border-t pt-6">
+        <h2 className="font-semibold text-lg">Live updates</h2>
+
+        {userId ? (
+          <div className="mt-4">
+            <textarea
+              value={updateMessage}
+              onChange={(e) => setUpdateMessage(e.target.value)}
+              placeholder="Share an update..."
+              className="w-full border rounded px-3 py-2 text-sm"
+              rows={3}
+            />
+            <button
+              onClick={handlePostUpdate}
+              disabled={!updateMessage.trim() || postingUpdate}
+              className="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {postingUpdate ? "Posting..." : "Post update"}
+            </button>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-gray-600">
+            <Link href="/login" className="text-blue-600 underline">
+              Log in
+            </Link>{" "}
+            to post an update
+          </p>
+        )}
+
+        <div className="mt-6 space-y-3">
+          {updates.length === 0 && (
+            <p className="text-sm text-gray-500">No updates yet for this match.</p>
+          )}
+          {updates.map((update) => (
+            <div key={update.id} className="border-l-2 border-gray-300 pl-3">
+              <p className="text-sm">{update.message}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {new Date(update.created_at).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
     </main>
   );
 }

@@ -110,21 +110,28 @@ export default function VenuePage() {
 
   if (loading) {
     return (
-      <main className="p-6 font-sans max-w-2xl">
-        <p className="text-gray-600">Loading...</p>
-      </main>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading venue...</p>
+        </div>
+      </div>
     );
   }
 
   if (!venue) {
     return (
-      <main className="p-6 font-sans max-w-2xl">
-        <h1 className="text-2xl font-bold">Venue not found</h1>
-        <p className="mt-4 text-gray-600">Sorry, we couldn't find that venue.</p>
-        <Link href={`/results?match=${matchId}`} className="mt-4 inline-block text-blue-600 underline">
-          ← Back to results
-        </Link>
-      </main>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Venue not found</h1>
+          <p className="text-gray-600 mb-6">Sorry, we couldn't find that venue.</p>
+          <Link href={`/results?match=${matchId}`}>
+            <button className="bg-gray-100 text-gray-900 px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-gray-200 transition-all">
+              ← Back to results
+            </button>
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -162,76 +169,104 @@ export default function VenuePage() {
 
   const isButtonDisabled = buttonDisabled || userAlreadyGoing;
 
+  const matchLabel = matchId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
   return (
-    <main className="p-6 font-sans max-w-2xl">
-      <Link href={`/results?match=${matchId}`} className="text-blue-600 text-sm underline">
-        ← Back to results
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+      
+      <Link 
+        href={`/results?match=${matchId}`} 
+        className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1 mb-6"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to results
       </Link>
 
-      <h1 className="text-3xl font-bold mt-4">{venue.name}</h1>
-      <p className="text-gray-600 mt-1">{venue.neighborhood}</p>
-      <p className="text-sm text-gray-500 mt-2">{barTypeDisplay}</p>
-
-      <div className="mt-8 border-t pt-6">
-        <h2 className="font-semibold text-lg">Today's Match</h2>
-        <p className="mt-2">Manchester United vs Liverpool — Sat 3:00 PM</p>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{venue.name}</h1>
+        <p className="text-lg text-gray-600 mb-3">{venue.neighborhood}</p>
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+          {barTypeDisplay}
+        </span>
       </div>
 
-      <div className="mt-6">
-        <p className="font-medium">{goingCount} going</p>
+      <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Today's Match</p>
+            <p className="font-semibold text-gray-900">{matchLabel}</p>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200 pt-4 mb-6">
+          <p className="text-2xl font-bold text-gray-900">
+            {goingCount} {goingCount === 1 ? "person" : "people"} going
+          </p>
+        </div>
+
+        <button
+          onClick={handleGoing}
+          disabled={isButtonDisabled}
+          className="w-full bg-blue-600 text-white px-6 py-3 text-base font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          {getButtonLabel()}
+        </button>
       </div>
 
-      <button
-        onClick={handleGoing}
-        disabled={isButtonDisabled}
-        className="mt-6 bg-blue-600 text-white px-6 py-3 rounded font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {getButtonLabel()}
-      </button>
-
-      <div className="mt-8 border-t pt-6">
-        <h2 className="font-semibold text-lg">Live updates</h2>
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">Live Updates</h2>
+          <p className="mt-1 text-sm text-gray-500">See what fans are saying</p>
+        </div>
 
         {userId ? (
-          <div className="mt-4">
+          <div className="mb-6">
             <textarea
               value={updateMessage}
               onChange={(e) => setUpdateMessage(e.target.value)}
-              placeholder="Share an update..."
-              className="w-full border rounded px-3 py-2 text-sm"
+              placeholder="Share what's happening at the bar..."
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               rows={3}
             />
-            <button
-              onClick={handlePostUpdate}
-              disabled={!updateMessage.trim() || postingUpdate}
-              className="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {postingUpdate ? "Posting..." : "Post update"}
-            </button>
+            <div className="mt-3">
+              <button
+                onClick={handlePostUpdate}
+                disabled={!updateMessage.trim() || postingUpdate}
+                className="bg-blue-600 text-white px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {postingUpdate ? "Posting..." : "Post update"}
+              </button>
+            </div>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-600">
-            <Link href="/login" className="text-blue-600 underline">
-              Log in
-            </Link>{" "}
-            to post an update
-          </p>
+          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+            <p className="text-sm text-gray-600">
+              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+                Log in
+              </Link>{" "}
+              to post updates and join the conversation
+            </p>
+          </div>
         )}
 
-        <div className="mt-6 space-y-3">
+        <div className="space-y-4">
           {updates.length === 0 && (
-            <p className="text-sm text-gray-500">No updates yet for this match.</p>
+            <div className="text-center py-8">
+              <p className="text-gray-500">No updates yet. Be the first to post!</p>
+            </div>
           )}
           {updates.map((update) => (
-            <div key={update.id} className="border-l-2 border-gray-300 pl-3">
-              <p className="text-sm">{update.message}</p>
-              <p className="text-xs text-gray-500 mt-1">
+            <div key={update.id} className="border-l-4 border-blue-600 pl-4 py-2">
+              <p className="text-gray-900 mb-1">{update.message}</p>
+              <p className="text-xs text-gray-500">
                 {new Date(update.created_at).toLocaleString()}
               </p>
             </div>
           ))}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

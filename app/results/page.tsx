@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { fetchShowingsForMatch, type ShowingRow } from "../../lib/showings";
 import { fetchGoingCount } from "../../lib/going";
+import { fetchMatchById } from "@/lib/matches";
 
 export default function ResultsPage() {
   const searchParams = useSearchParams();
@@ -14,6 +15,7 @@ export default function ResultsPage() {
   const [goingCounts, setGoingCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [matchData, setMatchData] = useState<{ home_team: string; away_team: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -22,6 +24,13 @@ export default function ResultsPage() {
       try {
         setLoading(true);
         setErrorMsg(null);
+        
+        // Fetch match data
+        const matchInfo = await fetchMatchById(matchId);
+        if (!cancelled && matchInfo) {
+          setMatchData({ home_team: matchInfo.home_team, away_team: matchInfo.away_team });
+        }
+        
         const data = await fetchShowingsForMatch(matchId);
         if (!cancelled) {
           setRows(data);
@@ -57,17 +66,18 @@ export default function ResultsPage() {
     };
   }, [matchId]);
 
-  const matchLabel = matchId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const matchLabel = matchData 
+    ? `${matchData.home_team} vs ${matchData.away_team}`
+    : matchId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   const otherMatches = [
-    { id: "man-utd-v-liverpool", label: "Man Utd vs Liverpool" },
-    { id: "chelsea-v-arsenal", label: "Chelsea vs Arsenal" },
-    { id: "spurs-v-man-city", label: "Spurs vs Man City" },
+    { id: "epl-2026-02-08-manu-liv", label: "Man Utd vs Liverpool" },
+    { id: "epl-2026-02-08-che-ars", label: "Chelsea vs Arsenal" },
+    { id: "epl-2026-02-09-tot-mci", label: "Spurs vs Man City" },
   ].filter((m) => m.id !== matchId);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-      
       <div className="mb-8">
         <Link href="/" className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1 mb-4">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

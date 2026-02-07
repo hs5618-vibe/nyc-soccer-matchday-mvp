@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { fetchShowingsForMatch, type ShowingRow } from "../../lib/showings";
 import { fetchGoingCount } from "../../lib/going";
 import { fetchMatchById } from "@/lib/matches";
 
-export default function ResultsPage() {
+function ResultsContent() {
   const searchParams = useSearchParams();
   const matchId = useMemo(() => searchParams.get("match") ?? "man-utd-v-liverpool", [searchParams]);
 
@@ -25,7 +25,6 @@ export default function ResultsPage() {
         setLoading(true);
         setErrorMsg(null);
         
-        // Fetch match data
         const matchInfo = await fetchMatchById(matchId);
         if (!cancelled && matchInfo) {
           setMatchData({ home_team: matchInfo.home_team, away_team: matchInfo.away_team });
@@ -196,5 +195,20 @@ export default function ResultsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ResultsContent />
+    </Suspense>
   );
 }

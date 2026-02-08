@@ -65,14 +65,18 @@ export default function AdminPage() {
 
   async function handleApprove(claim: VenueClaim) {
     if (!userId) return;
-
+  
     try {
       await approveClaim(claim.id, claim.user_id, claim.venue_id);
+      
+      // Small delay to ensure transaction completes
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       alert("Claim approved!");
       await loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error approving claim:", error);
-      alert("Failed to approve claim");
+      alert("Failed to approve claim: " + (error.message || "Unknown error"));
     }
   }
 

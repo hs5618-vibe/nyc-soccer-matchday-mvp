@@ -30,7 +30,6 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto px-4 sm:px-6 py-8">
-      <h1 style={{color: 'red', fontSize: '50px'}}>LOGIN PAGE NEW VERSION</h1>
       
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="w-full">

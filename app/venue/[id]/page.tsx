@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { fetchGoingCount, insertGoing, hasUserGone } from "@/lib/going";
 import { fetchVenueById } from "@/lib/venues";
 import { supabase } from "@/lib/supabaseClient";
+import { getVenueClaimStatus, claimVenue } from "@/lib/venueAdmin";
 
 type Venue = {
   id: string;
@@ -38,6 +39,14 @@ export default function VenuePage() {
   const [updates, setUpdates] = useState<Update[]>([]);
   const [updateMessage, setUpdateMessage] = useState("");
   const [postingUpdate, setPostingUpdate] = useState(false);
+  const [claimStatus, setClaimStatus] = useState<any>(null);
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [claimForm, setClaimForm] = useState({
+    businessName: "",
+    businessEmail: "",
+    businessPhone: "",
+  });
+  const [submittingClaim, setSubmittingClaim] = useState(false);
 
   useEffect(() => {
     async function loadVenueAndGoingData() {
@@ -58,6 +67,9 @@ export default function VenuePage() {
       if (user?.id) {
         const alreadyGoing = await hasUserGone({ matchId, venueId: venueData.id, userId: user.id });
         setUserAlreadyGoing(alreadyGoing);
+        
+        const status = await getVenueClaimStatus(user.id, venueData.id);
+        setClaimStatus(status);
       }
 
       await loadUpdates(venueData.id);
@@ -106,6 +118,24 @@ export default function VenuePage() {
     }
 
     setPostingUpdate(false);
+  }
+
+  async function handleClaimSubmit() {
+    if (!venue) return;
+    
+    setSubmittingClaim(true);
+    
+    try {
+      await claimVenue(venue.id, claimForm);
+      alert("Claim submitted! We'll review it shortly.");
+      setShowClaimModal(false);
+      const status = await getVenueClaimStatus(userId!, venue.id);
+      setClaimStatus(status);
+    } catch (error: any) {
+      alert("Failed to submit claim: " + error.message);
+    }
+    
+    setSubmittingClaim(false);
   }
 
   if (loading) {
@@ -173,7 +203,6 @@ export default function VenuePage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
-      
       <Link 
         href={`/results?match=${matchId}`} 
         className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1 mb-6"
@@ -190,6 +219,25 @@ export default function VenuePage() {
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
           {barTypeDisplay}
         </span>
+
+        {userId && !claimStatus && (
+          <button
+            onClick={() => setShowClaimModal(true)}
+            className="mt-4 bg-gray-100 text-gray-900 px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-gray-200 transition-all"
+          >
+            🏪 Claim this venue
+          </button>
+        )}
+
+        {claimStatus && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-900">
+              {claimStatus.status === 'pending' && '⏳ Claim pending review'}
+              {claimStatus.status === 'approved' && '✅ You manage this venue'}
+              {claimStatus.status === 'rejected' && '❌ Claim was rejected'}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
@@ -267,6 +315,71 @@ export default function VenuePage() {
           ))}
         </div>
       </div>
+
+      {showClaimModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Claim This Venue</h2>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Business Name
+                </label>
+                <input
+                  type="text"
+                  value={claimForm.businessName}
+                  onChange={(e) => setClaimForm({...claimForm, businessName: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={venue?.name}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Business Email
+                </label>
+                <input
+                  type="email"
+                  value={claimForm.businessEmail}
+                  onChange={(e) => setClaimForm({...claimForm, businessEmail: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="manager@bar.com"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Business Phone
+                </label>
+                <input
+                  type="tel"
+                  value={claimForm.businessPhone}
+                  onChange={(e) => setClaimForm({...claimForm, businessPhone: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="(212) 555-0123"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowClaimModal(false)}
+                className="flex-1 bg-gray-100 text-gray-900 px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-gray-200 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClaimSubmit}
+                disabled={submittingClaim || !claimForm.businessEmail}
+                className="flex-1 bg-blue-600 text-white px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all"
+              >
+                {submittingClaim ? "Submitting..." : "Submit Claim"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

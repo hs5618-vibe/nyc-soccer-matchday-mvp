@@ -6,13 +6,28 @@ import { useSearchParams } from "next/navigation";
 import { fetchShowingsForMatch, type ShowingRow } from "../../lib/showings";
 import { fetchGoingCount } from "../../lib/going";
 import { fetchMatchById } from "@/lib/matches";
+import { supabase } from "@/lib/supabaseClient";
+
+type Venue = {
+  id: string;
+  name: string;
+  neighborhood: string;
+  bar_type: string;
+  club_name: string | null;
+};
+
+type VenueWithStatus = {
+  venue: Venue;
+  status: 'showing' | 'not_showing' | 'unknown';
+  note: string | null;
+  goingCount: number;
+};
 
 function ResultsContent() {
   const searchParams = useSearchParams();
   const matchId = useMemo(() => searchParams.get("match") ?? "man-utd-v-liverpool", [searchParams]);
 
-  const [rows, setRows] = useState<ShowingRow[]>([]);
-  const [goingCounts, setGoingCounts] = useState<Record<string, number>>({});
+  const [venues, setVenues] = useState<VenueWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [matchData, setMatchData] = useState<{ home_team: string; away_team: string } | null>(null);
@@ -25,33 +40,60 @@ function ResultsContent() {
         setLoading(true);
         setErrorMsg(null);
         
+        // Fetch match data
         const matchInfo = await fetchMatchById(matchId);
         if (!cancelled && matchInfo) {
           setMatchData({ home_team: matchInfo.home_team, away_team: matchInfo.away_team });
         }
         
-        const data = await fetchShowingsForMatch(matchId);
-        if (!cancelled) {
-          setRows(data);
-          
-          const countPromises = data.map(async (row) => {
-            if (row.venue_id) {
-              const count = await fetchGoingCount({ matchId, venueId: row.venue_id });
-              return { venueId: row.venue_id, count };
-            }
-            return null;
-          });
+        // Fetch ALL venues
+        const { data: allVenues, error: venuesError } = await supabase
+          .from("venues")
+          .select("*")
+          .order("name");
 
-          const countResults = await Promise.all(countPromises);
-          const counts: Record<string, number> = {};
-          countResults.forEach((result) => {
-            if (result) {
-              counts[result.venueId] = result.count;
-            }
-          });
+        if (venuesError) throw venuesError;
 
-          if (!cancelled) setGoingCounts(counts);
-        }
+        // Fetch showings for this match
+        const { data: showings, error: showingsError } = await supabase
+          .from("showings")
+          .select("venue_id, status, note")
+          .eq("match_id", matchId);
+
+        if (showingsError) throw showingsError;
+
+        // Fetch going counts for all venues
+        const goingPromises = (allVenues || []).map(async (venue) => {
+          const count = await fetchGoingCount({ matchId, venueId: venue.id });
+          return { venueId: venue.id, count };
+        });
+
+        const goingResults = await Promise.all(goingPromises);
+        const goingMap: Record<string, number> = {};
+        goingResults.forEach(r => {
+          goingMap[r.venueId] = r.count;
+        });
+
+        // Combine venues with their showing status
+        const venuesWithStatus: VenueWithStatus[] = (allVenues || []).map(venue => {
+          const showing = showings?.find(s => s.venue_id === venue.id);
+          return {
+            venue,
+            status: showing?.status === 'showing' ? 'showing' : 
+                   showing?.status === 'not_showing' ? 'not_showing' : 'unknown',
+            note: showing?.note || null,
+            goingCount: goingMap[venue.id] || 0,
+          };
+        });
+
+        // Sort: showing first, then not_showing, then unknown
+        const sorted = venuesWithStatus.sort((a, b) => {
+          const statusOrder = { showing: 0, not_showing: 1, unknown: 2 };
+          return statusOrder[a.status] - statusOrder[b.status];
+        });
+
+        if (!cancelled) setVenues(sorted);
+        
       } catch (err: any) {
         if (!cancelled) setErrorMsg(err?.message ?? "Failed to load bars for this match");
       } finally {
@@ -75,6 +117,10 @@ function ResultsContent() {
     { id: "epl-2026-02-09-tot-mci", label: "Spurs vs Man City" },
   ].filter((m) => m.id !== matchId);
 
+  const showingCount = venues.filter(v => v.status === 'showing').length;
+  const notShowingCount = venues.filter(v => v.status === 'not_showing').length;
+  const unknownCount = venues.filter(v => v.status === 'unknown').length;
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <div className="mb-8">
@@ -86,9 +132,21 @@ function ResultsContent() {
         </Link>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Bars Showing This Match
+          Bars for This Match
         </h1>
         <p className="text-lg text-gray-600">{matchLabel}</p>
+
+        <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-600">
+          <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full">
+            {showingCount} showing
+          </span>
+          <span className="px-3 py-1 bg-red-50 text-red-700 rounded-full">
+            {notShowingCount} not showing
+          </span>
+          <span className="px-3 py-1 bg-gray-50 text-gray-700 rounded-full">
+            {unknownCount} unknown
+          </span>
+        </div>
 
         {otherMatches.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
@@ -119,58 +177,54 @@ function ResultsContent() {
 
       {!loading && !errorMsg && (
         <div className="space-y-4">
-          {rows.length === 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
-              <div className="text-gray-400 mb-3">
-                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">No bars yet</h3>
-              <p className="text-gray-500">Be the first to add a bar for this match</p>
-            </div>
-          )}
-
-          {rows.map((r) => {
-            const v = r.venue;
-            if (!v) return null;
-            
+          {venues.map((v) => {
             const barType =
-              v.bar_type === "club" && v.club_name
-                ? `Club-Specific: ${v.club_name}`
+              v.venue.bar_type === "club" && v.venue.club_name
+                ? `Club-Specific: ${v.venue.club_name}`
                 : "General Sports Bar";
 
-            const isShowing = r.status === "showing";
-            const goingCount = goingCounts[r.venue_id] ?? 0;
+            const badgeStyles = {
+              showing: 'bg-green-100 text-green-700',
+              not_showing: 'bg-red-100 text-red-700',
+              unknown: 'bg-gray-100 text-gray-600',
+            };
+
+            const badgeText = {
+              showing: 'Showing',
+              not_showing: 'Not showing',
+              unknown: 'No info',
+            };
 
             return (
-              <Link key={r.venue_id} href={`/venue/${v.id}?match=${matchId}`} className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-md transition-all">
+              <Link key={v.venue.id} href={`/venue/${v.venue.id}?match=${matchId}`} className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-md transition-all">
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-3 mb-2">
                       <h3 className="font-semibold text-gray-900 text-lg">
-                        {v.name}
+                        {v.venue.name}
                       </h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        isShowing ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {isShowing ? "Showing" : "Not showing"}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeStyles[v.status]}`}>
+                        {badgeText[v.status]}
                       </span>
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-2">{v.neighborhood}</p>
+                    <p className="text-sm text-gray-600 mb-2">{v.venue.neighborhood}</p>
 
                     <div className="flex flex-wrap items-center gap-3 text-sm">
                       <span className="text-gray-500">{barType}</span>
-                      <span className="text-gray-300">•</span>
-                      <span className="font-medium text-gray-700">
-                        {goingCount} {goingCount === 1 ? "person" : "people"} going
-                      </span>
+                      {v.goingCount > 0 && (
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <span className="font-medium text-gray-700">
+                            {v.goingCount} {v.goingCount === 1 ? "person" : "people"} going
+                          </span>
+                        </>
+                      )}
                     </div>
 
-                    {r.note && (
+                    {v.note && (
                       <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                        <p className="text-sm text-blue-900">{r.note}</p>
+                        <p className="text-sm text-blue-900">{v.note}</p>
                       </div>
                     )}
                   </div>

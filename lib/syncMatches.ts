@@ -3,18 +3,22 @@ import { createClient } from '@supabase/supabase-js';
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 const PREMIER_LEAGUE_ID = 2021;
 
-// Use service role key for server-side operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 type FootballDataMatch = {
   id: number;
   utcDate: string;
   status: string;
-  homeTeam: { name: string };
-  awayTeam: { name: string };
+  homeTeam: { 
+    name: string;
+    crest: string;
+  };
+  awayTeam: { 
+    name: string;
+    crest: string;
+  };
 };
 
 export async function syncMatchesFromAPI() {
@@ -58,6 +62,8 @@ export async function syncMatchesFromAPI() {
         league: 'Premier League',
         home_team: match.homeTeam.name,
         away_team: match.awayTeam.name,
+        home_team_crest: match.homeTeam.crest,
+        away_team_crest: match.awayTeam.crest,
         kickoff_time: match.utcDate,
         status: 'upcoming',
       }));
@@ -67,7 +73,6 @@ export async function syncMatchesFromAPI() {
       return { success: true, count: 0 };
     }
 
-    // Use admin client to bypass RLS
     const { data: upsertedMatches, error } = await supabaseAdmin
       .from('matches')
       .upsert(matchesToInsert, { onConflict: 'id' })
@@ -80,7 +85,6 @@ export async function syncMatchesFromAPI() {
 
     console.log(`Successfully synced ${upsertedMatches?.length || 0} matches`);
 
-    // Mark old matches as finished
     const { error: updateError } = await supabaseAdmin
       .from('matches')
       .update({ status: 'finished' })

@@ -94,19 +94,51 @@ export default function HomePage() {
             <Link
               key={match.id}
               href={`/results?match=${match.id}`}
-              className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-md transition-all"
+              className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-md transition-all group"
             >
               <div className="flex justify-between items-center">
-                <div>
-                  <div className="font-semibold text-gray-900 text-lg">
-                    {match.home_team} vs {match.away_team}
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      {match.home_team_crest && (
+                        <img 
+                          src={match.home_team_crest} 
+                          alt={match.home_team}
+                          className="w-8 h-8 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      <span className="font-semibold text-gray-900 text-base">
+                        {match.home_team}
+                      </span>
+                    </div>
+                    
+                    <span className="text-gray-400 text-sm font-medium">vs</span>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-900 text-base">
+                        {match.away_team}
+                      </span>
+                      {match.away_team_crest && (
+                        <img 
+                          src={match.away_team_crest} 
+                          alt={match.away_team}
+                          className="w-8 h-8 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="text-sm text-gray-500">
                     {formatMatchTime(match.kickoff_time)}
                   </div>
                 </div>
                 <svg
-                  className="w-5 h-5 text-gray-400"
+                  className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

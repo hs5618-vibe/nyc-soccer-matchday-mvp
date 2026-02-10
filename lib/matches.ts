@@ -5,6 +5,8 @@ export type Match = {
   league: string;
   home_team: string;
   away_team: string;
+  home_team_crest: string | null;
+  away_team_crest: string | null;
   kickoff_time: string;
   status: 'upcoming' | 'live' | 'finished';
 };
@@ -47,18 +49,14 @@ export async function fetchMatchById(matchId: string): Promise<Match | null> {
 }
 
 export function formatMatchTime(kickoffTime: string): string {
-    const date = new Date(kickoffTime);
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    const dayName = days[date.getDay()];
-    const monthName = months[date.getMonth()];
-    const dayOfMonth = date.getDate();
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-    const displayMinutes = minutes.toString().padStart(2, '0');
-    
-    return `${dayName}, ${monthName} ${dayOfMonth} • ${displayHours}:${displayMinutes} ${ampm}`;
-  }
+  const date = new Date(kickoffTime);
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayName = days[date.getDay()];
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  const displayMinutes = minutes.toString().padStart(2, '0');
+  
+  return `${dayName}, ${new Date(kickoffTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${displayHours}:${displayMinutes} ${ampm}`;
+}

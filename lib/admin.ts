@@ -132,3 +132,62 @@ export async function getAdminStats() {
     totalShowings: showings.count || 0,
   };
 }
+
+export async function getPendingReports() {
+    const { data, error } = await supabase
+      .from("reports")
+      .select(`
+        *,
+        updates (
+          id,
+          message,
+          created_at,
+          user_id,
+          match_id,
+          venue_id
+        )
+      `)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+  
+    if (error) {
+      console.error("Error fetching reports:", error);
+      return [];
+    }
+  
+    return data || [];
+  }
+  
+  export async function reviewReport(reportId: string, reviewerId: string, action: 'dismiss' | 'delete') {
+    // Update report status
+    const { error: reportError } = await supabase
+      .from("reports")
+      .update({
+        status: action === 'dismiss' ? 'dismissed' : 'reviewed',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: reviewerId,
+      })
+      .eq("id", reportId);
+  
+    if (reportError) throw reportError;
+  
+    // If action is delete, delete the update
+    if (action === 'delete') {
+      const { data: report } = await supabase
+        .from("reports")
+        .select("update_id")
+        .eq("id", reportId)
+        .single();
+  
+      if (report?.update_id) {
+        const { error: deleteError } = await supabase
+          .from("updates")
+          .delete()
+          .eq("id", report.update_id);
+  
+        if (deleteError) throw deleteError;
+      }
+    }
+  
+    return { success: true };
+  }

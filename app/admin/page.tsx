@@ -5,20 +5,23 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import {
-  isAdmin,
-  getPendingClaims,
-  getAllVenueAdmins,
-  approveClaim,
-  rejectClaim,
-  getAdminStats,
-  type VenueClaim,
-} from "@/lib/admin";
+    isAdmin,
+    getPendingClaims,
+    getAllVenueAdmins,
+    approveClaim,
+    rejectClaim,
+    getAdminStats,
+    getPendingReports,
+    reviewReport,
+    type VenueClaim,
+  } from "@/lib/admin";
 
 export default function AdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [pendingClaims, setPendingClaims] = useState<VenueClaim[]>([]);
+  const [pendingReports, setPendingReports] = useState<any[]>([]);
   const [venueAdmins, setVenueAdmins] = useState<any[]>([]);
   const [stats, setStats] = useState({
     totalVenues: 0,
@@ -26,8 +29,7 @@ export default function AdminPage() {
     totalAdmins: 0,
     totalShowings: 0,
   });
-  const [activeTab, setActiveTab] = useState<"claims" | "admins" | "stats">("claims");
-
+  const [activeTab, setActiveTab] = useState<"claims" | "admins" | "reports">("claims");
   useEffect(() => {
     async function checkAdmin() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -52,15 +54,17 @@ export default function AdminPage() {
   }, [router]);
 
   async function loadData() {
-    const [claims, admins, statistics] = await Promise.all([
+    const [claims, admins, statistics, reports] = await Promise.all([
       getPendingClaims(),
       getAllVenueAdmins(),
       getAdminStats(),
+      getPendingReports(),
     ]);
-
+  
     setPendingClaims(claims);
     setVenueAdmins(admins);
     setStats(statistics);
+    setPendingReports(reports);
   }
 
   async function handleApprove(claim: VenueClaim) {
@@ -92,6 +96,34 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Error rejecting claim:", error);
       alert("Failed to reject claim");
+    }
+  }
+
+  async function handleDismissReport(reportId: string) {
+    if (!userId) return;
+  
+    try {
+      await reviewReport(reportId, userId, 'dismiss');
+      alert("Report dismissed");
+      await loadData();
+    } catch (error) {
+      console.error("Error dismissing report:", error);
+      alert("Failed to dismiss report");
+    }
+  }
+  
+  async function handleDeleteUpdate(reportId: string) {
+    if (!userId) return;
+  
+    if (!confirm("Are you sure you want to delete this update? This cannot be undone.")) return;
+  
+    try {
+      await reviewReport(reportId, userId, 'delete');
+      alert("Update deleted");
+      await loadData();
+    } catch (error) {
+      console.error("Error deleting update:", error);
+      alert("Failed to delete update");
     }
   }
 
@@ -141,28 +173,38 @@ export default function AdminPage() {
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 flex gap-2">
-        <button
-          onClick={() => setActiveTab("claims")}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            activeTab === "claims"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Pending Claims ({pendingClaims.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("admins")}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            activeTab === "admins"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Venue Admins
-        </button>
-      </div>
+<div className="mb-6 flex gap-2">
+  <button
+    onClick={() => setActiveTab("claims")}
+    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+      activeTab === "claims"
+        ? "bg-blue-600 text-white"
+        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+    }`}
+  >
+    Pending Claims ({pendingClaims.length})
+  </button>
+  <button
+    onClick={() => setActiveTab("admins")}
+    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+      activeTab === "admins"
+        ? "bg-blue-600 text-white"
+        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+    }`}
+  >
+    Venue Admins
+  </button>
+  <button
+    onClick={() => setActiveTab("reports")}
+    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+      activeTab === "reports"
+        ? "bg-blue-600 text-white"
+        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+    }`}
+  >
+    Reports ({pendingReports.length})
+  </button>
+</div>
 
       {/* Pending Claims Tab */}
       {activeTab === "claims" && (
@@ -254,6 +296,65 @@ export default function AdminPage() {
           )}
         </div>
       )}
+
+      {/* Reports Tab */}
+{activeTab === "reports" && (
+  <div className="space-y-4">
+    <h2 className="text-xl font-semibold text-gray-900">Reported Updates</h2>
+
+    {pendingReports.length === 0 ? (
+      <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+        <p className="text-gray-600">No pending reports</p>
+      </div>
+    ) : (
+      pendingReports.map((report) => (
+        <div key={report.id} className="bg-white border border-gray-200 rounded-xl p-5">
+          <div className="mb-4">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-gray-900 text-lg mb-1">
+                  Reported Update
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Reported {new Date(report.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                Pending Review
+              </span>
+            </div>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
+              <p className="text-gray-900 mb-2">{report.updates?.message || "Update deleted"}</p>
+              <p className="text-xs text-gray-500">
+                Posted: {report.updates?.created_at ? new Date(report.updates.created_at).toLocaleString() : "Unknown"}
+              </p>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <p><span className="font-medium">Reason:</span> {report.reason}</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleDismissReport(report.id)}
+              className="bg-gray-100 text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-200 transition-all"
+            >
+              Dismiss Report
+            </button>
+            <button
+              onClick={() => handleDeleteUpdate(report.id)}
+              className="bg-red-600 text-white px-4 py-2 text-sm font-medium rounded-lg hover:bg-red-700 transition-all"
+            >
+              Delete Update
+            </button>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+)}
     </div>
   );
 }

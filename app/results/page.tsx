@@ -7,6 +7,7 @@ import { fetchShowingsForMatch, type ShowingRow } from "../../lib/showings";
 import { fetchGoingCount } from "../../lib/going";
 import { fetchMatchById } from "@/lib/matches";
 import { supabase } from "@/lib/supabaseClient";
+import { getProfile } from "@/lib/profiles";
 
 type Venue = {
   id: string;
@@ -21,6 +22,13 @@ type VenueWithStatus = {
   status: 'showing' | 'not_showing' | 'unknown';
   note: string | null;
   goingCount: number;
+  recentUpdates: Array<{
+    id: string;
+    message: string;
+    created_at: string;
+    username: string;
+    bars_visited: number;
+  }>;
 };
 
 function ResultsContent() {
@@ -74,7 +82,34 @@ function ResultsContent() {
           goingMap[r.venueId] = r.count;
         });
 
-        // Combine venues with their showing status
+        // Fetch recent updates for all venues
+        const { data: allUpdates, error: updatesError } = await supabase
+          .from("updates")
+          .select("id, message, created_at, user_id, venue_id")
+          .eq("match_id", matchId)
+          .order("created_at", { ascending: false });
+
+        if (updatesError) throw updatesError;
+
+        // Group updates by venue and fetch profiles
+        const updatesByVenue: Record<string, any[]> = {};
+        for (const update of (allUpdates || [])) {
+          if (!updatesByVenue[update.venue_id]) {
+            updatesByVenue[update.venue_id] = [];
+          }
+          if (updatesByVenue[update.venue_id].length < 2) {
+            const profile = await getProfile(update.user_id);
+            updatesByVenue[update.venue_id].push({
+              id: update.id,
+              message: update.message,
+              created_at: update.created_at,
+              username: profile?.username || "Anonymous",
+              bars_visited: profile?.bars_visited || 0,
+            });
+          }
+        }
+
+        // Combine venues with their showing status and updates
         const venuesWithStatus: VenueWithStatus[] = (allVenues || []).map(venue => {
           const showing = showings?.find(s => s.venue_id === venue.id);
           return {
@@ -83,6 +118,7 @@ function ResultsContent() {
                    showing?.status === 'not_showing' ? 'not_showing' : 'unknown',
             note: showing?.note || null,
             goingCount: goingMap[venue.id] || 0,
+            recentUpdates: updatesByVenue[venue.id] || [],
           };
         });
 
@@ -120,6 +156,22 @@ function ResultsContent() {
   const showingCount = venues.filter(v => v.status === 'showing').length;
   const notShowingCount = venues.filter(v => v.status === 'not_showing').length;
   const unknownCount = venues.filter(v => v.status === 'unknown').length;
+
+  function getTimeAgo(timestamp: string): string {
+    const now = new Date();
+    const posted = new Date(timestamp);
+    const diffMs = now.getTime() - posted.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
@@ -210,7 +262,7 @@ function ResultsContent() {
 
                     <p className="text-sm text-gray-600 mb-2">{v.venue.neighborhood}</p>
 
-                    <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
                       <span className="text-gray-500">{barType}</span>
                       {v.goingCount > 0 && (
                         <>
@@ -222,8 +274,25 @@ function ResultsContent() {
                       )}
                     </div>
 
+                    {/* Recent Updates Preview */}
+                    {v.recentUpdates.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {v.recentUpdates.map((update) => (
+                          <div key={update.id} className="flex items-start gap-2 text-sm">
+                            <span className="text-gray-400 mt-0.5">💬</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-gray-700 line-clamp-1">"{update.message}"</p>
+                              <p className="text-xs text-gray-500">
+                                {update.username} • {getTimeAgo(update.created_at)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {v.note && (
-                      <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                      <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
                         <p className="text-sm text-blue-900">{v.note}</p>
                       </div>
                     )}

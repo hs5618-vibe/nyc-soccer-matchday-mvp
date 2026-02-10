@@ -7,6 +7,8 @@ import { fetchGoingCount, insertGoing, hasUserGone } from "@/lib/going";
 import { fetchVenueById } from "@/lib/venues";
 import { supabase } from "@/lib/supabaseClient";
 import { getVenueClaimStatus, claimVenue } from "@/lib/venueAdmin";
+import { getProfile, type UserProfile, reportUpdate } from "@/lib/profiles";
+import UsernameModal from "@/components/UsernameModal";
 
 type Venue = {
   id: string;
@@ -23,6 +25,10 @@ type Update = {
   user_id: string;
 };
 
+type UpdateWithProfile = Update & {
+  profile?: UserProfile | null;
+};
+
 export default function VenuePage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -34,9 +40,11 @@ export default function VenuePage() {
   const [userAlreadyGoing, setUserAlreadyGoing] = useState(false);
   const [goingCount, setGoingCount] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [updates, setUpdates] = useState<Update[]>([]);
+  const [updates, setUpdates] = useState<UpdateWithProfile[]>([]);
   const [updateMessage, setUpdateMessage] = useState("");
   const [postingUpdate, setPostingUpdate] = useState(false);
   const [claimStatus, setClaimStatus] = useState<any>(null);
@@ -47,6 +55,7 @@ export default function VenuePage() {
     businessPhone: "",
   });
   const [submittingClaim, setSubmittingClaim] = useState(false);
+  const [reportingUpdateId, setReportingUpdateId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadVenueAndGoingData() {
@@ -70,6 +79,9 @@ export default function VenuePage() {
         
         const status = await getVenueClaimStatus(user.id, venueData.id);
         setClaimStatus(status);
+
+        const profile = await getProfile(user.id);
+        setUserProfile(profile);
       }
 
       await loadUpdates(venueData.id);
@@ -85,18 +97,32 @@ export default function VenuePage() {
       .eq("match_id", matchId)
       .eq("venue_id", venueId)
       .order("created_at", { ascending: false })
-      .limit(5);
+      .limit(20);
 
     if (error) {
       console.error("Error fetching updates:", error);
       return;
     }
 
-    setUpdates(data || []);
+    // Fetch profiles for each update
+    const updatesWithProfiles = await Promise.all(
+      (data || []).map(async (update) => {
+        const profile = await getProfile(update.user_id);
+        return { ...update, profile };
+      })
+    );
+
+    setUpdates(updatesWithProfiles);
   }
 
   async function handlePostUpdate() {
     if (!userId || !venue) return;
+
+    // Check if user has a profile/username
+    if (!userProfile) {
+      setShowUsernameModal(true);
+      return;
+    }
 
     setPostingUpdate(true);
 
@@ -138,6 +164,21 @@ export default function VenuePage() {
     setSubmittingClaim(false);
   }
 
+  async function handleReport(updateId: string) {
+    if (!userId) return;
+
+    const reason = prompt("Why are you reporting this update?");
+    if (!reason) return;
+
+    try {
+      await reportUpdate(updateId, userId, reason);
+      alert("Update reported. We'll review it shortly.");
+      setReportingUpdateId(null);
+    } catch (error) {
+      alert("Failed to report update");
+    }
+  }
+
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
@@ -176,6 +217,12 @@ export default function VenuePage() {
       return;
     }
 
+    // Check if user has username
+    if (!userProfile) {
+      setShowUsernameModal(true);
+      return;
+    }
+
     setGoingCount((prev) => prev + 1);
     setButtonDisabled(true);
 
@@ -184,6 +231,10 @@ export default function VenuePage() {
       setUserAlreadyGoing(true);
       const refreshedCount = await fetchGoingCount({ matchId, venueId: venue.id });
       setGoingCount(refreshedCount);
+      
+      // Refresh profile to show updated bars_visited
+      const updatedProfile = await getProfile(userId);
+      setUserProfile(updatedProfile);
     } catch (error) {
       console.error("Error marking as going:", error);
       setGoingCount((prev) => prev - 1);
@@ -261,6 +312,14 @@ export default function VenuePage() {
         >
           {getButtonLabel()}
         </button>
+
+        {userProfile && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg text-center">
+            <p className="text-sm text-gray-600">
+              You've been to <span className="font-semibold text-gray-900">{userProfile.bars_visited}</span> bars 🍻
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-5">
@@ -306,11 +365,34 @@ export default function VenuePage() {
             </div>
           )}
           {updates.map((update) => (
-            <div key={update.id} className="border-l-4 border-blue-600 pl-4 py-2">
-              <p className="text-gray-900 mb-1">{update.message}</p>
-              <p className="text-xs text-gray-500">
-                {new Date(update.created_at).toLocaleString()}
-              </p>
+            <div key={update.id} className="border-l-4 border-blue-600 pl-4 py-2 relative group">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-gray-900">
+                      {update.profile?.username || "Anonymous"}
+                    </span>
+                    {update.profile && update.profile.bars_visited > 0 && (
+                      <span className="text-xs text-gray-500">
+                        • {update.profile.bars_visited} {update.profile.bars_visited === 1 ? 'bar' : 'bars'} visited
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-900 mb-1">{update.message}</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(update.created_at).toLocaleString()}
+                  </p>
+                </div>
+                
+                {userId && userId !== update.user_id && (
+                  <button
+                    onClick={() => handleReport(update.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-500 hover:text-red-600"
+                  >
+                    Report
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -379,6 +461,17 @@ export default function VenuePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showUsernameModal && userId && (
+        <UsernameModal
+          userId={userId}
+          onComplete={async (username) => {
+            const profile = await getProfile(userId);
+            setUserProfile(profile);
+            setShowUsernameModal(false);
+          }}
+        />
       )}
     </div>
   );

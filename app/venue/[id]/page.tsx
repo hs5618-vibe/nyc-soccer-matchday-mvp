@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchGoingCount, insertGoing, hasUserGone } from "@/lib/going";
 import { fetchVenueById } from "@/lib/venues";
+import { fetchMatchById } from "@/lib/matches";
 import { supabase } from "@/lib/supabaseClient";
 import { getVenueClaimStatus, claimVenue } from "@/lib/venueAdmin";
 import { getProfile, type UserProfile, reportUpdate } from "@/lib/profiles";
@@ -37,6 +38,7 @@ export default function VenuePage() {
   const matchId = searchParams.get("match") || "man-utd-v-liverpool";
   
   const [venue, setVenue] = useState<Venue | null>(null);
+  const [matchData, setMatchData] = useState<{ home_team: string; away_team: string } | null>(null);
   const [userAlreadyGoing, setUserAlreadyGoing] = useState(false);
   const [goingCount, setGoingCount] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
@@ -55,7 +57,6 @@ export default function VenuePage() {
     businessPhone: "",
   });
   const [submittingClaim, setSubmittingClaim] = useState(false);
-  const [reportingUpdateId, setReportingUpdateId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadVenueAndGoingData() {
@@ -63,6 +64,13 @@ export default function VenuePage() {
 
       const venueData = await fetchVenueById(id);
       setVenue(venueData);
+
+      // Fetch match data
+      const matchInfo = await fetchMatchById(matchId);
+      if (matchInfo) {
+        setMatchData({ home_team: matchInfo.home_team, away_team: matchInfo.away_team });
+      }
+
       setLoading(false);
 
       if (!venueData) return;
@@ -173,7 +181,6 @@ export default function VenuePage() {
     try {
       await reportUpdate(updateId, userId, reason);
       alert("Update reported. We'll review it shortly.");
-      setReportingUpdateId(null);
     } catch (error) {
       alert("Failed to report update");
     }
@@ -250,7 +257,9 @@ export default function VenuePage() {
 
   const isButtonDisabled = buttonDisabled || userAlreadyGoing;
 
-  const matchLabel = matchId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const matchLabel = matchData 
+    ? `${matchData.home_team} vs ${matchData.away_team}`
+    : "Loading match...";
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">

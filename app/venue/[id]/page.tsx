@@ -18,6 +18,7 @@ type Venue = {
   neighborhood: string;
   bar_type: string;
   club_name: string | null;
+  address: string | null;
 };
 
 type Update = {
@@ -133,8 +134,6 @@ export default function VenuePage() {
       })
     );
 
-    setUpdates(updatesWithProfiles);
-
     // Fetch upvote counts
     const updateIds = (data || []).map(u => u.id);
     const counts = await getUpvotesForUpdates(updateIds);
@@ -145,6 +144,21 @@ export default function VenuePage() {
       const userUpvoted = await getUserUpvotes(userId, updateIds);
       setUserUpvotes(userUpvoted);
     }
+
+    // Sort by upvote count (most upvoted first), then by recency
+    const sorted = updatesWithProfiles.sort((a, b) => {
+      const aUpvotes = counts[a.id] || 0;
+      const bUpvotes = counts[b.id] || 0;
+      
+      if (aUpvotes !== bUpvotes) {
+        return bUpvotes - aUpvotes; // More upvotes first
+      }
+      
+      // If same upvotes, sort by recency
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    setUpdates(sorted);
   }
 
   async function handlePostUpdate() {
@@ -328,7 +342,39 @@ export default function VenuePage() {
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">{venue.name}</h1>
-        <p className="text-lg text-gray-600 mb-3">{venue.neighborhood}</p>
+        <p className="text-lg text-gray-600 mb-1">{venue.neighborhood}</p>
+        
+        {/* Address with map links */}
+        {venue.address && (
+          <div className="flex items-start gap-2 mb-3">
+            <svg className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm text-gray-600">{venue.address}</p>
+              <div className="flex gap-3 mt-1">
+                <a
+                  href={`https://maps.apple.com/?address=${encodeURIComponent(venue.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Open in Apple Maps
+                </a>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Open in Google Maps
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
           {barTypeDisplay}
         </span>
@@ -407,7 +453,7 @@ export default function VenuePage() {
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Live Updates</h2>
-          <p className="mt-1 text-sm text-gray-500">See what fans are saying</p>
+          <p className="mt-1 text-sm text-gray-500">Most helpful updates first</p>
         </div>
 
         {userId ? (

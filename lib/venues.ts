@@ -6,6 +6,7 @@ export type Venue = {
   neighborhood: string;
   bar_type: string;
   club_name: string | null;
+  address: string | null;
 };
 
 export async function fetchVenueById(venueId: string): Promise<Venue | null> {

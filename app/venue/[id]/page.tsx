@@ -9,6 +9,7 @@ import { fetchMatchById } from "@/lib/matches";
 import { supabase } from "@/lib/supabaseClient";
 import { getVenueClaimStatus, claimVenue } from "@/lib/venueAdmin";
 import { getProfile, type UserProfile, reportUpdate } from "@/lib/profiles";
+import { getUpvotesForUpdates, getUserUpvotes, toggleUpvote } from "@/lib/upvotes";
 import UsernameModal from "@/components/UsernameModal";
 
 type Venue = {
@@ -38,7 +39,12 @@ export default function VenuePage() {
   const matchId = searchParams.get("match") || "man-utd-v-liverpool";
   
   const [venue, setVenue] = useState<Venue | null>(null);
-  const [matchData, setMatchData] = useState<{ home_team: string; away_team: string } | null>(null);
+  const [matchData, setMatchData] = useState<{ 
+    home_team: string; 
+    away_team: string;
+    home_team_crest: string | null;
+    away_team_crest: string | null;
+  } | null>(null);
   const [userAlreadyGoing, setUserAlreadyGoing] = useState(false);
   const [goingCount, setGoingCount] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
@@ -57,6 +63,8 @@ export default function VenuePage() {
     businessPhone: "",
   });
   const [submittingClaim, setSubmittingClaim] = useState(false);
+  const [upvoteCounts, setUpvoteCounts] = useState<Record<string, number>>({});
+  const [userUpvotes, setUserUpvotes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     async function loadVenueAndGoingData() {
@@ -68,7 +76,12 @@ export default function VenuePage() {
       // Fetch match data
       const matchInfo = await fetchMatchById(matchId);
       if (matchInfo) {
-        setMatchData({ home_team: matchInfo.home_team, away_team: matchInfo.away_team });
+        setMatchData({ 
+          home_team: matchInfo.home_team, 
+          away_team: matchInfo.away_team,
+          home_team_crest: matchInfo.home_team_crest,
+          away_team_crest: matchInfo.away_team_crest,
+        });
       }
 
       setLoading(false);
@@ -121,6 +134,17 @@ export default function VenuePage() {
     );
 
     setUpdates(updatesWithProfiles);
+
+    // Fetch upvote counts
+    const updateIds = (data || []).map(u => u.id);
+    const counts = await getUpvotesForUpdates(updateIds);
+    setUpvoteCounts(counts);
+
+    // Fetch user's upvotes if logged in
+    if (userId) {
+      const userUpvoted = await getUserUpvotes(userId, updateIds);
+      setUserUpvotes(userUpvoted);
+    }
   }
 
   async function handlePostUpdate() {
@@ -183,6 +207,35 @@ export default function VenuePage() {
       alert("Update reported. We'll review it shortly.");
     } catch (error) {
       alert("Failed to report update");
+    }
+  }
+
+  async function handleUpvote(updateId: string) {
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const result = await toggleUpvote(updateId, userId);
+      
+      // Update local state
+      setUpvoteCounts(prev => ({
+        ...prev,
+        [updateId]: result.count,
+      }));
+
+      setUserUpvotes(prev => {
+        const newSet = new Set(prev);
+        if (result.upvoted) {
+          newSet.add(updateId);
+        } else {
+          newSet.delete(updateId);
+        }
+        return newSet;
+      });
+    } catch (error) {
+      console.error("Error toggling upvote:", error);
     }
   }
 
@@ -301,10 +354,30 @@ export default function VenuePage() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Today's Match</p>
-            <p className="font-semibold text-gray-900">{matchLabel}</p>
+        <div className="mb-4">
+          <p className="text-sm text-gray-500 mb-2">Today's Match</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {matchData?.home_team_crest && (
+              <img 
+                src={matchData.home_team_crest} 
+                alt={matchData.home_team}
+                className="w-10 h-10 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
+            <p className="font-semibold text-gray-900 text-lg">{matchLabel}</p>
+            {matchData?.away_team_crest && (
+              <img 
+                src={matchData.away_team_crest} 
+                alt={matchData.away_team}
+                className="w-10 h-10 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
           </div>
         </div>
 
@@ -373,37 +446,69 @@ export default function VenuePage() {
               <p className="text-gray-500">No updates yet. Be the first to post!</p>
             </div>
           )}
-          {updates.map((update) => (
-            <div key={update.id} className="border-l-4 border-blue-600 pl-4 py-2 relative group">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-gray-900">
-                      {update.profile?.username || "Anonymous"}
-                    </span>
-                    {update.profile && update.profile.bars_visited > 0 && (
-                      <span className="text-xs text-gray-500">
-                        • {update.profile.bars_visited} {update.profile.bars_visited === 1 ? 'bar' : 'bars'} visited
+          {updates.map((update) => {
+            const upvoteCount = upvoteCounts[update.id] || 0;
+            const hasUpvoted = userUpvotes.has(update.id);
+
+            return (
+              <div key={update.id} className="border-l-4 border-blue-600 pl-4 py-2 relative group">
+                <div className="flex justify-between items-start gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-gray-900">
+                        {update.profile?.username || "Anonymous"}
                       </span>
-                    )}
+                      {update.profile && update.profile.bars_visited > 0 && (
+                        <span className="text-xs text-gray-500">
+                          • {update.profile.bars_visited} {update.profile.bars_visited === 1 ? 'bar' : 'bars'} visited
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-900 mb-1">{update.message}</p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-xs text-gray-500">
+                        {new Date(update.created_at).toLocaleString()}
+                      </p>
+                      
+                      {/* Upvote button */}
+                      <button
+                        onClick={() => handleUpvote(update.id)}
+                        className={`flex items-center gap-1 text-xs transition-colors ${
+                          hasUpvoted 
+                            ? 'text-blue-600 font-medium' 
+                            : 'text-gray-500 hover:text-blue-600'
+                        }`}
+                      >
+                        <svg 
+                          className="w-4 h-4" 
+                          fill={hasUpvoted ? "currentColor" : "none"}
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M5 15l7-7 7 7" 
+                          />
+                        </svg>
+                        {upvoteCount > 0 && <span>{upvoteCount}</span>}
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-gray-900 mb-1">{update.message}</p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(update.created_at).toLocaleString()}
-                  </p>
+                  
+                  {userId && userId !== update.user_id && (
+                    <button
+                      onClick={() => handleReport(update.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-500 hover:text-red-600"
+                    >
+                      Report
+                    </button>
+                  )}
                 </div>
-                
-                {userId && userId !== update.user_id && (
-                  <button
-                    onClick={() => handleReport(update.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-500 hover:text-red-600"
-                  >
-                    Report
-                  </button>
-                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

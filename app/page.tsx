@@ -30,8 +30,13 @@ export default function HomePage() {
   }, [matches, searchQuery]);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 pitch-pattern min-h-screen">
       <div className="text-center mb-12">
+        <div className="inline-block mb-4">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-4xl shadow-lg">
+            ⚽
+          </div>
+        </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-3">
           Find Your Match
         </h1>
@@ -48,7 +53,7 @@ export default function HomePage() {
             placeholder="Search for a team (e.g., Liverpool, Arsenal)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
           />
           <svg 
             className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" 
@@ -68,11 +73,11 @@ export default function HomePage() {
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
           <p className="mt-4 text-gray-600">Loading matches...</p>
         </div>
       ) : filteredMatches.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center shadow-sm">
           <p className="text-gray-600">
             {searchQuery 
               ? `No matches found for "${searchQuery}"`
@@ -82,7 +87,7 @@ export default function HomePage() {
           {searchQuery && (
             <button 
               onClick={() => setSearchQuery("")}
-              className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="mt-4 text-green-600 hover:text-green-700 text-sm font-medium"
             >
               Clear search
             </button>
@@ -94,7 +99,7 @@ export default function HomePage() {
             <Link
               key={match.id}
               href={`/results?match=${match.id}`}
-              className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-md transition-all group"
+              className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-green-300 hover:shadow-md transition-all group card-hover"
             >
               <div className="flex justify-between items-center">
                 <div className="flex-1">
@@ -138,7 +143,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <svg
-                  className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
+                  className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

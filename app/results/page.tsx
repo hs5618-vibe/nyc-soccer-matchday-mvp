@@ -38,7 +38,13 @@ function ResultsContent() {
   const [venues, setVenues] = useState<VenueWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [matchData, setMatchData] = useState<{ home_team: string; away_team: string } | null>(null);
+  const [matchData, setMatchData] = useState<{ 
+    home_team: string; 
+    away_team: string;
+    home_team_crest: string | null;
+    away_team_crest: string | null;
+  } | null>(null);
+  const [barSearchQuery, setBarSearchQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -51,7 +57,12 @@ function ResultsContent() {
         // Fetch match data
         const matchInfo = await fetchMatchById(matchId);
         if (!cancelled && matchInfo) {
-          setMatchData({ home_team: matchInfo.home_team, away_team: matchInfo.away_team });
+          setMatchData({ 
+            home_team: matchInfo.home_team, 
+            away_team: matchInfo.away_team,
+            home_team_crest: matchInfo.home_team_crest,
+            away_team_crest: matchInfo.away_team_crest,
+          });
         }
         
         // Fetch ALL venues
@@ -143,6 +154,18 @@ function ResultsContent() {
     };
   }, [matchId]);
 
+  // Filter venues based on search query
+  const filteredVenues = useMemo(() => {
+    if (!barSearchQuery.trim()) return venues;
+    
+    const query = barSearchQuery.toLowerCase();
+    return venues.filter(v => 
+      v.venue.name.toLowerCase().includes(query) ||
+      v.venue.neighborhood.toLowerCase().includes(query) ||
+      (v.venue.club_name && v.venue.club_name.toLowerCase().includes(query))
+    );
+  }, [venues, barSearchQuery]);
+
   const matchLabel = matchData 
     ? `${matchData.home_team} vs ${matchData.away_team}`
     : matchId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -153,9 +176,9 @@ function ResultsContent() {
     { id: "epl-2026-02-09-tot-mci", label: "Spurs vs Man City" },
   ].filter((m) => m.id !== matchId);
 
-  const showingCount = venues.filter(v => v.status === 'showing').length;
-  const notShowingCount = venues.filter(v => v.status === 'not_showing').length;
-  const unknownCount = venues.filter(v => v.status === 'unknown').length;
+  const showingCount = filteredVenues.filter(v => v.status === 'showing').length;
+  const notShowingCount = filteredVenues.filter(v => v.status === 'not_showing').length;
+  const unknownCount = filteredVenues.filter(v => v.status === 'unknown').length;
 
   function getTimeAgo(timestamp: string): string {
     const now = new Date();
@@ -183,10 +206,38 @@ function ResultsContent() {
           Back to matches
         </Link>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 mb-3">
           Bars for This Match
         </h1>
-        <p className="text-lg text-gray-600">{matchLabel}</p>
+        
+        {/* Match with team logos */}
+        {matchData && (
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
+            {matchData.home_team_crest && (
+              <img 
+                src={matchData.home_team_crest} 
+                alt={matchData.home_team}
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
+            <p className="text-lg text-gray-600">
+              {matchData.home_team} <span className="text-gray-400">vs</span> {matchData.away_team}
+            </p>
+            {matchData.away_team_crest && (
+              <img 
+                src={matchData.away_team_crest} 
+                alt={matchData.away_team}
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
+          </div>
+        )}
 
         <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-600">
           <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full">
@@ -214,6 +265,32 @@ function ResultsContent() {
         )}
       </div>
 
+      {/* Bar Search Filter */}
+      <div className="mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Filter bars by name or neighborhood..."
+            value={barSearchQuery}
+            onChange={(e) => setBarSearchQuery(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <svg 
+            className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        {barSearchQuery && (
+          <p className="mt-2 text-sm text-gray-500">
+            {filteredVenues.length} {filteredVenues.length === 1 ? 'bar' : 'bars'} found
+          </p>
+        )}
+      </div>
+
       {loading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -229,92 +306,111 @@ function ResultsContent() {
 
       {!loading && !errorMsg && (
         <div className="space-y-4">
-          {venues.map((v) => {
-            const barType =
-              v.venue.bar_type === "club" && v.venue.club_name
-                ? `Club-Specific: ${v.venue.club_name}`
-                : "General Sports Bar";
+          {filteredVenues.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+              <p className="text-gray-600">
+                {barSearchQuery 
+                  ? `No bars found matching "${barSearchQuery}"`
+                  : "No bars available"
+                }
+              </p>
+              {barSearchQuery && (
+                <button 
+                  onClick={() => setBarSearchQuery("")}
+                  className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  Clear filter
+                </button>
+              )}
+            </div>
+          ) : (
+            filteredVenues.map((v) => {
+              const barType =
+                v.venue.bar_type === "club" && v.venue.club_name
+                  ? `Club-Specific: ${v.venue.club_name}`
+                  : "General Sports Bar";
 
-            const badgeStyles = {
-              showing: 'bg-green-100 text-green-700',
-              not_showing: 'bg-red-100 text-red-700',
-              unknown: 'bg-gray-100 text-gray-600',
-            };
+              const badgeStyles = {
+                showing: 'bg-green-100 text-green-700',
+                not_showing: 'bg-red-100 text-red-700',
+                unknown: 'bg-gray-100 text-gray-600',
+              };
 
-            const badgeText = {
-              showing: 'Showing',
-              not_showing: 'Not showing',
-              unknown: 'No info',
-            };
+              const badgeText = {
+                showing: 'Showing',
+                not_showing: 'Not showing',
+                unknown: 'No info',
+              };
 
-            return (
-              <Link key={v.venue.id} href={`/venue/${v.venue.id}?match=${matchId}`} className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-md transition-all">
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-3 mb-2">
-                      <h3 className="font-semibold text-gray-900 text-lg">
-                        {v.venue.name}
-                      </h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeStyles[v.status]}`}>
-                        {badgeText[v.status]}
-                      </span>
-                    </div>
+              return (
+                <Link key={v.venue.id} href={`/venue/${v.venue.id}?match=${matchId}`} className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-md transition-all">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-3 mb-2">
+                        <h3 className="font-semibold text-gray-900 text-lg">
+                          {v.venue.name}
+                        </h3>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeStyles[v.status]}`}>
+                          {badgeText[v.status]}
+                        </span>
+                      </div>
 
-                    <p className="text-sm text-gray-600 mb-2">{v.venue.neighborhood}</p>
+                      <p className="text-sm text-gray-600 mb-2">{v.venue.neighborhood}</p>
 
-                    <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
-                      <span className="text-gray-500">{barType}</span>
-                      {v.goingCount > 0 && (
-                        <>
-                          <span className="text-gray-300">•</span>
-                          <span className="font-medium text-gray-700">
-                            {v.goingCount} {v.goingCount === 1 ? "person" : "people"} going
-                          </span>
-                        </>
+                      <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
+                        <span className="text-gray-500">{barType}</span>
+                        {v.goingCount > 0 && (
+                          <>
+                            <span className="text-gray-300">•</span>
+                            <span className="font-medium text-gray-700">
+                              {v.goingCount} {v.goingCount === 1 ? "person" : "people"} going
+                            </span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Recent Updates Preview */}
+                      {v.recentUpdates.length > 0 && (
+                        <div className="space-y-2 mb-3">
+                          {v.recentUpdates.map((update) => (
+                            <div key={update.id} className="flex items-start gap-2 text-sm">
+                              <span className="text-gray-400 mt-0.5">💬</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-gray-700 line-clamp-1">"{update.message}"</p>
+                                <p className="text-xs text-gray-500">
+                                  {update.username} • {getTimeAgo(update.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {v.note && (
+                        <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                          <p className="text-sm text-blue-900">{v.note}</p>
+                        </div>
                       )}
                     </div>
 
-                    {/* Recent Updates Preview */}
-                    {v.recentUpdates.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {v.recentUpdates.map((update) => (
-                          <div key={update.id} className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-400 mt-0.5">💬</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-gray-700 line-clamp-1">"{update.message}"</p>
-                              <p className="text-xs text-gray-500">
-                                {update.username} • {getTimeAgo(update.created_at)}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {v.note && (
-                      <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                        <p className="text-sm text-blue-900">{v.note}</p>
-                      </div>
-                    )}
+                    <svg
+                      className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
                   </div>
-
-                  <svg
-                    className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })
+          )}
         </div>
       )}
     </div>

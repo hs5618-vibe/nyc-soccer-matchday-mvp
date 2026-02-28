@@ -1,7 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
 
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
-const PREMIER_LEAGUE_ID = 2021;
+
+// League IDs from Football-Data.org
+const LEAGUES = {
+  PREMIER_LEAGUE: 2021,
+  LA_LIGA: 2014,
+  BUNDESLIGA: 2002,
+  SERIE_A: 2019,
+  LIGUE_1: 2015,
+  CHAMPIONS_LEAGUE: 2001,
+};
+
+const LEAGUE_NAMES = {
+  [LEAGUES.PREMIER_LEAGUE]: 'Premier League',
+  [LEAGUES.LA_LIGA]: 'La Liga',
+  [LEAGUES.BUNDESLIGA]: 'Bundesliga',
+  [LEAGUES.SERIE_A]: 'Serie A',
+  [LEAGUES.LIGUE_1]: 'Ligue 1',
+  [LEAGUES.CHAMPIONS_LEAGUE]: 'Champions League',
+};
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -37,45 +55,60 @@ export async function syncMatchesFromAPI() {
 
     console.log(`Fetching matches from ${dateFrom} to ${dateTo}...`);
 
-    const response = await fetch(
-      `https://api.football-data.org/v4/competitions/${PREMIER_LEAGUE_ID}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`,
-      {
-        headers: {
-          'X-Auth-Token': FOOTBALL_DATA_API_KEY,
-        },
-      }
-    );
+    let allMatchesToInsert: any[] = [];
 
-    if (!response.ok) {
-      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    // Fetch matches for each league
+    for (const [leagueKey, leagueId] of Object.entries(LEAGUES)) {
+      console.log(`Fetching ${LEAGUE_NAMES[leagueId]} matches...`);
+
+      const response = await fetch(
+        `https://api.football-data.org/v4/competitions/${leagueId}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`,
+        {
+          headers: {
+            'X-Auth-Token': FOOTBALL_DATA_API_KEY,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error(`API error for ${LEAGUE_NAMES[leagueId]}: ${response.status}`);
+        continue; // Skip this league and continue with others
+      }
+
+      const data = await response.json();
+      const matches: FootballDataMatch[] = data.matches || [];
+
+      console.log(`Found ${matches.length} matches for ${LEAGUE_NAMES[leagueId]}`);
+
+      const matchesToInsert = matches
+        .filter(m => m.status === 'SCHEDULED' || m.status === 'TIMED')
+        .map(match => ({
+          id: `${leagueKey.toLowerCase()}-${match.id}`,
+          league: LEAGUE_NAMES[leagueId],
+          home_team: match.homeTeam.name,
+          away_team: match.awayTeam.name,
+          home_team_crest: match.homeTeam.crest,
+          away_team_crest: match.awayTeam.crest,
+          kickoff_time: match.utcDate,
+          status: 'upcoming',
+        }));
+
+      allMatchesToInsert = [...allMatchesToInsert, ...matchesToInsert];
+
+      // Rate limiting: wait 1 second between league requests
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    const data = await response.json();
-    const matches: FootballDataMatch[] = data.matches || [];
-
-    console.log(`Found ${matches.length} matches from API`);
-
-    const matchesToInsert = matches
-      .filter(m => m.status === 'SCHEDULED' || m.status === 'TIMED')
-      .map(match => ({
-        id: `epl-${match.id}`,
-        league: 'Premier League',
-        home_team: match.homeTeam.name,
-        away_team: match.awayTeam.name,
-        home_team_crest: match.homeTeam.crest,
-        away_team_crest: match.awayTeam.crest,
-        kickoff_time: match.utcDate,
-        status: 'upcoming',
-      }));
-
-    if (matchesToInsert.length === 0) {
+    if (allMatchesToInsert.length === 0) {
       console.log("No upcoming matches to insert");
       return { success: true, count: 0 };
     }
 
+    console.log(`Upserting ${allMatchesToInsert.length} total matches...`);
+
     const { data: upsertedMatches, error } = await supabaseAdmin
       .from('matches')
-      .upsert(matchesToInsert, { onConflict: 'id' })
+      .upsert(allMatchesToInsert, { onConflict: 'id' })
       .select();
 
     if (error) {
@@ -85,6 +118,7 @@ export async function syncMatchesFromAPI() {
 
     console.log(`Successfully synced ${upsertedMatches?.length || 0} matches`);
 
+    // Mark old matches as finished
     const { error: updateError } = await supabaseAdmin
       .from('matches')
       .update({ status: 'finished' })
@@ -98,7 +132,7 @@ export async function syncMatchesFromAPI() {
     return { 
       success: true, 
       count: upsertedMatches?.length || 0,
-      message: `Synced ${upsertedMatches?.length || 0} matches`
+      message: `Synced ${upsertedMatches?.length || 0} matches across all leagues`
     };
 
   } catch (error: any) {

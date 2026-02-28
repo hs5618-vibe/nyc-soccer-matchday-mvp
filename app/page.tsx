@@ -8,6 +8,7 @@ export default function HomePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLeague, setSelectedLeague] = useState<string>("all");
 
   useEffect(() => {
     async function loadMatches() {
@@ -18,16 +19,32 @@ export default function HomePage() {
     loadMatches();
   }, []);
 
-  // Filter matches based on search query
+  // Get unique leagues
+  const leagues = useMemo(() => {
+    const uniqueLeagues = Array.from(new Set(matches.map(m => m.league)));
+    return ['all', ...uniqueLeagues.sort()];
+  }, [matches]);
+
+  // Filter matches based on search query and league
   const filteredMatches = useMemo(() => {
-    if (!searchQuery.trim()) return matches;
-    
-    const query = searchQuery.toLowerCase();
-    return matches.filter(match => 
-      match.home_team.toLowerCase().includes(query) ||
-      match.away_team.toLowerCase().includes(query)
-    );
-  }, [matches, searchQuery]);
+    let filtered = matches;
+
+    // Filter by league
+    if (selectedLeague !== 'all') {
+      filtered = filtered.filter(match => match.league === selectedLeague);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(match => 
+        match.home_team.toLowerCase().includes(query) ||
+        match.away_team.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [matches, searchQuery, selectedLeague]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 pitch-pattern min-h-screen">
@@ -43,6 +60,25 @@ export default function HomePage() {
         <p className="text-lg text-gray-600">
           Discover where to watch your team's match in NYC
         </p>
+      </div>
+
+      {/* League Filter */}
+      <div className="mb-4">
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {leagues.map((league) => (
+            <button
+              key={league}
+              onClick={() => setSelectedLeague(league)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                selectedLeague === league
+                  ? 'bg-black text-white'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:border-black'
+              }`}
+            >
+              {league === 'all' ? 'All Leagues' : league}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -64,7 +100,7 @@ export default function HomePage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-        {searchQuery && (
+        {(searchQuery || selectedLeague !== 'all') && (
           <p className="mt-2 text-sm text-gray-500">
             {filteredMatches.length} {filteredMatches.length === 1 ? 'match' : 'matches'} found
           </p>
@@ -79,17 +115,20 @@ export default function HomePage() {
       ) : filteredMatches.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-12 text-center shadow-sm">
           <p className="text-gray-600">
-            {searchQuery 
-              ? `No matches found for "${searchQuery}"`
+            {searchQuery || selectedLeague !== 'all'
+              ? `No matches found`
               : "No upcoming matches at the moment"
             }
           </p>
-          {searchQuery && (
+          {(searchQuery || selectedLeague !== 'all') && (
             <button 
-              onClick={() => setSearchQuery("")}
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedLeague("all");
+              }}
               className="mt-4 text-black hover:text-gray-700 text-sm font-medium"
             >
-              Clear search
+              Clear filters
             </button>
           )}
         </div>
@@ -103,6 +142,13 @@ export default function HomePage() {
             >
               <div className="flex justify-between items-center">
                 <div className="flex-1">
+                  {/* League badge */}
+                  <div className="mb-2">
+                    <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      {match.league}
+                    </span>
+                  </div>
+
                   <div className="flex items-center gap-3 mb-2 flex-wrap">
                     <div className="flex items-center gap-2">
                       {match.home_team_crest && (

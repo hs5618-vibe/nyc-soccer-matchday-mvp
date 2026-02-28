@@ -33,15 +33,15 @@ export default function HomePage() {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 pitch-pattern min-h-screen">
       <div className="text-center mb-12">
         <div className="inline-block mb-4">
-          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-4xl shadow-lg">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-black to-gray-800 rounded-full flex items-center justify-center text-4xl shadow-lg">
             ⚽
           </div>
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-3">
-          Find Your Match
+        <h1 className="text-5xl font-bold text-gray-900 mb-3">
+          Find Your Sports Bar
         </h1>
         <p className="text-lg text-gray-600">
-          Discover bars showing upcoming games in NYC
+          Discover where to watch your team's match in NYC
         </p>
       </div>
 
@@ -53,7 +53,7 @@ export default function HomePage() {
             placeholder="Search for a team (e.g., Liverpool, Arsenal)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white"
           />
           <svg 
             className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" 
@@ -73,7 +73,7 @@ export default function HomePage() {
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
           <p className="mt-4 text-gray-600">Loading matches...</p>
         </div>
       ) : filteredMatches.length === 0 ? (
@@ -87,7 +87,7 @@ export default function HomePage() {
           {searchQuery && (
             <button 
               onClick={() => setSearchQuery("")}
-              className="mt-4 text-green-600 hover:text-green-700 text-sm font-medium"
+              className="mt-4 text-black hover:text-gray-700 text-sm font-medium"
             >
               Clear search
             </button>
@@ -99,7 +99,7 @@ export default function HomePage() {
             <Link
               key={match.id}
               href={`/results?match=${match.id}`}
-              className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-green-300 hover:shadow-md transition-all group card-hover"
+              className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-black hover:shadow-md transition-all group card-hover"
             >
               <div className="flex justify-between items-center">
                 <div className="flex-1">
@@ -143,7 +143,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <svg
-                  className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors flex-shrink-0"
+                  className="w-5 h-5 text-gray-400 group-hover:text-black transition-colors flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

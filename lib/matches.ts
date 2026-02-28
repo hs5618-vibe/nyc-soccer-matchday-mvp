@@ -22,8 +22,8 @@ export async function fetchUpcomingMatches(): Promise<Match[]> {
     .eq("status", "upcoming")
     .gte("kickoff_time", now.toISOString())
     .lte("kickoff_time", thirtyDaysFromNow.toISOString())
-    .order("kickoff_time", { ascending: true })
-    .limit(20);
+    .order("kickoff_time", { ascending: true });
+    // REMOVED .limit(20) to show all matches
 
   if (error) {
     console.error("Error fetching matches:", error);

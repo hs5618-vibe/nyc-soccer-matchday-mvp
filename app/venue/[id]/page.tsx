@@ -7,7 +7,7 @@ import { fetchGoingCount, insertGoing, hasUserGone } from "@/lib/going";
 import { fetchVenueById } from "@/lib/venues";
 import { fetchMatchById } from "@/lib/matches";
 import { supabase } from "@/lib/supabaseClient";
-import { getVenueClaimStatus, claimVenue } from "@/lib/venueAdmin";
+import { getVenueClaimStatus, claimVenue, isVenueAdmin } from "@/lib/venueAdmin";
 import { getProfile, type UserProfile, reportUpdate } from "@/lib/profiles";
 import { getUpvotesForUpdates, getUserUpvotes, toggleUpvote } from "@/lib/upvotes";
 import UsernameModal from "@/components/UsernameModal";
@@ -66,6 +66,7 @@ export default function VenuePage() {
   const [submittingClaim, setSubmittingClaim] = useState(false);
   const [upvoteCounts, setUpvoteCounts] = useState<Record<string, number>>({});
   const [userUpvotes, setUserUpvotes] = useState<Set<string>>(new Set());
+  const [isVenueOwner, setIsVenueOwner] = useState(false);
 
   useEffect(() => {
     async function loadVenueAndGoingData() {
@@ -74,7 +75,6 @@ export default function VenuePage() {
       const venueData = await fetchVenueById(id);
       setVenue(venueData);
 
-      // Fetch match data
       const matchInfo = await fetchMatchById(matchId);
       if (matchInfo) {
         setMatchData({ 
@@ -104,6 +104,9 @@ export default function VenuePage() {
 
         const profile = await getProfile(user.id);
         setUserProfile(profile);
+
+        const isOwner = await isVenueAdmin(user.id, venueData.id);
+        setIsVenueOwner(isOwner);
       }
 
       await loadUpdates(venueData.id);
@@ -126,7 +129,6 @@ export default function VenuePage() {
       return;
     }
 
-    // Fetch profiles for each update
     const updatesWithProfiles = await Promise.all(
       (data || []).map(async (update) => {
         const profile = await getProfile(update.user_id);
@@ -134,27 +136,23 @@ export default function VenuePage() {
       })
     );
 
-    // Fetch upvote counts
     const updateIds = (data || []).map(u => u.id);
     const counts = await getUpvotesForUpdates(updateIds);
     setUpvoteCounts(counts);
 
-    // Fetch user's upvotes if logged in
     if (userId) {
       const userUpvoted = await getUserUpvotes(userId, updateIds);
       setUserUpvotes(userUpvoted);
     }
 
-    // Sort by upvote count (most upvoted first), then by recency
     const sorted = updatesWithProfiles.sort((a, b) => {
       const aUpvotes = counts[a.id] || 0;
       const bUpvotes = counts[b.id] || 0;
       
       if (aUpvotes !== bUpvotes) {
-        return bUpvotes - aUpvotes; // More upvotes first
+        return bUpvotes - aUpvotes;
       }
       
-      // If same upvotes, sort by recency
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
@@ -164,9 +162,13 @@ export default function VenuePage() {
   async function handlePostUpdate() {
     if (!userId || !venue) return;
 
-    // Check if user has a profile/username
     if (!userProfile) {
       setShowUsernameModal(true);
+      return;
+    }
+
+    if (!isVenueOwner) {
+      alert("Only bar staff can post updates");
       return;
     }
 
@@ -233,7 +235,6 @@ export default function VenuePage() {
     try {
       const result = await toggleUpvote(updateId, userId);
       
-      // Update local state
       setUpvoteCounts(prev => ({
         ...prev,
         [updateId]: result.count,
@@ -252,6 +253,39 @@ export default function VenuePage() {
       console.error("Error toggling upvote:", error);
     }
   }
+
+  const handleGoing = async () => {
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+
+    if (!userProfile) {
+      setShowUsernameModal(true);
+      return;
+    }
+
+    if (!venue) {
+      return;
+    }
+
+    setGoingCount((prev) => prev + 1);
+    setButtonDisabled(true);
+
+    try {
+      await insertGoing({ matchId, venueId: venue.id, userId });
+      setUserAlreadyGoing(true);
+      const refreshedCount = await fetchGoingCount({ matchId, venueId: venue.id });
+      setGoingCount(refreshedCount);
+      
+      const updatedProfile = await getProfile(userId);
+      setUserProfile(updatedProfile);
+    } catch (error) {
+      console.error("Error marking as going:", error);
+      setGoingCount((prev) => prev - 1);
+      setButtonDisabled(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -280,41 +314,9 @@ export default function VenuePage() {
     );
   }
 
-  const barTypeDisplay =
-    venue.bar_type === "club" && venue.club_name
-      ? `Club-Specific: ${venue.club_name}`
-      : "General Sports Bar";
-
-  const handleGoing = async () => {
-    if (!userId) {
-      router.push("/login");
-      return;
-    }
-
-    // Check if user has username
-    if (!userProfile) {
-      setShowUsernameModal(true);
-      return;
-    }
-
-    setGoingCount((prev) => prev + 1);
-    setButtonDisabled(true);
-
-    try {
-      await insertGoing({ matchId, venueId: venue.id, userId });
-      setUserAlreadyGoing(true);
-      const refreshedCount = await fetchGoingCount({ matchId, venueId: venue.id });
-      setGoingCount(refreshedCount);
-      
-      // Refresh profile to show updated bars_visited
-      const updatedProfile = await getProfile(userId);
-      setUserProfile(updatedProfile);
-    } catch (error) {
-      console.error("Error marking as going:", error);
-      setGoingCount((prev) => prev - 1);
-      setButtonDisabled(false);
-    }
-  };
+  const barTypeDisplay = venue.bar_type === "club" && venue.club_name
+    ? `Club-Specific: ${venue.club_name}`
+    : "General Sports Bar";
 
   const getButtonLabel = () => {
     if (!userId) return "Log in to mark going";
@@ -344,7 +346,6 @@ export default function VenuePage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">{venue.name}</h1>
         <p className="text-lg text-gray-600 mb-1">{venue.neighborhood}</p>
         
-        {/* Address with map links */}
         {venue.address && (
           <div className="flex items-start gap-2 mb-3">
             <svg className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -452,16 +453,23 @@ export default function VenuePage() {
 
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Live Updates</h2>
-          <p className="mt-1 text-sm text-gray-500">Most helpful updates first</p>
+          <h2 className="text-xl font-semibold text-gray-900">Bar Updates</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {isVenueOwner ? "Share updates with fans" : "Updates from bar staff"}
+          </p>
         </div>
 
-        {userId ? (
+        {userId && isVenueOwner ? (
           <div className="mb-6">
+            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-900">
+                ✍️ Post updates about the atmosphere, specials, or what's happening at the bar
+              </p>
+            </div>
             <textarea
               value={updateMessage}
               onChange={(e) => setUpdateMessage(e.target.value)}
-              placeholder="Share what's happening at the bar..."
+              placeholder="Share updates about the bar (e.g., 'Great atmosphere tonight!' or 'Special matchday menu available')..."
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               rows={3}
             />
@@ -471,9 +479,15 @@ export default function VenuePage() {
                 disabled={!updateMessage.trim() || postingUpdate}
                 className="bg-blue-600 text-white px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                {postingUpdate ? "Posting..." : "Post update"}
+                {postingUpdate ? "Posting..." : "Post Update"}
               </button>
             </div>
+          </div>
+        ) : userId ? (
+          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+            <p className="text-sm text-gray-600">
+              Only bar staff can post updates
+            </p>
           </div>
         ) : (
           <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
@@ -481,7 +495,7 @@ export default function VenuePage() {
               <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
                 Log in
               </Link>{" "}
-              to post updates and join the conversation
+              to see live updates from bar staff
             </p>
           </div>
         )}
@@ -489,7 +503,7 @@ export default function VenuePage() {
         <div className="space-y-4">
           {updates.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-gray-500">No updates yet. Be the first to post!</p>
+              <p className="text-gray-500">No updates yet. {isVenueOwner && "Be the first to post!"}</p>
             </div>
           )}
           {updates.map((update) => {
@@ -502,13 +516,11 @@ export default function VenuePage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold text-gray-900">
-                        {update.profile?.username || "Anonymous"}
+                        {update.profile?.username || "Bar Staff"}
                       </span>
-                      {update.profile && update.profile.bars_visited > 0 && (
-                        <span className="text-xs text-gray-500">
-                          • {update.profile.bars_visited} {update.profile.bars_visited === 1 ? 'bar' : 'bars'} visited
-                        </span>
-                      )}
+                      <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                        Staff
+                      </span>
                     </div>
                     <p className="text-gray-900 mb-1">{update.message}</p>
                     <div className="flex items-center gap-3">
@@ -516,7 +528,6 @@ export default function VenuePage() {
                         {new Date(update.created_at).toLocaleString()}
                       </p>
                       
-                      {/* Upvote button */}
                       <button
                         onClick={() => handleUpvote(update.id)}
                         className={`flex items-center gap-1 text-xs transition-colors ${
@@ -525,19 +536,7 @@ export default function VenuePage() {
                             : 'text-gray-500 hover:text-blue-600'
                         }`}
                       >
-                        <svg 
-                          className="w-4 h-4" 
-                          fill={hasUpvoted ? "currentColor" : "none"}
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={2} 
-                            d="M5 15l7-7 7 7" 
-                          />
-                        </svg>
+                        <span>↑</span>
                         {upvoteCount > 0 && <span>{upvoteCount}</span>}
                       </button>
                     </div>

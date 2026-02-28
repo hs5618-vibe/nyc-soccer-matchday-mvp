@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
+import Button from "./ui/Button";
 
 export default function AuthStatus() {
   const [user, setUser] = useState<User | null>(null);
@@ -25,26 +26,29 @@ export default function AuthStatus() {
   }, []);
 
   if (loading) {
-    return <div className="text-sm text-gray-500">Loading...</div>;
+    return <div className="text-sm text-gray-400">Loading...</div>;
   }
 
   if (user) {
     return (
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-gray-600">{user.email}</span>
-        <button
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-gray-600 hidden sm:inline">{user.email}</span>
+        <Button
           onClick={() => supabase.auth.signOut()}
-          className="text-sm text-blue-600 underline"
+          variant="ghost"
+          size="sm"
         >
           Sign out
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <Link href="/login" className="text-sm text-blue-600 underline">
-      Log in
+    <Link href="/login">
+      <Button variant="secondary" size="sm">
+        Log in
+      </Button>
     </Link>
   );
 }

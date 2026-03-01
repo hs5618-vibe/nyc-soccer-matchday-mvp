@@ -3,6 +3,7 @@ import { supabase } from "./supabaseClient";
 export type Match = {
   id: string;
   league: string;
+  league_emblem: string | null; // ADD THIS
   home_team: string;
   away_team: string;
   home_team_crest: string | null;
@@ -23,7 +24,6 @@ export async function fetchUpcomingMatches(): Promise<Match[]> {
     .gte("kickoff_time", now.toISOString())
     .lte("kickoff_time", thirtyDaysFromNow.toISOString())
     .order("kickoff_time", { ascending: true });
-    // REMOVED .limit(20) to show all matches
 
   if (error) {
     console.error("Error fetching matches:", error);
@@ -34,7 +34,7 @@ export async function fetchUpcomingMatches(): Promise<Match[]> {
 }
 
 export async function fetchMatchById(matchId: string): Promise<Match | null> {
-  const { data, error } = await supabase
+  const { data, error} = await supabase
     .from("matches")
     .select("*")
     .eq("id", matchId)

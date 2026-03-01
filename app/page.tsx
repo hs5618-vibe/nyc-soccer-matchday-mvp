@@ -42,19 +42,6 @@ export default function HomePage() {
     return filtered;
   }, [matches, searchQuery, selectedLeague]);
 
-  // League logos - using local images
-  const getLeagueLogo = (league: string) => {
-    const logos: Record<string, string> = {
-      'Premier League': '/leagues/premier-league.png',
-      'La Liga': '/leagues/la-liga.png',
-      'Bundesliga': '/leagues/bundesliga.png',
-      'Serie A': '/leagues/serie-a.png',
-      'Ligue 1': '/leagues/ligue-1.png',
-      'Champions League': '/leagues/champions-league.png',
-    };
-    return logos[league] || '';
-  };
-
   return (
     <div className="min-h-screen font-oswald">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
@@ -142,8 +129,6 @@ export default function HomePage() {
         ) : (
           <div className="space-y-4">
             {filteredMatches.map((match) => {
-              const leagueLogo = getLeagueLogo(match.league);
-              
               return (
                 <Link
                   key={match.id}
@@ -152,13 +137,12 @@ export default function HomePage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      {/* League logo + time */}
                       <div className="flex items-center gap-3 mb-4 flex-wrap">
-                        {leagueLogo && (
+                        {match.league_emblem && (
                           <img 
-                            src={leagueLogo} 
+                            src={match.league_emblem} 
                             alt={match.league}
-                            className="h-6 w-auto object-contain"
+                            className="h-5 w-auto object-contain brightness-0 invert opacity-80"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
@@ -170,7 +154,6 @@ export default function HomePage() {
                         </span>
                       </div>
                       
-                      {/* Teams */}
                       <div className="flex items-center gap-6 flex-wrap">
                         <div className="flex items-center gap-3 flex-1 min-w-[200px]">
                           {match.home_team_crest && (

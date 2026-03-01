@@ -39,6 +39,15 @@ type FootballDataMatch = {
   };
 };
 
+type FootballDataResponse = {
+  matches: FootballDataMatch[];
+  competition: {
+    id: number;
+    name: string;
+    emblem: string; // <-- This is the league logo URL!
+  };
+};
+
 export async function syncMatchesFromAPI() {
   if (!FOOTBALL_DATA_API_KEY) {
     console.error("FOOTBALL_DATA_API_KEY not set");
@@ -75,16 +84,19 @@ export async function syncMatchesFromAPI() {
         continue; // Skip this league and continue with others
       }
 
-      const data = await response.json();
+      const data: FootballDataResponse = await response.json();
       const matches: FootballDataMatch[] = data.matches || [];
+      const leagueEmblem = data.competition?.emblem || ''; // Get league logo URL
 
       console.log(`Found ${matches.length} matches for ${LEAGUE_NAMES[leagueId]}`);
+      console.log(`League emblem URL: ${leagueEmblem}`);
 
       const matchesToInsert = matches
         .filter(m => m.status === 'SCHEDULED' || m.status === 'TIMED')
         .map(match => ({
           id: `${leagueKey.toLowerCase()}-${match.id}`,
           league: LEAGUE_NAMES[leagueId],
+          league_emblem: leagueEmblem, // Store league logo
           home_team: match.homeTeam.name,
           away_team: match.awayTeam.name,
           home_team_crest: match.homeTeam.crest,

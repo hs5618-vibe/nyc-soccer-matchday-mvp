@@ -42,23 +42,24 @@ export default function HomePage() {
     return filtered;
   }, [matches, searchQuery, selectedLeague]);
 
-  const getLeagueStyle = (league: string) => {
-    const styles: Record<string, { color: string; text: string }> = {
-      'Premier League': { color: 'text-purple-400', text: 'PREMIER LEAGUE' },
-      'La Liga': { color: 'text-orange-400', text: 'LA LIGA' },
-      'Bundesliga': { color: 'text-red-400', text: 'BUNDESLIGA' },
-      'Serie A': { color: 'text-blue-400', text: 'SERIE A' },
-      'Ligue 1': { color: 'text-blue-300', text: 'LIGUE 1' },
-      'Champions League': { color: 'text-indigo-400', text: 'CHAMPIONS LEAGUE' },
+  // League logos (using Wikipedia/official sources)
+  const getLeagueLogo = (league: string) => {
+    const logos: Record<string, string> = {
+      'Premier League': 'https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg',
+      'La Liga': 'https://upload.wikimedia.org/wikipedia/commons/1/13/LaLiga_logo_2023.svg',
+      'Bundesliga': 'https://upload.wikimedia.org/wikipedia/en/d/df/Bundesliga_logo_%282017%29.svg',
+      'Serie A': 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Serie_A_logo_2022.svg',
+      'Ligue 1': 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ligue_1_Uber_Eats_logo.svg',
+      'Champions League': 'https://upload.wikimedia.org/wikipedia/en/b/bf/UEFA_Champions_League_logo_2.svg',
     };
-    return styles[league] || { color: 'text-gray-400', text: league.toUpperCase() };
+    return logos[league] || '';
   };
 
   return (
-    <div className="min-h-screen font-inter">
+    <div className="min-h-screen font-oswald">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
         <div className="text-center mb-16">
-          <h1 className="text-7xl font-black mb-4 text-white" style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.02em' }}>
+          <h1 className="text-7xl font-black mb-4 text-white" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.02em' }}>
             awaydayz
           </h1>
           <p className="text-2xl text-gray-300 font-bold mb-2">
@@ -141,26 +142,35 @@ export default function HomePage() {
         ) : (
           <div className="space-y-4">
             {filteredMatches.map((match) => {
-              const leagueStyle = getLeagueStyle(match.league);
+              const leagueLogo = getLeagueLogo(match.league);
               
               return (
                 <Link
                   key={match.id}
                   href={`/results?match=${match.id}`}
-                  className="block glass-card rounded-2xl p-6 transition-all cursor-pointer shadow-xl card-hover border-l-4 border-white/10 hover:border-white/30"
+                  className="block glass-card rounded-2xl p-6 transition-all cursor-pointer shadow-xl card-hover"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
+                      {/* League logo + time */}
                       <div className="flex items-center gap-3 mb-4 flex-wrap">
-                        <span className={`${leagueStyle.color} text-xs font-black tracking-wider`}>
-                          {leagueStyle.text}
-                        </span>
+                        {leagueLogo && (
+                          <img 
+                            src={leagueLogo} 
+                            alt={match.league}
+                            className="h-6 w-auto object-contain brightness-0 invert"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
                         <span className="text-xs text-gray-500">•</span>
                         <span className="text-sm font-semibold text-gray-400">
                           {formatMatchTime(match.kickoff_time)}
                         </span>
                       </div>
                       
+                      {/* Teams */}
                       <div className="flex items-center gap-6 flex-wrap">
                         <div className="flex items-center gap-3 flex-1 min-w-[200px]">
                           {match.home_team_crest && (

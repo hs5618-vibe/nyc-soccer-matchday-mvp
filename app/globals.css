@@ -27,13 +27,6 @@ body {
   backdrop-filter: blur(20px);
 }
 
-/* Team logo containers */
-.team-logo {
-  background: white;
-  padding: 8px;
-  border-radius: 12px;
-}
-
 /* Smooth transitions */
 * {
   transition-property: color, background-color, border-color, transform, opacity;

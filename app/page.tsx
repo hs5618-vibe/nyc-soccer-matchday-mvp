@@ -44,27 +44,25 @@ export default function HomePage() {
 
   const leagueColors: Record<string, string> = {
     'Premier League': 'bg-purple-600',
-    'La Liga': 'bg-orange-500',
-    'Bundesliga': 'bg-yellow-500',
+    'La Liga': 'bg-gradient-to-r from-orange-500 to-red-500',
+    'Bundesliga': 'bg-gradient-to-r from-red-600 to-black',
     'Serie A': 'bg-blue-600',
-    'Ligue 1': 'bg-green-600',
-    'Champions League': 'bg-indigo-600',
+    'Ligue 1': 'bg-gradient-to-r from-blue-600 to-blue-800',
+    'Champions League': 'bg-gradient-to-r from-indigo-600 to-purple-600',
   };
 
   return (
     <div className="min-h-screen">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
-        {/* Hero Section */}
+        {/* Hero Section - No emoji */}
         <div className="text-center mb-16">
-          <div className="inline-block mb-6">
-            <div className="w-24 h-24 mx-auto bg-white rounded-3xl flex items-center justify-center text-5xl shadow-2xl transform hover:scale-105 transition-transform">
-              ⚽
-            </div>
-          </div>
-          <h1 className="text-6xl font-black mb-4 tracking-tight text-white">
-            Find Your Sports Bar
+          <h1 className="text-7xl font-black mb-4 tracking-tight text-white">
+            awaydayz
           </h1>
-          <p className="text-xl text-gray-300 font-medium">
+          <p className="text-2xl text-gray-300 font-bold mb-2">
+            Find Your Sports Bar
+          </p>
+          <p className="text-lg text-gray-400">
             Discover where to watch your team's match in NYC
           </p>
         </div>
@@ -154,8 +152,8 @@ export default function HomePage() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       {/* League badge and time */}
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className={`${leagueColor} text-xs font-bold text-white px-3 py-1.5 rounded-lg uppercase tracking-wide`}>
+                      <div className="flex items-center gap-2 mb-4 flex-wrap">
+                        <span className={`${leagueColor} text-xs font-black text-white px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-lg`}>
                           {match.league}
                         </span>
                         <span className="text-xs text-gray-400">•</span>
@@ -165,10 +163,10 @@ export default function HomePage() {
                       </div>
                       
                       {/* Teams */}
-                      <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-3 flex-1">
+                      <div className="flex items-center gap-6 flex-wrap">
+                        <div className="flex items-center gap-3 flex-1 min-w-[200px]">
                           {match.home_team_crest ? (
-                            <div className="team-logo w-14 h-14 flex items-center justify-center">
+                            <div className="team-logo w-14 h-14 flex items-center justify-center flex-shrink-0">
                               <img 
                                 src={match.home_team_crest} 
                                 alt={match.home_team}
@@ -179,19 +177,19 @@ export default function HomePage() {
                               />
                             </div>
                           ) : (
-                            <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center">
+                            <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl">
                               ⚽
                             </div>
                           )}
-                          <span className="font-bold text-xl text-white">{match.home_team}</span>
+                          <span className="font-bold text-lg text-white truncate">{match.home_team}</span>
                         </div>
                         
-                        <span className="text-gray-400 font-bold text-lg">vs</span>
+                        <span className="text-gray-400 font-bold text-base">vs</span>
                         
-                        <div className="flex items-center gap-3 flex-1 justify-end">
-                          <span className="font-bold text-xl text-white">{match.away_team}</span>
+                        <div className="flex items-center gap-3 flex-1 min-w-[200px] justify-end">
+                          <span className="font-bold text-lg text-white truncate">{match.away_team}</span>
                           {match.away_team_crest ? (
-                            <div className="team-logo w-14 h-14 flex items-center justify-center">
+                            <div className="team-logo w-14 h-14 flex items-center justify-center flex-shrink-0">
                               <img 
                                 src={match.away_team_crest} 
                                 alt={match.away_team}
@@ -202,7 +200,7 @@ export default function HomePage() {
                               />
                             </div>
                           ) : (
-                            <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center">
+                            <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl">
                               ⚽
                             </div>
                           )}
@@ -211,7 +209,7 @@ export default function HomePage() {
                     </div>
                     
                     {/* Arrow button */}
-                    <div className="ml-6">
+                    <div className="ml-6 flex-shrink-0">
                       <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 font-bold shadow-lg hover:scale-110 transition-transform">
                         →
                       </div>

@@ -19,22 +19,18 @@ export default function HomePage() {
     loadMatches();
   }, []);
 
-  // Get unique leagues
   const leagues = useMemo(() => {
     const uniqueLeagues = Array.from(new Set(matches.map(m => m.league)));
     return ['all', ...uniqueLeagues.sort()];
   }, [matches]);
 
-  // Filter matches based on search query and league
   const filteredMatches = useMemo(() => {
     let filtered = matches;
 
-    // Filter by league
     if (selectedLeague !== 'all') {
       filtered = filtered.filter(match => match.league === selectedLeague);
     }
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(match => 
@@ -46,166 +42,187 @@ export default function HomePage() {
     return filtered;
   }, [matches, searchQuery, selectedLeague]);
 
+  const leagueColors: Record<string, string> = {
+    'Premier League': 'bg-purple-600',
+    'La Liga': 'bg-orange-500',
+    'Bundesliga': 'bg-yellow-500',
+    'Serie A': 'bg-blue-600',
+    'Ligue 1': 'bg-green-600',
+    'Champions League': 'bg-indigo-600',
+  };
+
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 pitch-pattern min-h-screen">
-      <div className="text-center mb-12">
-        <div className="inline-block mb-4">
-          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-black to-gray-800 rounded-full flex items-center justify-center text-4xl shadow-lg">
-            ⚽
+    <div className="min-h-screen">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <div className="inline-block mb-6">
+            <div className="w-24 h-24 mx-auto bg-white rounded-3xl flex items-center justify-center text-5xl shadow-2xl transform hover:scale-105 transition-transform">
+              ⚽
+            </div>
+          </div>
+          <h1 className="text-6xl font-black mb-4 tracking-tight text-white">
+            Find Your Sports Bar
+          </h1>
+          <p className="text-xl text-gray-300 font-medium">
+            Discover where to watch your team's match in NYC
+          </p>
+        </div>
+
+        {/* League Filter */}
+        <div className="mb-8">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {leagues.map((league) => (
+              <button
+                key={league}
+                onClick={() => setSelectedLeague(league)}
+                className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all ${
+                  selectedLeague === league
+                    ? 'bg-white text-gray-900 shadow-lg transform scale-105'
+                    : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
+                }`}
+              >
+                {league === 'all' ? '⚡ All Leagues' : league}
+              </button>
+            ))}
           </div>
         </div>
-        <h1 className="text-5xl font-bold text-gray-900 mb-3">
-          Find Your Sports Bar
-        </h1>
-        <p className="text-lg text-gray-600">
-          Discover where to watch your team's match in NYC
-        </p>
-      </div>
 
-      {/* League Filter */}
-      <div className="mb-4">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {leagues.map((league) => (
-            <button
-              key={league}
-              onClick={() => setSelectedLeague(league)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                selectedLeague === league
-                  ? 'bg-black text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:border-black'
-              }`}
+        {/* Search Bar */}
+        <div className="mb-10">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search teams..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-5 py-4 pl-12 text-base font-medium text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30"
+            />
+            <svg 
+              className="absolute left-4 top-4.5 w-5 h-5 text-gray-400" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
             >
-              {league === 'all' ? 'All Leagues' : league}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search for a team (e.g., Liverpool, Arsenal)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white"
-          />
-          <svg 
-            className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        {(searchQuery || selectedLeague !== 'all') && (
-          <p className="mt-2 text-sm text-gray-500">
-            {filteredMatches.length} {filteredMatches.length === 1 ? 'match' : 'matches'} found
-          </p>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-          <p className="mt-4 text-gray-600">Loading matches...</p>
-        </div>
-      ) : filteredMatches.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center shadow-sm">
-          <p className="text-gray-600">
-            {searchQuery || selectedLeague !== 'all'
-              ? `No matches found`
-              : "No upcoming matches at the moment"
-            }
-          </p>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
           {(searchQuery || selectedLeague !== 'all') && (
-            <button 
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedLeague("all");
-              }}
-              className="mt-4 text-black hover:text-gray-700 text-sm font-medium"
-            >
-              Clear filters
-            </button>
+            <p className="mt-3 text-sm font-medium text-gray-300">
+              {filteredMatches.length} {filteredMatches.length === 1 ? 'match' : 'matches'} found
+            </p>
           )}
         </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredMatches.map((match) => (
-            <Link
-              key={match.id}
-              href={`/results?match=${match.id}`}
-              className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-black hover:shadow-md transition-all group card-hover"
-            >
-              <div className="flex justify-between items-center">
-                <div className="flex-1">
-                  {/* League badge */}
-                  <div className="mb-2">
-                    <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {match.league}
-                    </span>
-                  </div>
 
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      {match.home_team_crest && (
-                        <img 
-                          src={match.home_team_crest} 
-                          alt={match.home_team}
-                          className="w-8 h-8 object-contain"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      )}
-                      <span className="font-semibold text-gray-900 text-base">
-                        {match.home_team}
-                      </span>
-                    </div>
-                    
-                    <span className="text-gray-400 text-sm font-medium">vs</span>
-                    
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-900 text-base">
-                        {match.away_team}
-                      </span>
-                      {match.away_team_crest && (
-                        <img 
-                          src={match.away_team_crest} 
-                          alt={match.away_team}
-                          className="w-8 h-8 object-contain"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {formatMatchTime(match.kickoff_time)}
-                  </div>
-                </div>
-                <svg
-                  className="w-5 h-5 text-gray-400 group-hover:text-black transition-colors flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+            <p className="mt-6 text-gray-300 font-medium">Loading matches...</p>
+          </div>
+        ) : filteredMatches.length === 0 ? (
+          <div className="glass-card-light rounded-3xl p-16 text-center shadow-xl">
+            <div className="text-6xl mb-4">⚽</div>
+            <p className="text-lg text-gray-900 font-medium mb-4">
+              {searchQuery || selectedLeague !== 'all'
+                ? `No matches found`
+                : "No upcoming matches at the moment"
+              }
+            </p>
+            {(searchQuery || selectedLeague !== 'all') && (
+              <button 
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedLeague("all");
+                }}
+                className="mt-2 text-gray-900 hover:text-gray-700 text-sm font-bold underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredMatches.map((match) => {
+              const leagueColor = leagueColors[match.league] || 'bg-gray-600';
+              
+              return (
+                <Link
+                  key={match.id}
+                  href={`/results?match=${match.id}`}
+                  className="block glass-card rounded-2xl p-6 transition-all cursor-pointer shadow-xl card-hover"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      {/* League badge and time */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className={`${leagueColor} text-xs font-bold text-white px-3 py-1.5 rounded-lg uppercase tracking-wide`}>
+                          {match.league}
+                        </span>
+                        <span className="text-xs text-gray-400">•</span>
+                        <span className="text-sm font-semibold text-gray-300">
+                          {formatMatchTime(match.kickoff_time)}
+                        </span>
+                      </div>
+                      
+                      {/* Teams */}
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-3 flex-1">
+                          {match.home_team_crest ? (
+                            <div className="team-logo w-14 h-14 flex items-center justify-center">
+                              <img 
+                                src={match.home_team_crest} 
+                                alt={match.home_team}
+                                className="w-10 h-10 object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center">
+                              ⚽
+                            </div>
+                          )}
+                          <span className="font-bold text-xl text-white">{match.home_team}</span>
+                        </div>
+                        
+                        <span className="text-gray-400 font-bold text-lg">vs</span>
+                        
+                        <div className="flex items-center gap-3 flex-1 justify-end">
+                          <span className="font-bold text-xl text-white">{match.away_team}</span>
+                          {match.away_team_crest ? (
+                            <div className="team-logo w-14 h-14 flex items-center justify-center">
+                              <img 
+                                src={match.away_team_crest} 
+                                alt={match.away_team}
+                                className="w-10 h-10 object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center">
+                              ⚽
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Arrow button */}
+                    <div className="ml-6">
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 font-bold shadow-lg hover:scale-110 transition-transform">
+                        →
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

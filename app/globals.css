@@ -12,7 +12,6 @@
 }
 
 @layer components {
-  /* Glass morphism cards */
   .glass-card {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(10px);
@@ -24,13 +23,11 @@
     border-color: rgba(255, 255, 255, 0.2);
   }
 
-  /* White glass card for light sections */
   .glass-card-light {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
   }
 
-  /* Hide scrollbar but keep functionality */
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -40,7 +37,6 @@
     scrollbar-width: none;
   }
 
-  /* Card hover effects */
   .card-hover:hover {
     transform: translateY(-4px);
   }

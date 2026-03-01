@@ -42,15 +42,15 @@ export default function HomePage() {
     return filtered;
   }, [matches, searchQuery, selectedLeague]);
 
-  // League logos (using Wikipedia/official sources)
+  // League logos - using local images
   const getLeagueLogo = (league: string) => {
     const logos: Record<string, string> = {
-      'Premier League': 'https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg',
-      'La Liga': 'https://upload.wikimedia.org/wikipedia/commons/1/13/LaLiga_logo_2023.svg',
-      'Bundesliga': 'https://upload.wikimedia.org/wikipedia/en/d/df/Bundesliga_logo_%282017%29.svg',
-      'Serie A': 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Serie_A_logo_2022.svg',
-      'Ligue 1': 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ligue_1_Uber_Eats_logo.svg',
-      'Champions League': 'https://upload.wikimedia.org/wikipedia/en/b/bf/UEFA_Champions_League_logo_2.svg',
+      'Premier League': '/leagues/premier-league.png',
+      'La Liga': '/leagues/la-liga.png',
+      'Bundesliga': '/leagues/bundesliga.png',
+      'Serie A': '/leagues/serie-a.png',
+      'Ligue 1': '/leagues/ligue-1.png',
+      'Champions League': '/leagues/champions-league.png',
     };
     return logos[league] || '';
   };
@@ -158,7 +158,7 @@ export default function HomePage() {
                           <img 
                             src={leagueLogo} 
                             alt={match.league}
-                            className="h-6 w-auto object-contain brightness-0 invert"
+                            className="h-6 w-auto object-contain"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}

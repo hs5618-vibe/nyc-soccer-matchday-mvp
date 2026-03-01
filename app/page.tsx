@@ -42,24 +42,23 @@ export default function HomePage() {
     return filtered;
   }, [matches, searchQuery, selectedLeague]);
 
-  const getLeagueBadge = (league: string) => {
-    const badges: Record<string, { bg: string; icon: string; text: string }> = {
-      'Premier League': { bg: 'bg-purple-600', icon: '⚽', text: 'PREMIER LEAGUE' },
-      'La Liga': { bg: 'bg-gradient-to-r from-orange-600 to-red-600', icon: '⚔️', text: 'LA LIGA' },
-      'Bundesliga': { bg: 'bg-gradient-to-r from-red-600 to-black', icon: '🦅', text: 'BUNDESLIGA' },
-      'Serie A': { bg: 'bg-blue-700', icon: '🇮🇹', text: 'SERIE A' },
-      'Ligue 1': { bg: 'bg-gradient-to-r from-blue-700 to-indigo-800', icon: '⚜️', text: 'LIGUE 1' },
-      'Champions League': { bg: 'bg-gradient-to-r from-blue-900 via-indigo-800 to-purple-900', icon: '⭐', text: 'UCL' },
+  const getLeagueStyle = (league: string) => {
+    const styles: Record<string, { color: string; text: string }> = {
+      'Premier League': { color: 'text-purple-400', text: 'PREMIER LEAGUE' },
+      'La Liga': { color: 'text-orange-400', text: 'LA LIGA' },
+      'Bundesliga': { color: 'text-red-400', text: 'BUNDESLIGA' },
+      'Serie A': { color: 'text-blue-400', text: 'SERIE A' },
+      'Ligue 1': { color: 'text-blue-300', text: 'LIGUE 1' },
+      'Champions League': { color: 'text-indigo-400', text: 'CHAMPIONS LEAGUE' },
     };
-
-    return badges[league] || { bg: 'bg-gray-700', icon: '⚽', text: league.toUpperCase() };
+    return styles[league] || { color: 'text-gray-400', text: league.toUpperCase() };
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen font-inter">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
         <div className="text-center mb-16">
-          <h1 className="text-7xl font-black mb-4 text-white" style={{ fontFamily: 'Arial, sans-serif', letterSpacing: '-0.02em' }}>
+          <h1 className="text-7xl font-black mb-4 text-white" style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.02em' }}>
             awaydayz
           </h1>
           <p className="text-2xl text-gray-300 font-bold mb-2">
@@ -142,25 +141,22 @@ export default function HomePage() {
         ) : (
           <div className="space-y-4">
             {filteredMatches.map((match) => {
-              const badge = getLeagueBadge(match.league);
+              const leagueStyle = getLeagueStyle(match.league);
               
               return (
                 <Link
                   key={match.id}
                   href={`/results?match=${match.id}`}
-                  className="block glass-card rounded-2xl p-6 transition-all cursor-pointer shadow-xl card-hover"
+                  className="block glass-card rounded-2xl p-6 transition-all cursor-pointer shadow-xl card-hover border-l-4 border-white/10 hover:border-white/30"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-4 flex-wrap">
-                        <div className={`${badge.bg} flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-lg`}>
-                          <span className="text-base">{badge.icon}</span>
-                          <span className="text-xs font-black text-white tracking-wider">
-                            {badge.text}
-                          </span>
-                        </div>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-sm font-semibold text-gray-300">
+                        <span className={`${leagueStyle.color} text-xs font-black tracking-wider`}>
+                          {leagueStyle.text}
+                        </span>
+                        <span className="text-xs text-gray-500">•</span>
+                        <span className="text-sm font-semibold text-gray-400">
                           {formatMatchTime(match.kickoff_time)}
                         </span>
                       </div>
@@ -182,7 +178,7 @@ export default function HomePage() {
                           <span className="font-bold text-lg text-white truncate">{match.home_team}</span>
                         </div>
                         
-                        <span className="text-gray-400 font-bold text-base">vs</span>
+                        <span className="text-gray-500 font-medium text-sm">vs</span>
                         
                         <div className="flex items-center gap-3 flex-1 min-w-[200px] justify-end">
                           <span className="font-bold text-lg text-white truncate">{match.away_team}</span>
@@ -203,7 +199,7 @@ export default function HomePage() {
                     </div>
                     
                     <div className="ml-6 flex-shrink-0">
-                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 font-bold shadow-lg hover:scale-110 transition-transform">
+                      <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center text-gray-900 font-bold shadow-lg hover:scale-110 transition-transform">
                         →
                       </div>
                     </div>

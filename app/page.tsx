@@ -138,15 +138,18 @@ export default function HomePage() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-4 flex-wrap">
-                        {match.league_emblem && (
-                          <img 
-                            src={match.league_emblem} 
-                            alt={match.league}
-                            className="h-6 w-auto object-contain"                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        )}
+                      {match.league_emblem && (
+  <img 
+    src={match.league_emblem} 
+    alt={match.league}
+    className={`h-8 w-auto object-contain ${
+      match.league === 'Premier League' ? 'brightness-0 invert' : ''
+    }`}
+    onError={(e) => {
+      e.currentTarget.style.display = 'none';
+    }}
+  />
+)}
                         <span className="text-xs text-gray-500">•</span>
                         <span className="text-sm font-semibold text-gray-400">
                           {formatMatchTime(match.kickoff_time)}

@@ -142,8 +142,7 @@ export default function HomePage() {
                           <img 
                             src={match.league_emblem} 
                             alt={match.league}
-                            className="h-5 w-auto object-contain brightness-0 invert opacity-80"
-                            onError={(e) => {
+                            className="h-6 w-auto object-contain"                            onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
                           />

@@ -6,6 +6,8 @@ import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
 import { fetchVenuesByMatch } from "@/lib/venues";
 import Link from "next/link";
 
+export const dynamic = 'force-dynamic';
+
 type Venue = {
   id: string;
   name: string;

@@ -52,3 +52,17 @@ export async function fetchVenuesByMatch(matchId: string): Promise<Venue[]> {
 
   return venues;
 }
+
+export async function fetchAllVenues(): Promise<Venue[]> {
+  const { data, error } = await supabase
+    .from("venues")
+    .select("*")
+    .order("name");
+
+  if (error) {
+    console.error("Error fetching all venues:", error);
+    return [];
+  }
+
+  return data || [];
+}

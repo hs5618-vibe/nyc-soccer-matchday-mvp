@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
-import { fetchVenuesByMatch } from "@/lib/venues";
+import { fetchVenuesByMatch, fetchAllVenues } from "@/lib/venues";
 import Link from "next/link";
 
 type Venue = {
@@ -17,20 +17,29 @@ function ResultsContent() {
   const searchParams = useSearchParams();
   const matchId = searchParams.get("match");
   const [match, setMatch] = useState<Match | null>(null);
-  const [venues, setVenues] = useState<Venue[]>([]);
+  const [showingVenues, setShowingVenues] = useState<Venue[]>([]);
+  const [notShowingVenues, setNotShowingVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       if (!matchId) return;
       
-      const [matchData, venuesData] = await Promise.all([
+      const [matchData, venuesShowingMatch, allVenues] = await Promise.all([
         fetchMatchById(matchId),
         fetchVenuesByMatch(matchId),
+        fetchAllVenues(),
       ]);
       
       setMatch(matchData);
-      setVenues(venuesData);
+      
+      // Separate venues into showing and not showing
+      const showingIds = new Set(venuesShowingMatch.map(v => v.id));
+      const showing = venuesShowingMatch;
+      const notShowing = allVenues.filter(v => !showingIds.has(v.id));
+      
+      setShowingVenues(showing);
+      setNotShowingVenues(notShowing);
       setLoading(false);
     }
     loadData();
@@ -59,6 +68,8 @@ function ResultsContent() {
       </div>
     );
   }
+
+  const allVenues = [...showingVenues, ...notShowingVenues];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
@@ -91,9 +102,7 @@ function ResultsContent() {
                   }}
                 />
               )}
-            </div>
-            <div className="bg-purple-600 text-white text-sm font-bold px-4 py-2 rounded-full uppercase">
-              {match.league}
+              <span className="text-sm text-gray-400 font-semibold">{match.league}</span>
             </div>
           </div>
 
@@ -146,26 +155,68 @@ function ResultsContent() {
               Sports Bars
             </h2>
             <span className="text-sm text-gray-400">
-              {venues.length} {venues.length === 1 ? 'bar' : 'bars'}
+              {showingVenues.length} showing • {notShowingVenues.length} not confirmed
             </span>
           </div>
 
-          {venues.length === 0 ? (
+          {allVenues.length === 0 ? (
             <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-12 text-center border border-white/10">
               <p className="text-gray-400 text-lg mb-4">
-                No bars confirmed for this match yet
-              </p>
-              <p className="text-gray-500 text-sm">
-                Check back soon or search for your favorite team
+                No bars available
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {venues.map((venue) => (
+              {/* Showing Venues First */}
+              {showingVenues.map((venue) => (
                 <Link
                   key={venue.id}
                   href={`/venue/${venue.id}?match=${matchId}`}
                   className="block bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 hover:bg-white/10 hover:border-white/20 transition-all group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors">
+                          {venue.name}
+                        </h3>
+                        <span className="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                          SHOWING
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                          </svg>
+                          {venue.neighborhood}
+                        </span>
+                        {venue.address && (
+                          <>
+                            <span>•</span>
+                            <span className="truncate">{venue.address}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <svg 
+                      className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors flex-shrink-0 ml-4" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </Link>
+              ))}
+
+              {/* Not Showing Venues */}
+              {notShowingVenues.map((venue) => (
+                <Link
+                  key={venue.id}
+                  href={`/venue/${venue.id}?match=${matchId}`}
+                  className="block bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 hover:bg-white/10 hover:border-white/20 transition-all group opacity-60"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">

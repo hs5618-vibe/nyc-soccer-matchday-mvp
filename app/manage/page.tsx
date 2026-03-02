@@ -7,10 +7,13 @@ import { getUserVenues } from "@/lib/venueAdmin";
 import { fetchUpcomingMatches } from "@/lib/matches";
 import Link from "next/link";
 
-type Venue = {
-  id: string;
-  name: string;
-  neighborhood: string;
+type UserVenue = {
+  venue_id: string;
+  venues: {
+    id: string;
+    name: string;
+    neighborhood: string;
+  };
 };
 
 type Match = {
@@ -27,7 +30,7 @@ type VenueMatch = {
 
 export default function ManagePage() {
   const router = useRouter();
-  const [venues, setVenues] = useState<Venue[]>([]);
+  const [userVenues, setUserVenues] = useState<UserVenue[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [venueMatches, setVenueMatches] = useState<VenueMatch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,22 +47,23 @@ export default function ManagePage() {
 
       setUserId(user.id);
 
-      const userVenues = await getUserVenues(user.id);
-      if (userVenues.length === 0) {
+      const venues = await getUserVenues(user.id);
+      if (venues.length === 0) {
         router.push("/");
         return;
       }
 
-      setVenues(userVenues);
+      setUserVenues(venues);
 
       const upcomingMatches = await fetchUpcomingMatches();
       setMatches(upcomingMatches);
 
       // Fetch existing venue-match associations
+      const venueIds = venues.map(v => v.venues.id);
       const { data: vmData } = await supabase
         .from("venue_matches")
         .select("venue_id, match_id")
-        .in("venue_id", userVenues.map(v => v.id));
+        .in("venue_id", venueIds);
 
       setVenueMatches(vmData || []);
       setLoading(false);
@@ -122,7 +126,8 @@ export default function ManagePage() {
 
         {/* Venues */}
         <div className="space-y-6">
-          {venues.map((venue) => {
+          {userVenues.map((userVenue) => {
+            const venue = userVenue.venues;
             const venueMatchIds = venueMatches
               .filter(vm => vm.venue_id === venue.id)
               .map(vm => vm.match_id);

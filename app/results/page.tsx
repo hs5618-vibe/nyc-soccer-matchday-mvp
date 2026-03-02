@@ -1,444 +1,207 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { fetchShowingsForMatch, type ShowingRow } from "../../lib/showings";
-import { fetchGoingCount } from "../../lib/going";
-import { fetchMatchById } from "@/lib/matches";
-import { supabase } from "@/lib/supabaseClient";
-import { getProfile } from "@/lib/profiles";
+import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
+import { fetchVenuesByMatch } from "@/lib/venues";
+import Link from "next/link";
 
 type Venue = {
   id: string;
   name: string;
   neighborhood: string;
-  bar_type: string;
-  club_name: string | null;
   address: string | null;
 };
 
-type VenueWithStatus = {
-  venue: Venue;
-  status: 'showing' | 'not_showing' | 'unknown';
-  note: string | null;
-  goingCount: number;
-  recentUpdates: Array<{
-    id: string;
-    message: string;
-    created_at: string;
-    username: string;
-    bars_visited: number;
-  }>;
-};
-
-function ResultsContent() {
+export default function ResultsPage() {
   const searchParams = useSearchParams();
-  const matchId = useMemo(() => searchParams.get("match") ?? "man-utd-v-liverpool", [searchParams]);
-
-  const [venues, setVenues] = useState<VenueWithStatus[]>([]);
+  const matchId = searchParams.get("match");
+  const [match, setMatch] = useState<Match | null>(null);
+  const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [matchData, setMatchData] = useState<{ 
-    home_team: string; 
-    away_team: string;
-    home_team_crest: string | null;
-    away_team_crest: string | null;
-  } | null>(null);
-  const [barSearchQuery, setBarSearchQuery] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        setLoading(true);
-        setErrorMsg(null);
-        
-        // Fetch match data
-        const matchInfo = await fetchMatchById(matchId);
-        if (!cancelled && matchInfo) {
-          setMatchData({ 
-            home_team: matchInfo.home_team, 
-            away_team: matchInfo.away_team,
-            home_team_crest: matchInfo.home_team_crest,
-            away_team_crest: matchInfo.away_team_crest,
-          });
-        }
-        
-        // Fetch ALL venues
-        const { data: allVenues, error: venuesError } = await supabase
-          .from("venues")
-          .select("*")
-          .order("name");
-
-        if (venuesError) throw venuesError;
-
-        // Fetch showings for this match
-        const { data: showings, error: showingsError } = await supabase
-          .from("showings")
-          .select("venue_id, status, note")
-          .eq("match_id", matchId);
-
-        if (showingsError) throw showingsError;
-
-        // Fetch going counts for all venues
-        const goingPromises = (allVenues || []).map(async (venue) => {
-          const count = await fetchGoingCount({ matchId, venueId: venue.id });
-          return { venueId: venue.id, count };
-        });
-
-        const goingResults = await Promise.all(goingPromises);
-        const goingMap: Record<string, number> = {};
-        goingResults.forEach(r => {
-          goingMap[r.venueId] = r.count;
-        });
-
-        // Fetch recent updates for all venues
-        const { data: allUpdates, error: updatesError } = await supabase
-          .from("updates")
-          .select("id, message, created_at, user_id, venue_id")
-          .eq("match_id", matchId)
-          .order("created_at", { ascending: false });
-
-        if (updatesError) throw updatesError;
-
-        // Group updates by venue and fetch profiles
-        const updatesByVenue: Record<string, any[]> = {};
-        for (const update of (allUpdates || [])) {
-          if (!updatesByVenue[update.venue_id]) {
-            updatesByVenue[update.venue_id] = [];
-          }
-          if (updatesByVenue[update.venue_id].length < 2) {
-            const profile = await getProfile(update.user_id);
-            updatesByVenue[update.venue_id].push({
-              id: update.id,
-              message: update.message,
-              created_at: update.created_at,
-              username: profile?.username || "Anonymous",
-              bars_visited: profile?.bars_visited || 0,
-            });
-          }
-        }
-
-        // Combine venues with their showing status and updates
-        const venuesWithStatus: VenueWithStatus[] = (allVenues || []).map(venue => {
-          const showing = showings?.find(s => s.venue_id === venue.id);
-          return {
-            venue,
-            status: showing?.status === 'showing' ? 'showing' : 
-                   showing?.status === 'not_showing' ? 'not_showing' : 'unknown',
-            note: showing?.note || null,
-            goingCount: goingMap[venue.id] || 0,
-            recentUpdates: updatesByVenue[venue.id] || [],
-          };
-        });
-
-        // Sort: showing first, then not_showing, then unknown
-        const sorted = venuesWithStatus.sort((a, b) => {
-          const statusOrder = { showing: 0, not_showing: 1, unknown: 2 };
-          return statusOrder[a.status] - statusOrder[b.status];
-        });
-
-        if (!cancelled) setVenues(sorted);
-        
-      } catch (err: any) {
-        if (!cancelled) setErrorMsg(err?.message ?? "Failed to load bars for this match");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    async function loadData() {
+      if (!matchId) return;
+      
+      const [matchData, venuesData] = await Promise.all([
+        fetchMatchById(matchId),
+        fetchVenuesByMatch(matchId),
+      ]);
+      
+      setMatch(matchData);
+      setVenues(venuesData);
+      setLoading(false);
     }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
+    loadData();
   }, [matchId]);
 
-  // Filter venues based on search query
-  const filteredVenues = useMemo(() => {
-    if (!barSearchQuery.trim()) return venues;
-    
-    const query = barSearchQuery.toLowerCase();
-    return venues.filter(v => 
-      v.venue.name.toLowerCase().includes(query) ||
-      v.venue.neighborhood.toLowerCase().includes(query) ||
-      (v.venue.club_name && v.venue.club_name.toLowerCase().includes(query))
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
     );
-  }, [venues, barSearchQuery]);
+  }
 
-  const matchLabel = matchData 
-    ? `${matchData.home_team} vs ${matchData.away_team}`
-    : matchId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-
-  const otherMatches = [
-    { id: "epl-2026-02-08-manu-liv", label: "Man Utd vs Liverpool" },
-    { id: "epl-2026-02-08-che-ars", label: "Chelsea vs Arsenal" },
-    { id: "epl-2026-02-09-tot-mci", label: "Spurs vs Man City" },
-  ].filter((m) => m.id !== matchId);
-
-  const showingCount = filteredVenues.filter(v => v.status === 'showing').length;
-  const notShowingCount = filteredVenues.filter(v => v.status === 'not_showing').length;
-  const unknownCount = filteredVenues.filter(v => v.status === 'unknown').length;
-
-  function getTimeAgo(timestamp: string): string {
-    const now = new Date();
-    const posted = new Date(timestamp);
-    const diffMs = now.getTime() - posted.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 1) return "just now";
-    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
-    
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  if (!match) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-400 mb-4">Match not found</p>
+          <Link href="/" className="text-blue-400 hover:text-blue-300">
+            ← Back to matches
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-      <div className="mb-8">
-        <Link href="/" className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1 mb-4">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        {/* Back Button */}
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Back to matches
         </Link>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">
-          Bars for This Match
-        </h1>
-        
-        {/* Match with team logos */}
-        {matchData && (
-          <div className="flex items-center gap-3 mb-4 flex-wrap">
-            {matchData.home_team_crest && (
-              <img 
-                src={matchData.home_team_crest} 
-                alt={matchData.home_team}
-                className="w-12 h-12 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            )}
-            <p className="text-lg text-gray-600">
-              {matchData.home_team} <span className="text-gray-400">vs</span> {matchData.away_team}
-            </p>
-            {matchData.away_team_crest && (
-              <img 
-                src={matchData.away_team_crest} 
-                alt={matchData.away_team}
-                className="w-12 h-12 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            )}
-          </div>
-        )}
-
-        <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-600">
-          <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full">
-            {showingCount} showing
-          </span>
-          <span className="px-3 py-1 bg-red-50 text-red-700 rounded-full">
-            {notShowingCount} not showing
-          </span>
-          <span className="px-3 py-1 bg-gray-50 text-gray-700 rounded-full">
-            {unknownCount} unknown
-          </span>
-        </div>
-
-        {otherMatches.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="text-sm text-gray-500">Switch to:</span>
-            {otherMatches.map((m) => (
-              <Link key={m.id} href={`/results?match=${m.id}`}>
-                <button className="bg-transparent text-gray-700 px-3 py-1.5 text-sm font-medium rounded-lg hover:bg-gray-100 transition-all">
-                  {m.label}
-                </button>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Bar Search Filter */}
-      <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Filter bars by name or neighborhood..."
-            value={barSearchQuery}
-            onChange={(e) => setBarSearchQuery(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <svg 
-            className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        {barSearchQuery && (
-          <p className="mt-2 text-sm text-gray-500">
-            {filteredVenues.length} {filteredVenues.length === 1 ? 'bar' : 'bars'} found
-          </p>
-        )}
-      </div>
-
-      {loading && (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading bars...</p>
-        </div>
-      )}
-
-      {errorMsg && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-5">
-          <p className="text-red-800 font-medium">Error: {errorMsg}</p>
-        </div>
-      )}
-
-      {!loading && !errorMsg && (
-        <div className="space-y-4">
-          {filteredVenues.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
-              <p className="text-gray-600">
-                {barSearchQuery 
-                  ? `No bars found matching "${barSearchQuery}"`
-                  : "No bars available"
-                }
-              </p>
-              {barSearchQuery && (
-                <button 
-                  onClick={() => setBarSearchQuery("")}
-                  className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
-                >
-                  Clear filter
-                </button>
+        {/* Match Card */}
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 mb-8">
+          {/* League Badge */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              {match.league_emblem && (
+                <img 
+                  src={match.league_emblem} 
+                  alt={match.league}
+                  className={`h-8 w-auto object-contain ${
+                    match.league === 'Premier League' ? 'brightness-0 invert' : ''
+                  }`}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
               )}
             </div>
+            <div className="bg-purple-600 text-white text-sm font-bold px-4 py-2 rounded-full uppercase">
+              {match.league}
+            </div>
+          </div>
+
+          {/* Teams */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col items-center flex-1">
+              {match.home_team_crest && (
+                <div className="w-24 h-24 flex items-center justify-center mb-4">
+                  <img 
+                    src={match.home_team_crest} 
+                    alt={match.home_team}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              <span className="font-bold text-2xl text-white text-center">{match.home_team}</span>
+            </div>
+            
+            <div className="text-gray-500 font-bold text-3xl px-8">vs</div>
+            
+            <div className="flex flex-col items-center flex-1">
+              {match.away_team_crest && (
+                <div className="w-24 h-24 flex items-center justify-center mb-4">
+                  <img 
+                    src={match.away_team_crest} 
+                    alt={match.away_team}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              <span className="font-bold text-2xl text-white text-center">{match.away_team}</span>
+            </div>
+          </div>
+
+          {/* Match Time */}
+          <div className="border-t border-white/10 pt-6 text-center">
+            <div className="flex items-center justify-center gap-2 text-gray-300">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-lg font-semibold">{formatMatchTime(match.kickoff_time)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bars Section */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white uppercase tracking-wide">
+              Sports Bars
+            </h2>
+            <span className="text-sm text-gray-400">
+              {venues.length} {venues.length === 1 ? 'bar' : 'bars'}
+            </span>
+          </div>
+
+          {venues.length === 0 ? (
+            <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-12 text-center border border-white/10">
+              <p className="text-gray-400 text-lg mb-4">
+                No bars confirmed for this match yet
+              </p>
+              <p className="text-gray-500 text-sm">
+                Check back soon or search for your favorite team
+              </p>
+            </div>
           ) : (
-            filteredVenues.map((v) => {
-              const barType =
-                v.venue.bar_type === "club" && v.venue.club_name
-                  ? `Club-Specific: ${v.venue.club_name}`
-                  : "General Sports Bar";
-
-              const badgeStyles = {
-                showing: 'bg-green-100 text-green-700',
-                not_showing: 'bg-red-100 text-red-700',
-                unknown: 'bg-gray-100 text-gray-600',
-              };
-
-              const badgeText = {
-                showing: 'Showing',
-                not_showing: 'Not showing',
-                unknown: 'No info',
-              };
-
-              return (
-                <Link key={v.venue.id} href={`/venue/${v.venue.id}?match=${matchId}`} className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-md transition-all">
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-3 mb-2">
-                        <h3 className="font-semibold text-gray-900 text-lg">
-                          {v.venue.name}
-                        </h3>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeStyles[v.status]}`}>
-                          {badgeText[v.status]}
-                        </span>
-                      </div>
-
-                      <p className="text-sm text-gray-600 mb-2">{v.venue.neighborhood}</p>
-
-                      {v.venue.address && (
-                        <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            <div className="space-y-3">
+              {venues.map((venue) => (
+                <Link
+                  key={venue.id}
+                  href={`/venue/${venue.id}?match=${matchId}`}
+                  className="block bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 hover:bg-white/10 hover:border-white/20 transition-all group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg text-white mb-1 group-hover:text-blue-400 transition-colors">
+                        {venue.name}
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                           </svg>
-                          <span className="truncate">{v.venue.address}</span>
-                        </p>
-                      )}
-
-                      <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
-                        <span className="text-gray-500">{barType}</span>
-                        {v.goingCount > 0 && (
+                          {venue.neighborhood}
+                        </span>
+                        {venue.address && (
                           <>
-                            <span className="text-gray-300">•</span>
-                            <span className="font-medium text-gray-700">
-                              {v.goingCount} {v.goingCount === 1 ? "person" : "people"} going
-                            </span>
+                            <span>•</span>
+                            <span className="truncate">{venue.address}</span>
                           </>
                         )}
                       </div>
-
-                      {/* Recent Updates Preview */}
-                      {v.recentUpdates.length > 0 && (
-                        <div className="space-y-2 mb-3">
-                          {v.recentUpdates.map((update) => (
-                            <div key={update.id} className="flex items-start gap-2 text-sm">
-                              <span className="text-gray-400 mt-0.5">💬</span>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-gray-700 line-clamp-1">"{update.message}"</p>
-                                <p className="text-xs text-gray-500">
-                                  {update.username} • {getTimeAgo(update.created_at)}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {v.note && (
-                        <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                          <p className="text-sm text-blue-900">{v.note}</p>
-                        </div>
-                      )}
                     </div>
-
-                    <svg
-                      className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1"
-                      fill="none"
-                      stroke="currentColor"
+                    <svg 
+                      className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors flex-shrink-0 ml-4" 
+                      fill="none" 
+                      stroke="currentColor" 
                       viewBox="0 0 24 24"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
                 </Link>
-              );
-            })
+              ))}
+            </div>
           )}
         </div>
-      )}
-    </div>
-  );
-}
-
-export default function ResultsPage() {
-  return (
-    <Suspense fallback={
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
       </div>
-    }>
-      <ResultsContent />
-    </Suspense>
+    </div>
   );
 }

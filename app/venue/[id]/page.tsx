@@ -236,7 +236,7 @@ export default function VenuePage() {
               <div className="flex items-center gap-2">
                 <span>•</span>
                 <a 
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address + ', New York, NY')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-blue-400 transition-colors"

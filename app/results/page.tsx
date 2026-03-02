@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
 import { fetchVenuesByMatch } from "@/lib/venues";
 import Link from "next/link";
-
-export const dynamic = 'force-dynamic';
 
 type Venue = {
   id: string;
@@ -15,7 +13,7 @@ type Venue = {
   address: string | null;
 };
 
-export default function ResultsPage() {
+function ResultsContent() {
   const searchParams = useSearchParams();
   const matchId = searchParams.get("match");
   const [match, setMatch] = useState<Match | null>(null);
@@ -205,5 +203,20 @@ export default function ResultsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ResultsContent />
+    </Suspense>
   );
 }

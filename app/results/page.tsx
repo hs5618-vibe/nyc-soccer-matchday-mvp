@@ -86,15 +86,15 @@ function ResultsContent() {
         </Link>
 
         {/* Match Card */}
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 mb-8">
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 sm:p-8 mb-8">
           {/* League Badge */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6 sm:mb-8">
             <div className="flex items-center gap-3">
               {match.league_emblem && (
                 <img 
                   src={match.league_emblem} 
                   alt={match.league}
-                  className={`h-8 w-auto object-contain ${
+                  className={`h-6 sm:h-8 w-auto object-contain ${
                     match.league === 'Premier League' ? 'brightness-0 invert' : ''
                   }`}
                   onError={(e) => {
@@ -102,15 +102,15 @@ function ResultsContent() {
                   }}
                 />
               )}
-              <span className="text-sm text-gray-400 font-semibold">{match.league}</span>
+              <span className="text-xs sm:text-sm text-gray-400 font-semibold">{match.league}</span>
             </div>
           </div>
 
-          {/* Teams */}
-          <div className="flex items-center justify-between mb-8">
+          {/* Teams - Responsive */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-8 mb-6 sm:mb-8">
             <div className="flex flex-col items-center flex-1">
               {match.home_team_crest && (
-                <div className="w-24 h-24 flex items-center justify-center mb-4">
+                <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mb-3 sm:mb-4">
                   <img 
                     src={match.home_team_crest} 
                     alt={match.home_team}
@@ -118,14 +118,14 @@ function ResultsContent() {
                   />
                 </div>
               )}
-              <span className="font-bold text-2xl text-white text-center">{match.home_team}</span>
+              <span className="font-bold text-lg sm:text-2xl text-white text-center break-words px-2">{match.home_team}</span>
             </div>
             
-            <div className="text-gray-500 font-bold text-3xl px-8">vs</div>
+            <div className="text-gray-500 font-bold text-2xl sm:text-3xl px-4 sm:px-8 text-center flex-shrink-0">vs</div>
             
             <div className="flex flex-col items-center flex-1">
               {match.away_team_crest && (
-                <div className="w-24 h-24 flex items-center justify-center mb-4">
+                <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mb-3 sm:mb-4">
                   <img 
                     src={match.away_team_crest} 
                     alt={match.away_team}
@@ -133,17 +133,17 @@ function ResultsContent() {
                   />
                 </div>
               )}
-              <span className="font-bold text-2xl text-white text-center">{match.away_team}</span>
+              <span className="font-bold text-lg sm:text-2xl text-white text-center break-words px-2">{match.away_team}</span>
             </div>
           </div>
 
           {/* Match Time */}
-          <div className="border-t border-white/10 pt-6 text-center">
+          <div className="border-t border-white/10 pt-4 sm:pt-6 text-center">
             <div className="flex items-center justify-center gap-2 text-gray-300">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-lg font-semibold">{formatMatchTime(match.kickoff_time)}</span>
+              <span className="text-base sm:text-lg font-semibold">{formatMatchTime(match.kickoff_time)}</span>
             </div>
           </div>
         </div>

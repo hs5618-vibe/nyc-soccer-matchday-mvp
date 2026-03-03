@@ -127,7 +127,10 @@ export default function VenuePage() {
       user_id: user.id,
     });
 
-    if (!error) {
+    if (error) {
+      console.error("Supabase insert error:", error);
+      alert(`Failed to post update: ${error.message}\n\nCode: ${error.code}\n\nHint: ${error.hint || 'Check browser console for details'}`);
+    } else {
       setNewUpdate("");
       await loadUpdates();
     }

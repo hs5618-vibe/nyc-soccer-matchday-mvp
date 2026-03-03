@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import Link from "next/link";
+
+import { supabase } from "@/lib/supabaseClient";
 import { fetchVenueById, type Venue } from "@/lib/venues";
 import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
-import { supabase } from "@/lib/supabaseClient";
-import Link from "next/link";
 import { isVenueAdmin } from "@/lib/venueAdmin";
 
 type Update = {
@@ -14,6 +15,21 @@ type Update = {
   created_at: string;
   user_id: string;
 };
+
+function alertSupabaseError(context: string, err: any) {
+  // Supabase errors usually look like: { message, code, details, hint }
+  const msg =
+    err?.message ||
+    err?.error_description ||
+    (typeof err === "string" ? err : "Unknown error");
+
+  const code = err?.code ? `\nCode: ${err.code}` : "";
+  const hint = err?.hint ? `\nHint: ${err.hint}` : "";
+  const details = err?.details ? `\nDetails: ${err.details}` : "";
+
+  console.error(`[${context}]`, err);
+  alert(`${context}\n\n${msg}${code}${details}${hint}`);
+}
 
 export default function VenuePage() {
   const params = useParams();
@@ -36,26 +52,33 @@ export default function VenuePage() {
 
   useEffect(() => {
     async function loadData() {
-      const [venueData, matchData] = await Promise.all([
-        fetchVenueById(venueId),
-        matchId ? fetchMatchById(matchId) : Promise.resolve(null),
-      ]);
+      try {
+        const [venueData, matchData] = await Promise.all([
+          fetchVenueById(venueId),
+          matchId ? fetchMatchById(matchId) : Promise.resolve(null),
+        ]);
 
-      setVenue(venueData);
-      setMatch(matchData);
+        setVenue(venueData);
+        setMatch(matchData);
 
-      if (venueData && matchId) {
-        await loadUpdates();
-        await loadGoingStatus();
+        if (venueData && matchId) {
+          await loadUpdates();
+          await loadGoingStatus();
+        }
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
     async function checkAuth() {
       const {
         data: { user },
+        error,
       } = await supabase.auth.getUser();
+
+      if (error) {
+        console.error("auth.getUser error:", error);
+      }
 
       setUser(user);
 
@@ -75,65 +98,79 @@ export default function VenuePage() {
   async function loadUpdates() {
     if (!matchId) return;
 
-    try {
-      const { data, error } = await supabase
-        .from("updates")
-        .select("id, content, created_at, user_id")
-        .eq("venue_id", venueId)
-        .eq("match_id", matchId)
-        .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("updates")
+      .select("id, content, created_at, user_id")
+      .eq("venue_id", venueId)
+      .eq("match_id", matchId)
+      .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error loading updates:", error);
-        setUpdates([]);
-        return;
-      }
-
-      setUpdates((data || []) as Update[]);
-    } catch (err) {
-      console.error("loadUpdates: Unexpected error:", err);
+    if (error) {
+      console.error("Error loading updates:", error);
       setUpdates([]);
+      return;
     }
+
+    setUpdates((data || []) as Update[]);
   }
 
   async function loadGoingStatus() {
-    if (!matchId || !venue) return;
+    if (!matchId) return;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    const { count } = await supabase
+    // Count
+    const { count, error: countError } = await supabase
       .from("going")
       .select("*", { count: "exact", head: true })
       .eq("venue_id", venueId)
       .eq("match_id", matchId);
 
-    setGoingCount(count || 0);
-
-    if (user) {
-      const { data } = await supabase
-        .from("going")
-        .select("id")
-        .eq("venue_id", venueId)
-        .eq("match_id", matchId)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      setGoing(!!data);
+    if (countError) {
+      console.error("Error counting going:", countError);
+      setGoingCount(0);
     } else {
-      setGoing(false);
+      setGoingCount(count || 0);
     }
+
+    // Current user status
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setGoing(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("going")
+      .select("id")
+      .eq("venue_id", venueId)
+      .eq("match_id", matchId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error loading going status:", error);
+      setGoing(false);
+      return;
+    }
+
+    setGoing(!!data);
   }
 
   async function handleGoing() {
-    if (!user || !matchId || !venue) {
+    if (!matchId) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
       alert("Please sign in to mark yourself as going");
       return;
     }
 
     if (goingLoading) return;
-
     setGoingLoading(true);
 
     // optimistic UI
@@ -143,11 +180,17 @@ export default function VenuePage() {
 
     try {
       if (nextGoing) {
-        const { error } = await supabase.from("going").insert({
-          venue_id: venueId,
-          match_id: matchId,
-          user_id: user.id,
-        });
+        // UPSERT prevents duplicates IF you have a unique constraint (recommended)
+        const { error } = await supabase.from("going").upsert(
+          {
+            venue_id: venueId,
+            match_id: matchId,
+            user_id: user.id,
+          },
+          // If you add the unique constraint, keep this:
+          { onConflict: "venue_id,match_id,user_id" }
+        );
+
         if (error) throw error;
       } else {
         const { error } = await supabase
@@ -156,19 +199,17 @@ export default function VenuePage() {
           .eq("venue_id", venueId)
           .eq("match_id", matchId)
           .eq("user_id", user.id);
+
         if (error) throw error;
       }
 
-      // sync count from DB
       await loadGoingStatus();
-    } catch (err) {
-      console.error("Error updating going:", err);
-
-      // revert optimistic UI on error
+    } catch (err: any) {
+      // revert optimistic UI
       setGoing(!nextGoing);
       setGoingCount((prev) => Math.max(0, prev + (!nextGoing ? 1 : -1)));
 
-      alert("Failed to update. Please try again.");
+      alertSupabaseError("Failed to update going status.", err);
     } finally {
       setGoingLoading(false);
     }
@@ -187,12 +228,7 @@ export default function VenuePage() {
     });
 
     if (error) {
-      console.error("Supabase insert error:", error);
-      alert(
-        `Failed to post update: ${error.message}\n\nCode: ${error.code}\n\nHint: ${
-          error.hint || "Check browser console for details"
-        }`
-      );
+      alertSupabaseError("Failed to post update.", error);
       return;
     }
 
@@ -227,7 +263,6 @@ export default function VenuePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {/* Back Button */}
         <Link
           href={matchId ? `/results?match=${matchId}` : "/"}
           className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
@@ -238,7 +273,6 @@ export default function VenuePage() {
           Back
         </Link>
 
-        {/* Venue Header */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 mb-6">
           <h1 className="text-4xl font-black text-white mb-4">{venue.name}</h1>
 
@@ -271,7 +305,6 @@ export default function VenuePage() {
             )}
           </div>
 
-          {/* Going Button */}
           {match && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <button
@@ -293,7 +326,6 @@ export default function VenuePage() {
           )}
         </div>
 
-        {/* Match Info */}
         {match && (
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 mb-6">
             <h2 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">Match</h2>
@@ -310,9 +342,7 @@ export default function VenuePage() {
                 <span className="font-semibold text-white truncate">{match.home_team}</span>
               </div>
 
-              <span className="text-gray-500 font-bold text-sm sm:text-base flex-shrink-0 self-center">
-                vs
-              </span>
+              <span className="text-gray-500 font-bold text-sm sm:text-base flex-shrink-0 self-center">vs</span>
 
               <div className="flex items-center gap-3 min-w-0 flex-1 sm:justify-end">
                 <span className="font-semibold text-white truncate">{match.away_team}</span>
@@ -330,11 +360,9 @@ export default function VenuePage() {
           </div>
         )}
 
-        {/* Live Updates */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6">
           <h2 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">Live Updates</h2>
 
-          {/* Post Update (Owner Only) */}
           {isOwner && user && match && (
             <div className="mb-6 p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl">
               <p className="text-sm text-blue-300 mb-3 font-semibold">Bar staff can post updates</p>
@@ -357,7 +385,6 @@ export default function VenuePage() {
 
           {!user && match && <p className="text-gray-400 text-sm mb-4">Sign in to see live updates from this bar</p>}
 
-          {/* Updates List */}
           {user && updates.length === 0 && <p className="text-gray-400 text-center py-8">No updates yet</p>}
 
           {user && (

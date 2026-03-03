@@ -194,7 +194,7 @@ export default function HomePage() {
                   href={`/results?match=${match.id}`}
                   className="block bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all group"
                 >
-                  {/* League logo + Time - NO BADGE */}
+                  {/* League logo + Time */}
                   <div className="flex items-center gap-3 mb-3">
                     {match.league_emblem && (
                       <img 
@@ -214,43 +214,49 @@ export default function HomePage() {
                     </span>
                   </div>
 
-                  {/* Teams - Horizontal Layout */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      {match.home_team_crest && (
-                        <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
-                          <img 
-                            src={match.home_team_crest} 
-                            alt={match.home_team}
-                            className="w-10 h-10 object-contain"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
-                      <span className="font-bold text-base text-white truncate">{match.home_team}</span>
-                    </div>
-                    
-                    <span className="text-gray-500 font-medium text-sm px-3">vs</span>
-                    
-                    <div className="flex items-center gap-3 flex-1 justify-end">
-                      <span className="font-bold text-base text-white truncate text-right">{match.away_team}</span>
-                      {match.away_team_crest && (
-                        <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
-                          <img 
-                            src={match.away_team_crest} 
-                            alt={match.away_team}
-                            className="w-10 h-10 object-contain"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
+                  {/* Teams - Responsive Layout */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {/* Home Team */}
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {match.home_team_crest && (
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0">
+                            <img 
+                              src={match.home_team_crest} 
+                              alt={match.home_team}
+                              className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <span className="font-bold text-sm sm:text-base text-white truncate">{match.home_team}</span>
+                      </div>
+                      
+                      {/* VS */}
+                      <span className="text-gray-500 font-medium text-xs sm:text-sm px-2 flex-shrink-0">vs</span>
+                      
+                      {/* Away Team */}
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="font-bold text-sm sm:text-base text-white truncate">{match.away_team}</span>
+                        {match.away_team_crest && (
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0">
+                            <img 
+                              src={match.away_team_crest} 
+                              alt={match.away_team}
+                              className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="ml-3 flex items-center gap-2 text-blue-400 font-semibold flex-shrink-0">
+                    {/* View bars link */}
+                    <div className="flex items-center gap-2 text-blue-400 font-semibold flex-shrink-0 self-end sm:self-auto">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>

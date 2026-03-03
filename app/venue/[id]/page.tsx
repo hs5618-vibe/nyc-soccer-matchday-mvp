@@ -437,18 +437,17 @@ export default function VenuePage() {
 
                     {/* Upvote */}
                     <button
-                      onClick={() => handleUpvote(update.id)}
-                      disabled={!user || upvotingId === update.id}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-bold border transition-all flex-shrink-0 ${
-                        update.user_has_upvoted
-                          ? "bg-white/10 border-white/20 text-white"
-                          : "bg-transparent border-white/10 text-gray-300 hover:border-white/20 hover:text-white"
-                      } ${(!user || upvotingId === update.id) ? "opacity-60 cursor-not-allowed" : ""}`}
-                      title={!user ? "Sign in to upvote" : "Upvote"}
-                    >
-                      <span>{update.user_has_upvoted ? "▲" : "△"}</span>
-                      <span>{update.upvote_count}</span>
-                    </button>
+  onClick={() => handleUpvote(update.id)}
+  disabled={!user || upvotingId === update.id}
+  className={`px-3 py-2 rounded-full text-sm font-bold border transition-all flex-shrink-0 ${
+    update.user_has_upvoted
+      ? "bg-white/10 border-white/20 text-white"
+      : "bg-transparent border-white/10 text-gray-300 hover:border-white/20 hover:text-white"
+  } ${(!user || upvotingId === update.id) ? "opacity-60 cursor-not-allowed" : ""}`}
+  title={!user ? "Sign in to upvote" : "Upvote"}
+>
+  {update.upvote_count}
+</button>
                   </div>
                 </div>
               ))}

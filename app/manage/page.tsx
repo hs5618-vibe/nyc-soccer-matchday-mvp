@@ -35,6 +35,7 @@ export default function ManagePage() {
   const [venueMatches, setVenueMatches] = useState<VenueMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null); // Track which match is being saved
 
   useEffect(() => {
     async function loadData() {
@@ -73,24 +74,37 @@ export default function ManagePage() {
   }, [router]);
 
   async function toggleMatch(venueId: string, matchId: string, isShowing: boolean) {
-    if (isShowing) {
-      // Remove
-      await supabase
-        .from("venue_matches")
-        .delete()
-        .eq("venue_id", venueId)
-        .eq("match_id", matchId);
+    setSaving(`${venueId}-${matchId}`);
+    
+    try {
+      if (isShowing) {
+        // Remove
+        const { error } = await supabase
+          .from("venue_matches")
+          .delete()
+          .eq("venue_id", venueId)
+          .eq("match_id", matchId);
 
-      setVenueMatches(prev => prev.filter(
-        vm => !(vm.venue_id === venueId && vm.match_id === matchId)
-      ));
-    } else {
-      // Add
-      await supabase
-        .from("venue_matches")
-        .insert({ venue_id: venueId, match_id: matchId });
+        if (error) throw error;
 
-      setVenueMatches(prev => [...prev, { venue_id: venueId, match_id: matchId }]);
+        setVenueMatches(prev => prev.filter(
+          vm => !(vm.venue_id === venueId && vm.match_id === matchId)
+        ));
+      } else {
+        // Add
+        const { error } = await supabase
+          .from("venue_matches")
+          .insert({ venue_id: venueId, match_id: matchId });
+
+        if (error) throw error;
+
+        setVenueMatches(prev => [...prev, { venue_id: venueId, match_id: matchId }]);
+      }
+    } catch (error) {
+      console.error("Error toggling match:", error);
+      alert("Failed to update. Please try again.");
+    } finally {
+      setSaving(null);
     }
   }
 
@@ -146,12 +160,13 @@ export default function ManagePage() {
                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">Upcoming Matches</h3>
                     {matches.map((match) => {
                       const isShowing = venueMatchIds.includes(match.id);
+                      const isSaving = saving === `${venue.id}-${match.id}`;
                       
                       return (
                         <div key={match.id} className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <p className="font-bold text-white mb-1">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-white mb-1 truncate">
                                 {match.home_team} vs {match.away_team}
                               </p>
                               <p className="text-sm text-gray-400">
@@ -164,18 +179,24 @@ export default function ManagePage() {
                                 })}
                               </p>
                             </div>
-                            <label className="flex items-center gap-3 cursor-pointer">
-                              <span className="text-sm font-semibold text-gray-300">
-                                We're showing this
+                            <label className="flex items-center gap-3 cursor-pointer flex-shrink-0">
+                              <span className="text-sm font-semibold text-gray-300 hidden sm:inline">
+                                {isSaving ? "Saving..." : "We're showing this"}
                               </span>
                               <input
                                 type="checkbox"
                                 checked={isShowing}
+                                disabled={isSaving}
                                 onChange={() => toggleMatch(venue.id, match.id, isShowing)}
-                                className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                                className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                               />
                             </label>
                           </div>
+                          {isSaving && (
+                            <div className="mt-2 text-xs text-blue-400 text-right">
+                              ✓ Saved
+                            </div>
+                          )}
                         </div>
                       );
                     })}

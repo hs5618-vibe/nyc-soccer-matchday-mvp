@@ -82,7 +82,13 @@ export default function VenuePage() {
       .eq("match_id", matchId)
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
+    if (error) {
+      console.error("Error loading updates:", error);
+      return;
+    }
+
+    if (data) {
+      console.log("Loaded updates:", data);
       const updatesWithVotes = data.map((update: any) => ({
         ...update,
         user_has_upvoted: user ? update.update_upvotes?.some((v: any) => v.user_id === user.id) : false,

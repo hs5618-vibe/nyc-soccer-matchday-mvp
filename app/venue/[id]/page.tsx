@@ -273,18 +273,18 @@ export default function VenuePage() {
         {match && (
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 mb-6">
             <h2 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">Match</h2>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 {match.home_team_crest && (
-                  <img src={match.home_team_crest} alt={match.home_team} className="w-10 h-10 object-contain" />
+                  <img src={match.home_team_crest} alt={match.home_team} className="w-8 h-8 sm:w-10 sm:h-10 object-contain flex-shrink-0" />
                 )}
-                <span className="font-semibold text-white">{match.home_team}</span>
+                <span className="font-semibold text-white truncate">{match.home_team}</span>
               </div>
-              <span className="text-gray-500 font-bold">vs</span>
-              <div className="flex items-center gap-3">
-                <span className="font-semibold text-white">{match.away_team}</span>
+              <span className="text-gray-500 font-bold text-sm sm:text-base flex-shrink-0 self-center">vs</span>
+              <div className="flex items-center gap-3 min-w-0 flex-1 sm:justify-end">
+                <span className="font-semibold text-white truncate">{match.away_team}</span>
                 {match.away_team_crest && (
-                  <img src={match.away_team_crest} alt={match.away_team} className="w-10 h-10 object-contain" />
+                  <img src={match.away_team_crest} alt={match.away_team} className="w-8 h-8 sm:w-10 sm:h-10 object-contain flex-shrink-0" />
                 )}
               </div>
             </div>

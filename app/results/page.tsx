@@ -174,33 +174,33 @@ function ResultsContent() {
                   href={`/venue/${venue.id}?match=${matchId}`}
                   className="block bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 hover:bg-white/10 hover:border-white/20 transition-all group"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                        <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate">
                           {venue.name}
                         </h3>
-                        <span className="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        <span className="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full self-start sm:self-auto flex-shrink-0">
                           SHOWING
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">
                         <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                           </svg>
-                          {venue.neighborhood}
+                          <span className="truncate">{venue.neighborhood}</span>
                         </span>
                         {venue.address && (
                           <>
-                            <span>•</span>
+                            <span className="hidden sm:inline">•</span>
                             <span className="truncate">{venue.address}</span>
                           </>
                         )}
                       </div>
                     </div>
                     <svg 
-                      className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors flex-shrink-0 ml-4" 
+                      className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors flex-shrink-0 self-end sm:self-auto" 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -218,28 +218,28 @@ function ResultsContent() {
                   href={`/venue/${venue.id}?match=${matchId}`}
                   className="block bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 hover:bg-white/10 hover:border-white/20 transition-all group opacity-60"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg text-white mb-1 group-hover:text-blue-400 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-lg text-white mb-2 group-hover:text-blue-400 transition-colors truncate">
                         {venue.name}
                       </h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">
                         <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                           </svg>
-                          {venue.neighborhood}
+                          <span className="truncate">{venue.neighborhood}</span>
                         </span>
                         {venue.address && (
                           <>
-                            <span>•</span>
+                            <span className="hidden sm:inline">•</span>
                             <span className="truncate">{venue.address}</span>
                           </>
                         )}
                       </div>
                     </div>
                     <svg 
-                      className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors flex-shrink-0 ml-4" 
+                      className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors flex-shrink-0 self-end sm:self-auto" 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"

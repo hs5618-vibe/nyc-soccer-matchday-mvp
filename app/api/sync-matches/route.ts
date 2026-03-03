@@ -2,10 +2,9 @@ import { NextResponse } from 'next/server';
 import { syncMatchesFromAPI } from '@/lib/syncMatches';
 
 export async function GET(request: Request) {
-  // Comment out auth for manual testing
+  // Auth disabled for manual sync - re-enable in production
   // const authHeader = request.headers.get('authorization');
   // const expectedToken = process.env.SYNC_SECRET_TOKEN;
-
   // if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
   //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   // }

@@ -12,6 +12,38 @@ type VenueWithMeta = BaseVenue & {
   going_count: number;
 };
 
+type SortMode = "default" | "near";
+type UserLoc = { lat: number; lng: number };
+
+function haversineMiles(a: UserLoc, b: UserLoc) {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R_km = 6371;
+
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lng - a.lng);
+
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+
+  const sinDLat = Math.sin(dLat / 2);
+  const sinDLon = Math.sin(dLon / 2);
+
+  const h =
+    sinDLat * sinDLat +
+    Math.cos(lat1) * Math.cos(lat2) * sinDLon * sinDLon;
+
+  const km = 2 * R_km * Math.asin(Math.sqrt(h));
+  const miles = km * 0.621371;
+
+  return miles;
+}
+
+function formatMiles(miles: number) {
+  if (!Number.isFinite(miles)) return "";
+  if (miles < 0.1) return "<0.1 mi";
+  return `${miles.toFixed(1)} mi`;
+}
+
 function ResultsContent() {
   const searchParams = useSearchParams();
   const matchId = searchParams.get("match");
@@ -19,6 +51,11 @@ function ResultsContent() {
   const [match, setMatch] = useState<Match | null>(null);
   const [venues, setVenues] = useState<VenueWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Near-me sorting
+  const [sortMode, setSortMode] = useState<SortMode>("default");
+  const [userLoc, setUserLoc] = useState<UserLoc | null>(null);
+  const [locError, setLocError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -33,17 +70,15 @@ function ResultsContent() {
 
       const [matchData, showingVenues, allVenues, goingRows] = await Promise.all([
         fetchMatchById(matchId),
-        fetchVenuesByMatch(matchId), // ✅ this exists in your lib/venues.ts
+        fetchVenuesByMatch(matchId),
         fetchAllVenues(),
         supabase.from("going").select("venue_id").eq("match_id", matchId),
       ]);
 
       setMatch(matchData);
 
-      // Which venues are confirmed showing
       const showingIds = new Set((showingVenues || []).map((v) => v.id));
 
-      // Count "going" per venue (client-side aggregation)
       const counts: Record<string, number> = {};
       (goingRows.data || []).forEach((r: any) => {
         const vid = String(r.venue_id);
@@ -55,13 +90,6 @@ function ResultsContent() {
         is_showing: showingIds.has(v.id),
         going_count: counts[v.id] || 0,
       }));
-
-      // Sort: showing first, then by going_count desc, then name
-      merged.sort((a, b) => {
-        if (a.is_showing !== b.is_showing) return a.is_showing ? -1 : 1;
-        if (a.going_count !== b.going_count) return b.going_count - a.going_count;
-        return a.name.localeCompare(b.name);
-      });
 
       setVenues(merged);
       setLoading(false);
@@ -75,6 +103,87 @@ function ResultsContent() {
     const notConfirmed = venues.length - showing;
     return { showing, notConfirmed };
   }, [venues]);
+
+  const venuesSorted = useMemo(() => {
+    const list = [...venues];
+
+    const distanceFor = (v: VenueWithMeta) => {
+      if (!userLoc) return Number.POSITIVE_INFINITY;
+      if (v.latitude == null || v.longitude == null) return Number.POSITIVE_INFINITY;
+      return haversineMiles(userLoc, { lat: v.latitude, lng: v.longitude });
+    };
+
+    if (sortMode === "near" && userLoc) {
+      list.sort((a, b) => {
+        // Showing first
+        if (a.is_showing !== b.is_showing) return a.is_showing ? -1 : 1;
+
+        const da = distanceFor(a);
+        const db = distanceFor(b);
+        if (da !== db) return da - db;
+
+        // Tie-breakers
+        if (a.going_count !== b.going_count) return b.going_count - a.going_count;
+        return a.name.localeCompare(b.name);
+      });
+      return list;
+    }
+
+    // Default sort: showing first, then going_count desc, then name
+    list.sort((a, b) => {
+      if (a.is_showing !== b.is_showing) return a.is_showing ? -1 : 1;
+      if (a.going_count !== b.going_count) return b.going_count - a.going_count;
+      return a.name.localeCompare(b.name);
+    });
+
+    return list;
+  }, [venues, sortMode, userLoc]);
+
+  const requestLocation = async () => {
+    setLocError(null);
+
+    if (typeof window === "undefined") return;
+
+    if (!("geolocation" in navigator)) {
+      setLocError("Location not supported on this device/browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocError(null);
+        setSortMode("near");
+      },
+      (err) => {
+        // Common: user denied, unavailable, timeout
+        setLocError(err.message || "Could not get your location.");
+        setUserLoc(null);
+        setSortMode("default");
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 }
+    );
+  };
+
+  const toggleNearMe = async () => {
+    if (sortMode === "near") {
+      setSortMode("default");
+      return;
+    }
+    // Turning on:
+    if (userLoc) {
+      setSortMode("near");
+      return;
+    }
+    await requestLocation();
+  };
+
+  const distanceLabel = (v: VenueWithMeta) => {
+    if (sortMode !== "near" || !userLoc) return null;
+    if (v.latitude == null || v.longitude == null) return null;
+    const miles = haversineMiles(userLoc, { lat: v.latitude, lng: v.longitude });
+    return formatMiles(miles);
+  };
 
   if (loading) {
     return (
@@ -185,78 +294,112 @@ function ResultsContent() {
 
         {/* Bars Section */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-white uppercase tracking-wide">Sports Bars</h2>
-            <span className="text-sm text-gray-400">
-              {stats.showing} showing • {stats.notConfirmed} not confirmed
-            </span>
+
+            <div className="flex items-center gap-3">
+              {/* Near me toggle */}
+              <button
+                type="button"
+                onClick={toggleNearMe}
+                className={`text-sm font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                  sortMode === "near"
+                    ? "bg-white/15 border-white/30 text-white"
+                    : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                Near me
+              </button>
+
+              <span className="text-sm text-gray-400">
+                {stats.showing} showing • {stats.notConfirmed} not confirmed
+              </span>
+            </div>
           </div>
 
-          {venues.length === 0 ? (
+          {locError && (
+            <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-200 rounded-2xl px-4 py-3 text-sm">
+              {locError}
+            </div>
+          )}
+
+          {venuesSorted.length === 0 ? (
             <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-12 text-center border border-white/10">
               <p className="text-gray-400 text-lg mb-4">No bars available</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {venues.map((venue) => (
-                <Link
-                  key={venue.id}
-                  href={`/venue/${venue.id}?match=${matchId}`}
-                  className={`block bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 hover:bg-white/10 hover:border-white/20 transition-all group ${
-                    venue.is_showing ? "" : "opacity-60"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2 min-w-0">
-                        <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate">
-                          {venue.name}
-                        </h3>
-                        {venue.is_showing && (
-                          <span className="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                            SHOWING
+              {venuesSorted.map((venue) => {
+                const dist = distanceLabel(venue);
+
+                return (
+                  <Link
+                    key={venue.id}
+                    href={`/venue/${venue.id}?match=${matchId}`}
+                    className={`block bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 hover:bg-white/10 hover:border-white/20 transition-all group ${
+                      venue.is_showing ? "" : "opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 min-w-0">
+                          <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate">
+                            {venue.name}
+                          </h3>
+                          {venue.is_showing && (
+                            <span className="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                              SHOWING
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span className="truncate">{venue.neighborhood}</span>
                           </span>
-                        )}
+
+                          {dist && (
+                            <>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="font-semibold text-gray-200">{dist}</span>
+                            </>
+                          )}
+
+                          {venue.address && (
+                            <>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="truncate">{venue.address}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                              fillRule="evenodd"
-                              d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          <span className="truncate">{venue.neighborhood}</span>
-                        </span>
-                        {venue.address && (
-                          <>
-                            <span className="hidden sm:inline">•</span>
-                            <span className="truncate">{venue.address}</span>
-                          </>
-                        )}
+                      {/* Going count on the right */}
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-white">{venue.going_count}</div>
+                          <div className="text-xs text-gray-400">going</div>
+                        </div>
+                        <svg
+                          className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
                       </div>
                     </div>
-
-                    {/* ✅ Going count on the right */}
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-white">{venue.going_count}</div>
-                        <div className="text-xs text-gray-400">going</div>
-                      </div>
-                      <svg
-                        className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

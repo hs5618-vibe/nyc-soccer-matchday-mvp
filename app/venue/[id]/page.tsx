@@ -13,8 +13,6 @@ type Update = {
   content: string;
   created_at: string;
   user_id: string;
-  upvote_count?: number;
-  user_has_upvoted?: boolean;
 };
 
 export default function VenuePage() {
@@ -29,9 +27,12 @@ export default function VenuePage() {
   const [newUpdate, setNewUpdate] = useState("");
   const [user, setUser] = useState<any>(null);
   const [isOwner, setIsOwner] = useState(false);
+
   const [going, setGoing] = useState(false);
   const [goingCount, setGoingCount] = useState(0);
+
   const [loading, setLoading] = useState(true);
+  const [goingLoading, setGoingLoading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -43,9 +44,14 @@ export default function VenuePage() {
       setVenue(venueData);
       setMatch(matchData);
 
+      // Load going count even if user is logged out (so the UI always shows count)
+      if (venueData && matchId) {
+        await loadGoingStatus();
+      }
+
+      // Only load updates when there's a match selected
       if (venueData && matchId) {
         await loadUpdates();
-        await loadGoingStatus();
       }
 
       setLoading(false);
@@ -54,24 +60,22 @@ export default function VenuePage() {
     async function checkAuth() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      
+
       if (user && venueId) {
         const ownerStatus = await isVenueAdmin(user.id, venueId);
         setIsOwner(ownerStatus);
+      } else {
+        setIsOwner(false);
       }
     }
 
     loadData();
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venueId, matchId]);
 
   async function loadUpdates() {
-    if (!matchId) {
-      console.log("loadUpdates: No matchId, skipping");
-      return;
-    }
-
-    console.log("loadUpdates: Loading for venue:", venueId, "match:", matchId);
+    if (!matchId) return;
 
     try {
       const { data, error } = await supabase
@@ -86,28 +90,37 @@ export default function VenuePage() {
         return;
       }
 
-      console.log("loadUpdates: Loaded", data?.length || 0, "updates:", data);
       setUpdates(data || []);
     } catch (err) {
-      console.error("loadUpdates: Unexpected error:", err);
+      console.error("loadUpdates unexpected error:", err);
     }
   }
 
   async function loadGoingStatus() {
-    if (!matchId || !venue) return;
+    if (!matchId) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+      // 1) Count (works best if SELECT is allowed in RLS)
+      const { count, error: countError } = await supabase
+        .from("going")
+        .select("*", { count: "exact", head: true })
+        .eq("venue_id", venueId)
+        .eq("match_id", matchId);
 
-    const { count } = await supabase
-      .from("going")
-      .select("*", { count: "exact", head: true })
-      .eq("venue_id", venueId)
-      .eq("match_id", matchId);
+      if (countError) {
+        console.error("Error fetching going count:", countError);
+      } else {
+        setGoingCount(count || 0);
+      }
 
-    setGoingCount(count || 0);
+      // 2) Whether current user has "gone"
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setGoing(false);
+        return;
+      }
 
-    if (user) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("going")
         .select("id")
         .eq("venue_id", venueId)
@@ -115,80 +128,81 @@ export default function VenuePage() {
         .eq("user_id", user.id)
         .maybeSingle();
 
+      if (error) {
+        // If RLS blocks SELECT for users, you'll see this here
+        console.error("Error checking if user is going:", error);
+      }
+
       setGoing(!!data);
+    } catch (err) {
+      console.error("loadGoingStatus unexpected error:", err);
     }
   }
 
   async function handlePostUpdate() {
     if (!user || !matchId || !newUpdate.trim()) return;
 
-    console.log("Posting update...", { venueId, matchId, content: newUpdate.trim() });
+    try {
+      const { error } = await supabase
+        .from("updates")
+        .insert({
+          venue_id: venueId,
+          match_id: matchId,
+          content: newUpdate.trim(),
+          user_id: user.id,
+        });
 
-    const { data, error } = await supabase.from("updates").insert({
-      venue_id: venueId,
-      match_id: matchId,
-      content: newUpdate.trim(),
-      user_id: user.id,
-    }).select();
+      if (error) throw error;
 
-    if (error) {
-      console.error("Supabase insert error:", error);
-      alert(`Failed to post update: ${error.message}\n\nCode: ${error.code}\n\nHint: ${error.hint || 'Check browser console for details'}`);
-    } else {
-      console.log("Update posted successfully!", data);
       setNewUpdate("");
       await loadUpdates();
+    } catch (e: any) {
+      console.error("Failed to post update:", e);
+      alert(`Failed to post update: ${e?.message || "Unknown error"}`);
     }
-  }
-
-  async function handleUpvote(updateId: string) {
-    if (!user) {
-      alert("Please sign in to upvote");
-      return;
-    }
-
-    const update = updates.find(u => u.id === updateId);
-    if (!update) return;
-
-    if (update.user_has_upvoted) {
-      await supabase
-        .from("update_upvotes")
-        .delete()
-        .eq("update_id", updateId)
-        .eq("user_id", user.id);
-    } else {
-      await supabase
-        .from("update_upvotes")
-        .insert({ update_id: updateId, user_id: user.id });
-    }
-
-    await loadUpdates();
   }
 
   async function handleGoing() {
-    if (!user || !matchId || !venue) {
+    if (!matchId) return;
+
+    if (!user) {
       alert("Please sign in to mark yourself as going");
       return;
     }
 
-    if (going) {
-      await supabase
-        .from("going")
-        .delete()
-        .eq("venue_id", venueId)
-        .eq("match_id", matchId)
-        .eq("user_id", user.id);
-    } else {
-      await supabase
-        .from("going")
-        .insert({
-          venue_id: venueId,
-          match_id: matchId,
-          user_id: user.id,
-        });
-    }
+    if (goingLoading) return;
 
-    await loadGoingStatus();
+    setGoingLoading(true);
+
+    try {
+      if (going) {
+        const { error } = await supabase
+          .from("going")
+          .delete()
+          .eq("venue_id", venueId)
+          .eq("match_id", matchId)
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("going")
+          .insert({
+            venue_id: venueId,
+            match_id: matchId,
+            user_id: user.id,
+          });
+
+        if (error) throw error;
+      }
+
+      await loadGoingStatus();
+    } catch (e: any) {
+      console.error("handleGoing failed:", e);
+      alert(`Could not update going status: ${e?.message || "Unknown error"}`);
+    } finally {
+      setGoingLoading(false);
+    }
   }
 
   if (loading) {
@@ -215,11 +229,13 @@ export default function VenuePage() {
     );
   }
 
+  const peopleLabel = goingCount === 1 ? "person" : "people";
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* Back Button */}
-        <Link 
+        <Link
           href={matchId ? `/results?match=${matchId}` : "/"}
           className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
         >
@@ -232,19 +248,26 @@ export default function VenuePage() {
         {/* Venue Header */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 mb-6">
           <h1 className="text-4xl font-black text-white mb-4">{venue.name}</h1>
-          
+
           <div className="flex flex-wrap gap-4 text-gray-300 mb-6">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                  clipRule="evenodd"
+                />
               </svg>
               <span>{venue.neighborhood}</span>
             </div>
+
             {venue.address && (
               <div className="flex items-center gap-2">
                 <span>•</span>
-                <a 
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address + ', New York, NY')}`}
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    venue.address + ", New York, NY"
+                  )}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-blue-400 transition-colors"
@@ -255,22 +278,23 @@ export default function VenuePage() {
             )}
           </div>
 
-          {/* Going Button */}
-          {match && (
+          {/* Going Button + Count */}
+          {matchId && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <button
                 onClick={handleGoing}
-                disabled={going}
+                disabled={going || goingLoading}
                 className={`px-6 py-3 rounded-full font-bold transition-all ${
                   going
-                    ? 'bg-blue-600 text-white cursor-default'
-                    : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
-                }`}
+                    ? "bg-blue-600 text-white cursor-default"
+                    : "bg-white/10 text-white border border-white/20 hover:bg-white/20"
+                } ${goingLoading ? "opacity-60" : ""}`}
               >
-                {going ? "✓ I'm going" : "Mark as going"}
+                {going ? "✓ I'm going" : goingLoading ? "Saving..." : "Mark as going"}
               </button>
-              <span className="text-gray-400 text-sm">
-                {goingCount} {goingCount === 1 ? 'person' : 'people'} going
+
+              <span className="inline-flex items-center rounded-full bg-white/10 border border-white/15 px-3 py-1 text-sm font-semibold text-gray-200">
+                {goingCount} {peopleLabel} going
               </span>
             </div>
           )}
@@ -280,21 +304,33 @@ export default function VenuePage() {
         {match && (
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 mb-6">
             <h2 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">Match</h2>
+
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 {match.home_team_crest && (
-                  <img src={match.home_team_crest} alt={match.home_team} className="w-8 h-8 sm:w-10 sm:h-10 object-contain flex-shrink-0" />
+                  <img
+                    src={match.home_team_crest}
+                    alt={match.home_team}
+                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain flex-shrink-0"
+                  />
                 )}
                 <span className="font-semibold text-white truncate">{match.home_team}</span>
               </div>
+
               <span className="text-gray-500 font-bold text-sm sm:text-base flex-shrink-0 self-center">vs</span>
+
               <div className="flex items-center gap-3 min-w-0 flex-1 sm:justify-end">
                 <span className="font-semibold text-white truncate">{match.away_team}</span>
                 {match.away_team_crest && (
-                  <img src={match.away_team_crest} alt={match.away_team} className="w-8 h-8 sm:w-10 sm:h-10 object-contain flex-shrink-0" />
+                  <img
+                    src={match.away_team_crest}
+                    alt={match.away_team}
+                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain flex-shrink-0"
+                  />
                 )}
               </div>
             </div>
+
             <div className="mt-4 text-sm text-gray-400 text-center">
               {formatMatchTime(match.kickoff_time)}
             </div>
@@ -326,13 +362,12 @@ export default function VenuePage() {
             </div>
           )}
 
-          {!user && match && (
+          {!user && matchId && (
             <p className="text-gray-400 text-sm mb-4">
               Sign in to see live updates from this bar
             </p>
           )}
 
-          {/* Updates List */}
           {user && updates.length === 0 && (
             <p className="text-gray-400 text-center py-8">No updates yet</p>
           )}

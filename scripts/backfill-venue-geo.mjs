@@ -12,9 +12,6 @@
 import "dotenv/config";
 import { createClient } from "@supabase/supabase-js";
 
-// -------------------------
-// CLI parsing
-// -------------------------
 function parseArgs(argv) {
   const args = { dryRun: false, limit: 0 };
 
@@ -30,7 +27,6 @@ function parseArgs(argv) {
       throw new Error(`Unknown arg: ${a}`);
     }
   }
-
   return args;
 }
 
@@ -42,29 +38,37 @@ function maskKey(k) {
   return `${k.slice(0, 4)}…${k.slice(-4)}`;
 }
 
-function buildAddressForQuery(v) {
-  // Based on your schema: id, name, neighborhood, address, latitude, longitude
-  // Compose: "Name, Address, Neighborhood, New York, NY, USA"
-  const parts = [];
+function norm(s) {
+  return String(s || "").replace(/\s+/g, " ").trim();
+}
 
-  if (v.name) parts.push(String(v.name).trim());
-  if (v.address) parts.push(String(v.address).trim());
-  if (v.neighborhood) parts.push(String(v.neighborhood).trim());
+function buildGeocodeCandidates(v) {
+  // Based on your schema: name, neighborhood, address
+  // We bias Manhattan because many of these are in Manhattan neighborhoods.
+  const name = norm(v.name);
+  const address = norm(v.address);
+  const neighborhood = norm(v.neighborhood);
 
-  // Always anchor to NYC to improve accuracy
-  parts.push("New York");
-  parts.push("NY");
-  parts.push("USA");
+  const baseCity = "New York, NY, USA";
+  const borough = "Manhattan";
 
-  const cleaned = parts
-    .map((p) => p.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
+  const candidates = [];
 
-  // De-dupe while preserving order
+  if (address) {
+    candidates.push(`${address}, ${borough}, ${baseCity}`);
+    if (name) candidates.push(`${name}, ${address}, ${borough}, ${baseCity}`);
+  }
+  if (name && neighborhood) {
+    candidates.push(`${name}, ${neighborhood}, ${borough}, ${baseCity}`);
+  }
+  if (name) {
+    candidates.push(`${name}, ${borough}, ${baseCity}`);
+  }
+
+  // De-dupe
   const uniq = [];
-  for (const p of cleaned) if (!uniq.includes(p)) uniq.push(p);
-
-  return uniq.join(", ");
+  for (const c of candidates) if (c && !uniq.includes(c)) uniq.push(c);
+  return uniq;
 }
 
 function parseLatLonFromNominatim(json) {
@@ -101,9 +105,6 @@ async function geocodeNominatim({ q, userAgent }) {
   return { kind: "ok", status: 200, data };
 }
 
-// -------------------------
-// Main
-// -------------------------
 async function main() {
   const { dryRun, limit } = parseArgs(process.argv);
 
@@ -113,8 +114,6 @@ async function main() {
   if (!SUPABASE_URL) throw new Error("Missing env: SUPABASE_URL");
   if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
 
-  // Make sure your .env uses this exact key name:
-  // NOMINATIM_USER_AGENT="NYC Soccer Matchday geocoder (yourdomain.com) contact: you@domain.com"
   const NOMINATIM_USER_AGENT =
     process.env.NOMINATIM_USER_AGENT ||
     "NYC Soccer Matchday geocoder (set NOMINATIM_USER_AGENT)";
@@ -131,7 +130,6 @@ async function main() {
     auth: { persistSession: false },
   });
 
-  // Select ONLY columns that exist in your venues table (per your screenshot).
   let query = supabase
     .from("venues")
     .select("id,name,neighborhood,address,latitude,longitude")
@@ -166,55 +164,58 @@ async function main() {
       continue;
     }
 
-    const q = buildAddressForQuery(v);
-    if (!q || q.length < 3) {
-      console.log(`[${i + 1}/${venues.length}] id=${id} SKIP (insufficient fields)`);
+    const candidates = buildGeocodeCandidates(v);
+    if (candidates.length === 0) {
+      console.log(`[${i + 1}/${venues.length}] id=${id} SKIP (no candidates)`);
       skipped++;
       continue;
     }
 
-    const now = Date.now();
-    const wait = Math.max(0, MIN_INTERVAL_MS - (now - lastReqAt));
-    if (wait > 0) await sleep(wait);
-
-    console.log(`[${i + 1}/${venues.length}] id=${id} geocode: "${q}"`);
-
     let geo = null;
+    let usedQuery = null;
 
-    try {
-      lastReqAt = Date.now();
-      const resp = await geocodeNominatim({ q, userAgent: NOMINATIM_USER_AGENT });
+    for (let attempt = 0; attempt < candidates.length; attempt++) {
+      const q = candidates[attempt];
 
-      if (resp.kind === "rate_limited") {
-        console.log(`  - Nominatim 429 rate limited; backing off 5s and retrying once...`);
-        await sleep(5000);
+      const now = Date.now();
+      const wait = Math.max(0, MIN_INTERVAL_MS - (now - lastReqAt));
+      if (wait > 0) await sleep(wait);
+
+      console.log(`[${i + 1}/${venues.length}] id=${id} try ${attempt + 1}/${candidates.length}: "${q}"`);
+
+      try {
         lastReqAt = Date.now();
-        const resp2 = await geocodeNominatim({ q, userAgent: NOMINATIM_USER_AGENT });
-        if (resp2.kind === "ok") geo = parseLatLonFromNominatim(resp2.data);
-        else {
-          console.log(`  - geocode failed after retry (status ${resp2.status})`);
-          failed++;
-          continue;
+        const resp = await geocodeNominatim({ q, userAgent: NOMINATIM_USER_AGENT });
+
+        if (resp.kind === "rate_limited") {
+          console.log(`  - 429 rate limited; backing off 5s and retrying this attempt once...`);
+          await sleep(5000);
+          lastReqAt = Date.now();
+          const resp2 = await geocodeNominatim({ q, userAgent: NOMINATIM_USER_AGENT });
+          if (resp2.kind === "ok") geo = parseLatLonFromNominatim(resp2.data);
+          else geo = null;
+        } else if (resp.kind === "http_error") {
+          geo = null;
+        } else {
+          geo = parseLatLonFromNominatim(resp.data);
         }
-      } else if (resp.kind === "http_error") {
-        console.log(`  - geocode http error (status ${resp.status})`);
-        failed++;
-        continue;
-      } else {
-        geo = parseLatLonFromNominatim(resp.data);
+      } catch (e) {
+        geo = null;
       }
-    } catch (e) {
-      console.log(`  - geocode exception: ${e?.message || String(e)}`);
-      failed++;
-      continue;
+
+      if (geo) {
+        usedQuery = q;
+        break;
+      }
     }
 
     if (!geo) {
-      console.log("  - no result");
+      console.log("  - no result (all attempts)");
       skipped++;
       continue;
     }
 
+    console.log(`  - matched via: "${usedQuery}"`);
     console.log(`  - result: lat=${geo.latitude}, lon=${geo.longitude}`);
 
     if (dryRun) {

@@ -1,3 +1,4 @@
+// app/venue/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,6 +14,8 @@ type Update = {
   content: string;
   created_at: string;
   user_id: string;
+  upvote_count?: number;
+  user_has_upvoted?: boolean;
 };
 
 export default function VenuePage() {
@@ -28,11 +31,12 @@ export default function VenuePage() {
   const [user, setUser] = useState<any>(null);
   const [isOwner, setIsOwner] = useState(false);
 
+  // Going state
   const [going, setGoing] = useState(false);
   const [goingCount, setGoingCount] = useState(0);
+  const [goingSaving, setGoingSaving] = useState(false);
 
   const [loading, setLoading] = useState(true);
-  const [goingLoading, setGoingLoading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -44,21 +48,18 @@ export default function VenuePage() {
       setVenue(venueData);
       setMatch(matchData);
 
-      // Load going count even if user is logged out (so the UI always shows count)
-      if (venueData && matchId) {
-        await loadGoingStatus();
-      }
-
-      // Only load updates when there's a match selected
       if (venueData && matchId) {
         await loadUpdates();
+        await loadGoingStatus();
       }
 
       setLoading(false);
     }
 
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
 
       if (user && venueId) {
@@ -90,92 +91,105 @@ export default function VenuePage() {
         return;
       }
 
-      setUpdates(data || []);
+      setUpdates((data as any) || []);
     } catch (err) {
-      console.error("loadUpdates unexpected error:", err);
+      console.error("loadUpdates: Unexpected error:", err);
     }
   }
 
   async function loadGoingStatus() {
     if (!matchId) return;
 
-    try {
-      // 1) Count (works best if SELECT is allowed in RLS)
-      const { count, error: countError } = await supabase
-        .from("going")
-        .select("*", { count: "exact", head: true })
-        .eq("venue_id", venueId)
-        .eq("match_id", matchId);
+    // Count
+    const { count, error: countError } = await supabase
+      .from("going")
+      .select("*", { count: "exact", head: true })
+      .eq("venue_id", venueId)
+      .eq("match_id", matchId);
 
-      if (countError) {
-        console.error("Error fetching going count:", countError);
-      } else {
-        setGoingCount(count || 0);
-      }
-
-      // 2) Whether current user has "gone"
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setGoing(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("going")
-        .select("id")
-        .eq("venue_id", venueId)
-        .eq("match_id", matchId)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        // If RLS blocks SELECT for users, you'll see this here
-        console.error("Error checking if user is going:", error);
-      }
-
-      setGoing(!!data);
-    } catch (err) {
-      console.error("loadGoingStatus unexpected error:", err);
+    if (countError) {
+      console.error("Error fetching going count:", countError);
     }
+
+    setGoingCount(count || 0);
+
+    // User status
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setGoing(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("going")
+      .select("id")
+      .eq("venue_id", venueId)
+      .eq("match_id", matchId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      // if RLS blocks or something else, fail gracefully
+      console.error("Error checking user going status:", error);
+      setGoing(false);
+      return;
+    }
+
+    setGoing(!!data);
   }
 
   async function handlePostUpdate() {
     if (!user || !matchId || !newUpdate.trim()) return;
 
-    try {
-      const { error } = await supabase
-        .from("updates")
-        .insert({
-          venue_id: venueId,
-          match_id: matchId,
-          content: newUpdate.trim(),
-          user_id: user.id,
-        });
+    const { error } = await supabase.from("updates").insert({
+      venue_id: venueId,
+      match_id: matchId,
+      content: newUpdate.trim(),
+      user_id: user.id,
+    });
 
-      if (error) throw error;
-
-      setNewUpdate("");
-      await loadUpdates();
-    } catch (e: any) {
-      console.error("Failed to post update:", e);
-      alert(`Failed to post update: ${e?.message || "Unknown error"}`);
+    if (error) {
+      console.error("Failed to post update:", error);
+      alert(`Failed to post update: ${error.message}`);
+      return;
     }
+
+    setNewUpdate("");
+    await loadUpdates();
   }
 
-  async function handleGoing() {
+  async function handleGoingToggle() {
     if (!matchId) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       alert("Please sign in to mark yourself as going");
       return;
     }
 
-    if (goingLoading) return;
+    if (goingSaving) return;
 
-    setGoingLoading(true);
+    setGoingSaving(true);
+
+    // Optimistic UI
+    const prevGoing = going;
+    const prevCount = goingCount;
+
+    const nextGoing = !prevGoing;
+    const nextCount = Math.max(0, prevCount + (nextGoing ? 1 : -1));
+
+    setGoing(nextGoing);
+    setGoingCount(nextCount);
 
     try {
-      if (going) {
+      if (prevGoing) {
+        // Remove
         const { error } = await supabase
           .from("going")
           .delete()
@@ -185,23 +199,28 @@ export default function VenuePage() {
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("going")
-          .insert({
-            venue_id: venueId,
-            match_id: matchId,
-            user_id: user.id,
-          });
+        // Add
+        const { error } = await supabase.from("going").insert({
+          venue_id: venueId,
+          match_id: matchId,
+          user_id: user.id,
+        });
 
         if (error) throw error;
       }
 
+      // Re-sync actual count (keeps you honest if multiple people click)
       await loadGoingStatus();
-    } catch (e: any) {
-      console.error("handleGoing failed:", e);
-      alert(`Could not update going status: ${e?.message || "Unknown error"}`);
+    } catch (err: any) {
+      console.error("Error toggling going:", err);
+
+      // Revert optimistic UI on failure
+      setGoing(prevGoing);
+      setGoingCount(prevCount);
+
+      alert("Failed to update. Please try again.");
     } finally {
-      setGoingLoading(false);
+      setGoingSaving(false);
     }
   }
 
@@ -228,8 +247,6 @@ export default function VenuePage() {
       </div>
     );
   }
-
-  const peopleLabel = goingCount === 1 ? "person" : "people";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
@@ -278,23 +295,23 @@ export default function VenuePage() {
             )}
           </div>
 
-          {/* Going Button + Count */}
+          {/* Going Row */}
           {matchId && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <button
-                onClick={handleGoing}
-                disabled={going || goingLoading}
+                onClick={handleGoingToggle}
+                disabled={goingSaving}
                 className={`px-6 py-3 rounded-full font-bold transition-all ${
                   going
-                    ? "bg-blue-600 text-white cursor-default"
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
                     : "bg-white/10 text-white border border-white/20 hover:bg-white/20"
-                } ${goingLoading ? "opacity-60" : ""}`}
+                } ${goingSaving ? "opacity-70 cursor-not-allowed" : ""}`}
               >
-                {going ? "✓ I'm going" : goingLoading ? "Saving..." : "Mark as going"}
+                {goingSaving ? "Saving..." : going ? "✓ Going" : "Mark as going"}
               </button>
 
-              <span className="inline-flex items-center rounded-full bg-white/10 border border-white/15 px-3 py-1 text-sm font-semibold text-gray-200">
-                {goingCount} {peopleLabel} going
+              <span className="text-gray-400 text-sm">
+                {goingCount} {goingCount === 1 ? "person" : "people"} going
               </span>
             </div>
           )}
@@ -304,7 +321,6 @@ export default function VenuePage() {
         {match && (
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 mb-6">
             <h2 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">Match</h2>
-
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 {match.home_team_crest && (
@@ -316,9 +332,7 @@ export default function VenuePage() {
                 )}
                 <span className="font-semibold text-white truncate">{match.home_team}</span>
               </div>
-
               <span className="text-gray-500 font-bold text-sm sm:text-base flex-shrink-0 self-center">vs</span>
-
               <div className="flex items-center gap-3 min-w-0 flex-1 sm:justify-end">
                 <span className="font-semibold text-white truncate">{match.away_team}</span>
                 {match.away_team_crest && (
@@ -330,10 +344,7 @@ export default function VenuePage() {
                 )}
               </div>
             </div>
-
-            <div className="mt-4 text-sm text-gray-400 text-center">
-              {formatMatchTime(match.kickoff_time)}
-            </div>
+            <div className="mt-4 text-sm text-gray-400 text-center">{formatMatchTime(match.kickoff_time)}</div>
           </div>
         )}
 
@@ -362,15 +373,12 @@ export default function VenuePage() {
             </div>
           )}
 
-          {!user && matchId && (
-            <p className="text-gray-400 text-sm mb-4">
-              Sign in to see live updates from this bar
-            </p>
+          {!user && match && (
+            <p className="text-gray-400 text-sm mb-4">Sign in to see live updates from this bar</p>
           )}
 
-          {user && updates.length === 0 && (
-            <p className="text-gray-400 text-center py-8">No updates yet</p>
-          )}
+          {/* Updates List */}
+          {user && updates.length === 0 && <p className="text-gray-400 text-center py-8">No updates yet</p>}
 
           {user && (
             <div className="space-y-3">
@@ -379,12 +387,8 @@ export default function VenuePage() {
                   <div className="flex items-start gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
-                          Staff
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(update.created_at).toLocaleString()}
-                        </span>
+                        <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">Staff</span>
+                        <span className="text-xs text-gray-500">{new Date(update.created_at).toLocaleString()}</span>
                       </div>
                       <p className="text-white">{update.content}</p>
                     </div>

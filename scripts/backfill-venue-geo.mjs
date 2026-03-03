@@ -43,17 +43,18 @@ function maskKey(k) {
 }
 
 function buildAddressForQuery(v) {
-  // Keep this conservative to avoid schema mismatches.
-  // Common columns: name, address, city, state, country
+  // Based on your schema: id, name, neighborhood, address, latitude, longitude
+  // Compose: "Name, Address, Neighborhood, New York, NY, USA"
   const parts = [];
 
   if (v.name) parts.push(String(v.name).trim());
   if (v.address) parts.push(String(v.address).trim());
-  if (v.city) parts.push(String(v.city).trim());
+  if (v.neighborhood) parts.push(String(v.neighborhood).trim());
 
-  // default to NY/USA if missing
-  parts.push(String(v.state || "NY").trim());
-  parts.push(String(v.country || "USA").trim());
+  // Always anchor to NYC to improve accuracy
+  parts.push("New York");
+  parts.push("NY");
+  parts.push("USA");
 
   const cleaned = parts
     .map((p) => p.replace(/\s+/g, " ").trim())
@@ -112,6 +113,8 @@ async function main() {
   if (!SUPABASE_URL) throw new Error("Missing env: SUPABASE_URL");
   if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
 
+  // Make sure your .env uses this exact key name:
+  // NOMINATIM_USER_AGENT="NYC Soccer Matchday geocoder (yourdomain.com) contact: you@domain.com"
   const NOMINATIM_USER_AGENT =
     process.env.NOMINATIM_USER_AGENT ||
     "NYC Soccer Matchday geocoder (set NOMINATIM_USER_AGENT)";
@@ -128,10 +131,10 @@ async function main() {
     auth: { persistSession: false },
   });
 
-  // Only select columns that are very likely to exist. Avoid schema mismatch crashes.
+  // Select ONLY columns that exist in your venues table (per your screenshot).
   let query = supabase
     .from("venues")
-    .select("id,name,address,city,state,country,latitude,longitude")
+    .select("id,name,neighborhood,address,latitude,longitude")
     .or("latitude.is.null,longitude.is.null");
 
   if (limit && limit > 0) query = query.limit(limit);
@@ -163,7 +166,6 @@ async function main() {
       continue;
     }
 
-    // If you only have a venue name, this still works (defaults city/state/country).
     const q = buildAddressForQuery(v);
     if (!q || q.length < 3) {
       console.log(`[${i + 1}/${venues.length}] id=${id} SKIP (insufficient fields)`);

@@ -65,35 +65,30 @@ export default function VenuePage() {
   }, [venueId, matchId]);
 
   async function loadUpdates() {
-    if (!matchId) return;
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    const { data, error } = await supabase
-      .from("updates")
-      .select(`
-        id,
-        content,
-        created_at,
-        upvote_count,
-        update_upvotes!left(user_id)
-      `)
-      .eq("venue_id", venueId)
-      .eq("match_id", matchId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error loading updates:", error);
+    if (!matchId) {
+      console.log("loadUpdates: No matchId, skipping");
       return;
     }
 
-    if (data) {
-      console.log("Loaded updates:", data);
-      const updatesWithVotes = data.map((update: any) => ({
-        ...update,
-        user_has_upvoted: user ? update.update_upvotes?.some((v: any) => v.user_id === user.id) : false,
-      }));
-      setUpdates(updatesWithVotes);
+    console.log("loadUpdates: Loading for venue:", venueId, "match:", matchId);
+
+    try {
+      const { data, error } = await supabase
+        .from("updates")
+        .select("id, content, created_at, user_id")
+        .eq("venue_id", venueId)
+        .eq("match_id", matchId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading updates:", error);
+        return;
+      }
+
+      console.log("loadUpdates: Loaded", data?.length || 0, "updates:", data);
+      setUpdates(data || []);
+    } catch (err) {
+      console.error("loadUpdates: Unexpected error:", err);
     }
   }
 
@@ -126,17 +121,20 @@ export default function VenuePage() {
   async function handlePostUpdate() {
     if (!user || !matchId || !newUpdate.trim()) return;
 
-    const { error } = await supabase.from("updates").insert({
+    console.log("Posting update...", { venueId, matchId, content: newUpdate.trim() });
+
+    const { data, error } = await supabase.from("updates").insert({
       venue_id: venueId,
       match_id: matchId,
       content: newUpdate.trim(),
       user_id: user.id,
-    });
+    }).select();
 
     if (error) {
       console.error("Supabase insert error:", error);
       alert(`Failed to post update: ${error.message}\n\nCode: ${error.code}\n\nHint: ${error.hint || 'Check browser console for details'}`);
     } else {
+      console.log("Update posted successfully!", data);
       setNewUpdate("");
       await loadUpdates();
     }
@@ -343,7 +341,7 @@ export default function VenuePage() {
             <div className="space-y-3">
               {updates.map((update) => (
                 <div key={update.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
@@ -355,17 +353,6 @@ export default function VenuePage() {
                       </div>
                       <p className="text-white">{update.content}</p>
                     </div>
-                    <button
-                      onClick={() => handleUpvote(update.id)}
-                      className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all ${
-                        update.user_has_upvoted
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                      }`}
-                    >
-                      <span className="text-lg">↑</span>
-                      <span className="text-xs font-bold">{update.upvote_count || 0}</span>
-                    </button>
                   </div>
                 </div>
               ))}

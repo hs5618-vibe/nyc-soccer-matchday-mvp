@@ -12,7 +12,8 @@ type Update = {
   id: string;
   content: string;
   created_at: string;
-  upvote_count: number;
+  user_id: string;
+  upvote_count?: number;
   user_has_upvoted?: boolean;
 };
 

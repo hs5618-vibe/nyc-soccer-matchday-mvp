@@ -5,39 +5,79 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
-import { fetchVenuesByMatch, fetchAllVenues, type Venue as BaseVenue } from "@/lib/venues";
+import {
+  fetchVenuesByMatch,
+  fetchAllVenues,
+  type Venue as BaseVenue,
+} from "@/lib/venues";
 
 type VenueWithMeta = BaseVenue & {
   is_showing: boolean;
   going_count: number;
-  distance_m?: number | null;
 };
 
-type LatLng = { lat: number; lon: number };
+type LatLng = { lat: number; lng: number };
 
-function haversineMeters(a: LatLng, b: LatLng) {
-  const R = 6371000;
-  const toRad = (x: number) => (x * Math.PI) / 180;
+function haversineMiles(a: LatLng, b: LatLng) {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R_km = 6371;
 
   const dLat = toRad(b.lat - a.lat);
-  const dLon = toRad(b.lon - a.lon);
-
+  const dLng = toRad(b.lng - a.lng);
   const lat1 = toRad(a.lat);
   const lat2 = toRad(b.lat);
 
-  const s1 = Math.sin(dLat / 2) ** 2;
-  const s2 = Math.sin(dLon / 2) ** 2;
+  const sinDLat = Math.sin(dLat / 2);
+  const sinDLng = Math.sin(dLng / 2);
 
-  const h = s1 + Math.cos(lat1) * Math.cos(lat2) * s2;
-  return 2 * R * Math.asin(Math.sqrt(h));
+  const h =
+    sinDLat * sinDLat +
+    Math.cos(lat1) * Math.cos(lat2) * sinDLng * sinDLng;
+
+  const c = 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+  const km = R_km * c;
+  const miles = km * 0.621371;
+
+  return miles;
 }
 
-function formatDistance(m?: number | null) {
-  if (m == null) return null;
-  const miles = m / 1609.344;
-  if (miles < 0.1) return "<0.1 mi";
-  if (miles < 10) return `${miles.toFixed(1)} mi`;
-  return `${Math.round(miles)} mi`;
+function formatMiles(m: number) {
+  if (!Number.isFinite(m)) return "";
+  if (m < 0.1) return "<0.1 mi";
+  if (m < 10) return `${m.toFixed(1)} mi`;
+  return `${Math.round(m)} mi`;
+}
+
+async function geocodeAddress(address: string): Promise<LatLng | null> {
+  // Uses OpenStreetMap Nominatim (no key) — good for MVP.
+  // IMPORTANT: add a simple user-agent header via fetch init (browser sets some headers).
+  // If you later want higher reliability, we’ll swap to Google Places / Mapbox.
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+    address
+  )}&limit=1`;
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!res.ok) return null;
+    const json = (await res.json()) as any[];
+
+    if (!json?.length) return null;
+
+    const first = json[0];
+    const lat = Number(first.lat);
+    const lng = Number(first.lon);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+  } catch {
+    return null;
+  }
 }
 
 function ResultsContent() {
@@ -48,12 +88,14 @@ function ResultsContent() {
   const [venues, setVenues] = useState<VenueWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Near-me UX
-  const [sortByDistance, setSortByDistance] = useState(false);
+  // Near-me controls
+  const [nearMe, setNearMe] = useState(false);
   const [origin, setOrigin] = useState<LatLng | null>(null);
+  const [originLabel, setOriginLabel] = useState<string>("");
+  const [geoError, setGeoError] = useState<string>("");
+
+  // Manual address
   const [addressInput, setAddressInput] = useState("");
-  const [geoStatus, setGeoStatus] = useState<string | null>(null);
-  const [geoLoading, setGeoLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -66,12 +108,14 @@ function ResultsContent() {
 
       setLoading(true);
 
-      const [matchData, showingVenues, allVenues, goingRows] = await Promise.all([
-        fetchMatchById(matchId),
-        fetchVenuesByMatch(matchId),
-        fetchAllVenues(),
-        supabase.from("going").select("venue_id").eq("match_id", matchId),
-      ]);
+      const [matchData, showingVenues, allVenues, goingRows] = await Promise.all(
+        [
+          fetchMatchById(matchId),
+          fetchVenuesByMatch(matchId),
+          fetchAllVenues(),
+          supabase.from("going").select("venue_id").eq("match_id", matchId),
+        ]
+      );
 
       setMatch(matchData);
 
@@ -87,7 +131,6 @@ function ResultsContent() {
         ...v,
         is_showing: showingIds.has(v.id),
         going_count: counts[v.id] || 0,
-        distance_m: null,
       }));
 
       setVenues(merged);
@@ -97,111 +140,124 @@ function ResultsContent() {
     load();
   }, [matchId]);
 
-  // Recompute distances + sort whenever origin or toggle changes
-  const sortedVenues = useMemo(() => {
-    const copy = [...venues];
+  // If Near Me toggled on, try to get geolocation (unless we already have an origin set by address)
+  useEffect(() => {
+    if (!nearMe) return;
 
-    // compute distances if possible
-    if (sortByDistance && origin) {
-      for (const v of copy) {
-        if (v.latitude != null && v.longitude != null) {
-          v.distance_m = haversineMeters(origin, { lat: v.latitude, lon: v.longitude });
-        } else {
-          v.distance_m = null;
-        }
+    // If user already set an origin via address, don’t override it.
+    if (origin) return;
+
+    if (!navigator.geolocation) {
+      setGeoError("Geolocation not supported on this device/browser.");
+      return;
+    }
+
+    setGeoError("");
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setOrigin({ lat, lng });
+        setOriginLabel("Current location");
+      },
+      (err) => {
+        setGeoError(
+          err?.message || "Could not get your location. Try entering an address."
+        );
+      },
+      { enableHighAccuracy: false, timeout: 8000 }
+    );
+  }, [nearMe, origin]);
+
+  const stats = useMemo(() => {
+    const showing = venues.filter((v) => v.is_showing).length;
+    const notConfirmed = venues.length - showing;
+    return { showing, notConfirmed };
+  }, [venues]);
+
+  const venuesWithDistance = useMemo(() => {
+    if (!nearMe || !origin) {
+      return venues.map((v) => ({
+        ...v,
+        distance_miles: null as number | null,
+      }));
+    }
+
+    return venues.map((v) => {
+      const lat = (v as any).latitude;
+      const lng = (v as any).longitude;
+
+      const latNum = Number(lat);
+      const lngNum = Number(lng);
+
+      if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+        return { ...v, distance_miles: null as number | null };
       }
 
-      // sort: showing first (keep your UX), then distance (known first), then going_count, then name
-      copy.sort((a, b) => {
+      const d = haversineMiles(origin, { lat: latNum, lng: lngNum });
+      return { ...v, distance_miles: d };
+    });
+  }, [venues, nearMe, origin]);
+
+  const sortedVenues = useMemo(() => {
+    const arr = [...venuesWithDistance];
+
+    if (nearMe && origin) {
+      // Primary sort by distance ascending.
+      // Venues without coords go to the bottom.
+      arr.sort((a: any, b: any) => {
+        const ad = a.distance_miles;
+        const bd = b.distance_miles;
+
+        const aHas = typeof ad === "number" && Number.isFinite(ad);
+        const bHas = typeof bd === "number" && Number.isFinite(bd);
+
+        if (aHas && bHas) {
+          if (ad !== bd) return ad - bd;
+        } else if (aHas && !bHas) return -1;
+        else if (!aHas && bHas) return 1;
+
+        // Tie-breakers
         if (a.is_showing !== b.is_showing) return a.is_showing ? -1 : 1;
-
-        const ad = a.distance_m;
-        const bd = b.distance_m;
-        const aHas = ad != null;
-        const bHas = bd != null;
-
-        if (aHas && bHas && ad !== bd) return ad! - bd!;
-        if (aHas !== bHas) return aHas ? -1 : 1;
-
         if (a.going_count !== b.going_count) return b.going_count - a.going_count;
         return a.name.localeCompare(b.name);
       });
 
-      return copy;
+      return arr;
     }
 
-    // default sort (your existing logic)
-    copy.sort((a, b) => {
+    // Default sort (your existing logic)
+    arr.sort((a, b) => {
       if (a.is_showing !== b.is_showing) return a.is_showing ? -1 : 1;
       if (a.going_count !== b.going_count) return b.going_count - a.going_count;
       return a.name.localeCompare(b.name);
     });
 
-    return copy;
-  }, [venues, sortByDistance, origin]);
+    return arr;
+  }, [venuesWithDistance, nearMe, origin]);
 
-  const stats = useMemo(() => {
-    const showing = sortedVenues.filter((v) => v.is_showing).length;
-    const notConfirmed = sortedVenues.length - showing;
-    return { showing, notConfirmed };
-  }, [sortedVenues]);
-
-  async function useMyLocation() {
-    setGeoStatus(null);
-
-    if (!navigator.geolocation) {
-      setGeoStatus("Geolocation not supported in this browser.");
-      return;
-    }
-
-    setGeoLoading(true);
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setOrigin({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-        setGeoStatus("Using your current location.");
-        setSortByDistance(true);
-        setGeoLoading(false);
-      },
-      (err) => {
-        setGeoStatus(err.message || "Could not get location.");
-        setGeoLoading(false);
-      },
-      { enableHighAccuracy: false, timeout: 8000 }
-    );
-  }
-
-  async function geocodeAddress() {
+  async function handleUseAddress() {
     const q = addressInput.trim();
     if (!q) return;
 
-    setGeoLoading(true);
-    setGeoStatus(null);
+    setGeoError("");
+    const point = await geocodeAddress(q);
 
-    try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
-      const json = await res.json();
-
-      if (!res.ok) {
-        setGeoStatus(json?.error || "Could not geocode address.");
-        setGeoLoading(false);
-        return;
-      }
-
-      if (!json?.result) {
-        setGeoStatus("No results found for that address.");
-        setGeoLoading(false);
-        return;
-      }
-
-      setOrigin({ lat: json.result.lat, lon: json.result.lon });
-      setGeoStatus(json.result.display_name ? `Using: ${json.result.display_name}` : "Using entered address.");
-      setSortByDistance(true);
-    } catch {
-      setGeoStatus("Geocoding failed.");
-    } finally {
-      setGeoLoading(false);
+    if (!point) {
+      setGeoError("Could not find that address. Try being more specific.");
+      return;
     }
+
+    setOrigin(point);
+    setOriginLabel(q);
+    setNearMe(true);
+  }
+
+  function clearOrigin() {
+    setOrigin(null);
+    setOriginLabel("");
+    setGeoError("");
   }
 
   if (loading) {
@@ -256,7 +312,7 @@ function ResultsContent() {
         </Link>
 
         {/* Match Card */}
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 sm:p-8 mb-6">
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 sm:p-8 mb-8">
           <div className="flex items-center gap-3 mb-6">
             {match.league_emblem && (
               <img
@@ -311,57 +367,90 @@ function ResultsContent() {
           </div>
         </div>
 
-        {/* Near me controls */}
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-4 sm:p-5 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <label className="inline-flex items-center gap-2 text-sm text-gray-200">
-              <input
-                type="checkbox"
-                className="h-4 w-4"
-                checked={sortByDistance}
-                onChange={(e) => setSortByDistance(e.target.checked)}
-              />
-              Sort by distance (near me)
-            </label>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={useMyLocation}
-                disabled={geoLoading}
-                className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-sm text-white transition disabled:opacity-50"
-              >
-                {geoLoading ? "Working..." : "Use my location"}
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-3 flex flex-col sm:flex-row gap-2">
-            <input
-              value={addressInput}
-              onChange={(e) => setAddressInput(e.target.value)}
-              placeholder="Or enter an address (e.g., 200 W 4th St, NYC)"
-              className="flex-1 px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-sm text-white placeholder:text-gray-500"
-            />
-            <button
-              onClick={geocodeAddress}
-              disabled={geoLoading || !addressInput.trim()}
-              className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm text-white transition disabled:opacity-50"
-            >
-              Use address
-            </button>
-          </div>
-
-          {geoStatus && <div className="mt-2 text-xs text-gray-400">{geoStatus}</div>}
-          {sortByDistance && !origin && <div className="mt-2 text-xs text-gray-500">Tip: click “Use my location” or enter an address.</div>}
-        </div>
-
         {/* Bars Section */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-white uppercase tracking-wide">Sports Bars</h2>
             <span className="text-sm text-gray-400">
               {stats.showing} showing • {stats.notConfirmed} not confirmed
             </span>
+          </div>
+
+          {/* Near me controls */}
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <label className="flex items-center gap-3 text-white">
+                <input
+                  type="checkbox"
+                  checked={nearMe}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setNearMe(next);
+                    if (!next) {
+                      // Keep origin in case you toggle back on quickly,
+                      // but you can also clear it if you prefer.
+                      // clearOrigin();
+                    }
+                  }}
+                  className="h-4 w-4"
+                />
+                <span className="font-semibold">Near me</span>
+                <span className="text-xs text-gray-400">
+                  (sorts by closest)
+                </span>
+              </label>
+
+              {nearMe && (
+                <div className="text-xs text-gray-400">
+                  {origin ? (
+                    <span>
+                      Using: <span className="text-gray-200">{originLabel || "location"}</span>
+                    </span>
+                  ) : (
+                    <span>Getting location…</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {nearMe && (
+              <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                <input
+                  value={addressInput}
+                  onChange={(e) => setAddressInput(e.target.value)}
+                  placeholder="Enter an address (e.g., 33 W 33rd St, NYC)"
+                  className="flex-1 rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm text-white placeholder:text-gray-500 outline-none"
+                />
+                <button
+                  onClick={handleUseAddress}
+                  className="rounded-xl bg-white/15 hover:bg-white/20 border border-white/10 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Use address
+                </button>
+                <button
+                  onClick={() => {
+                    // Clear manual origin, then attempt geolocation again if toggle is on
+                    clearOrigin();
+                  }}
+                  className="rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 px-4 py-2 text-sm font-semibold text-gray-200"
+                >
+                  Reset
+                </button>
+              </div>
+            )}
+
+            {nearMe && geoError && (
+              <div className="mt-2 text-xs text-red-300">
+                {geoError}
+              </div>
+            )}
+
+            {nearMe && (
+              <div className="mt-2 text-xs text-gray-500">
+                Note: bars need <code className="text-gray-300">latitude/longitude</code> to be sortable.
+                Bars without coords will drop to the bottom.
+              </div>
+            )}
           </div>
 
           {sortedVenues.length === 0 ? (
@@ -370,7 +459,7 @@ function ResultsContent() {
             </div>
           ) : (
             <div className="space-y-3">
-              {sortedVenues.map((venue) => (
+              {sortedVenues.map((venue: any) => (
                 <Link
                   key={venue.id}
                   href={`/venue/${venue.id}?match=${matchId}`}
@@ -402,32 +491,31 @@ function ResultsContent() {
                           </svg>
                           <span className="truncate">{venue.neighborhood}</span>
                         </span>
-
                         {venue.address && (
                           <>
                             <span className="hidden sm:inline">•</span>
                             <span className="truncate">{venue.address}</span>
                           </>
                         )}
-
-                        {/* Distance (only if we can compute it) */}
-                        {sortByDistance && origin && (
-                          <>
-                            <span className="hidden sm:inline">•</span>
-                            <span className="truncate text-gray-300">
-                              {formatDistance(venue.distance_m) ?? "Distance unknown"}
-                            </span>
-                          </>
-                        )}
                       </div>
                     </div>
 
-                    {/* Going count on the right */}
+                    {/* Right-side meta */}
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <div className="text-right">
+                        {/* Distance (only if nearMe is on) */}
+                        {nearMe && origin && (
+                          <div className="text-xs text-gray-300">
+                            {venue.distance_miles != null
+                              ? formatMiles(venue.distance_miles)
+                              : "—"}
+                          </div>
+                        )}
+
                         <div className="text-sm font-bold text-white">{venue.going_count}</div>
                         <div className="text-xs text-gray-400">going</div>
                       </div>
+
                       <svg
                         className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors"
                         fill="none"

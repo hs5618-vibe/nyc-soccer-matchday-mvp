@@ -8,7 +8,7 @@ export type Venue = {
   bar_type: string;
   club_name: string | null;
 
-  // New: for "near me" + map
+  // ✅ optional geo fields (null until you backfill)
   latitude: number | null;
   longitude: number | null;
 };
@@ -25,14 +25,13 @@ export async function fetchVenueById(venueId: string): Promise<Venue | null> {
     return null;
   }
 
-  return data as Venue;
+  return data;
 }
 
 export async function fetchVenuesByMatch(matchId: string): Promise<Venue[]> {
   const { data, error } = await supabase
     .from("venue_matches")
-    .select(
-      `
+    .select(`
       venue_id,
       venues (
         id,
@@ -44,8 +43,7 @@ export async function fetchVenuesByMatch(matchId: string): Promise<Venue[]> {
         latitude,
         longitude
       )
-    `
-    )
+    `)
     .eq("match_id", matchId);
 
   if (error) {
@@ -53,10 +51,9 @@ export async function fetchVenuesByMatch(matchId: string): Promise<Venue[]> {
     return [];
   }
 
-  // Extract venues from the joined data + remove nulls with a type guard
   const venues = (data || [])
-    .map((item: any) => item.venues as Venue | null)
-    .filter((v): v is Venue => v !== null);
+    .map((item: any) => item.venues)
+    .filter((venue: any) => venue !== null);
 
   return venues;
 }
@@ -72,5 +69,5 @@ export async function fetchAllVenues(): Promise<Venue[]> {
     return [];
   }
 
-  return (data || []) as Venue[];
+  return data || [];
 }

@@ -2,16 +2,11 @@
 /**
  * Backfill venue latitude/longitude using OpenStreetMap Nominatim
  *
- * Requirements:
- * - ESM (.mjs)
- * - Uses process.env only (no hardcoded secrets)
- * - Safe rate limiting (<= 1 req/sec)
- * - Supports --dry-run and --limit flags
+ * Safe defaults:
+ * - Uses process.env only
+ * - Rate limited (<= 1 req/sec)
+ * - --dry-run and --limit flags
  * - Does not log secrets
- *
- * Usage:
- *   node scripts/backfill-venue-geo.mjs --dry-run --limit 25
- *   node scripts/backfill-venue-geo.mjs --limit 50
  */
 
 import "dotenv/config";
@@ -28,9 +23,7 @@ function parseArgs(argv) {
     if (a === "--dry-run") args.dryRun = true;
     else if (a === "--limit") {
       const n = Number(argv[i + 1]);
-      if (!Number.isFinite(n) || n <= 0) {
-        throw new Error(`Invalid --limit value: "${argv[i + 1]}"`);
-      }
+      if (!Number.isFinite(n) || n <= 0) throw new Error(`Invalid --limit value: "${argv[i + 1]}"`);
       args.limit = Math.floor(n);
       i++;
     } else {
@@ -50,34 +43,18 @@ function maskKey(k) {
 }
 
 function buildAddressForQuery(v) {
-  // Try a few common columns without assuming your exact schema.
-  // This gracefully composes whatever exists.
+  // Keep this conservative to avoid schema mismatches.
+  // Common columns: name, address, city, state, country
   const parts = [];
 
-  const name = v.name || v.venue_name;
-  if (name) parts.push(String(name).trim());
+  if (v.name) parts.push(String(v.name).trim());
+  if (v.address) parts.push(String(v.address).trim());
+  if (v.city) parts.push(String(v.city).trim());
 
-  const address =
-    v.address ||
-    v.street_address ||
-    v.address_line1 ||
-    v.address1 ||
-    v.location;
-  if (address) parts.push(String(address).trim());
+  // default to NY/USA if missing
+  parts.push(String(v.state || "NY").trim());
+  parts.push(String(v.country || "USA").trim());
 
-  const neighborhood = v.neighborhood || v.area || v.district;
-  if (neighborhood) parts.push(String(neighborhood).trim());
-
-  const city = v.city || "New York";
-  if (city) parts.push(String(city).trim());
-
-  const state = v.state || "NY";
-  if (state) parts.push(String(state).trim());
-
-  const country = v.country || "USA";
-  if (country) parts.push(String(country).trim());
-
-  // Remove empties / duplicates
   const cleaned = parts
     .map((p) => p.replace(/\s+/g, " ").trim())
     .filter(Boolean);
@@ -108,17 +85,12 @@ async function geocodeNominatim({ q, userAgent }) {
   const res = await fetch(url, {
     method: "GET",
     headers: {
-      // Nominatim usage policy expects an identifiable UA.
-      // Do NOT put secrets here; include a public contact like your site/email.
       "User-Agent": userAgent,
       Accept: "application/json",
     },
   });
 
-  // Handle rate limiting or transient errors gracefully
-  if (res.status === 429) {
-    return { kind: "rate_limited", status: 429, data: null };
-  }
+  if (res.status === 429) return { kind: "rate_limited", status: 429, data: null };
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     return { kind: "http_error", status: res.status, data: body?.slice(0, 500) || "" };
@@ -140,13 +112,10 @@ async function main() {
   if (!SUPABASE_URL) throw new Error("Missing env: SUPABASE_URL");
   if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
 
-  // Public UA — set something like:
-  // NOMINATIM_USER_AGENT="NYC Soccer Matchday (yourdomain.com) contact: you@domain.com"
   const NOMINATIM_USER_AGENT =
     process.env.NOMINATIM_USER_AGENT ||
     "NYC Soccer Matchday geocoder (set NOMINATIM_USER_AGENT)";
 
-  // Do not print secrets. Show only masked key for sanity.
   console.log("Backfill venues geo");
   console.log(`- dryRun: ${dryRun}`);
   console.log(`- limit: ${limit || "none"}`);
@@ -159,20 +128,17 @@ async function main() {
     auth: { persistSession: false },
   });
 
-  // IMPORTANT: adjust selected columns if your schema differs.
-  // We purposely select a broad set and compose an address from what exists.
+  // Only select columns that are very likely to exist. Avoid schema mismatch crashes.
   let query = supabase
     .from("venues")
-    .select(
-      "id,name,venue_name,address,street_address,address_line1,address1,location,neighborhood,area,district,city,state,country,latitude,longitude"
-    )
+    .select("id,name,address,city,state,country,latitude,longitude")
     .or("latitude.is.null,longitude.is.null");
 
   if (limit && limit > 0) query = query.limit(limit);
 
   const { data: venues, error: fetchErr } = await query;
-
   if (fetchErr) throw new Error(`Supabase fetch error: ${fetchErr.message}`);
+
   if (!venues || venues.length === 0) {
     console.log("No venues found with missing latitude/longitude. Done.");
     return;
@@ -184,7 +150,6 @@ async function main() {
   let skipped = 0;
   let failed = 0;
 
-  // Rate limit: max 1 request / second
   const MIN_INTERVAL_MS = 1100;
   let lastReqAt = 0;
 
@@ -192,21 +157,20 @@ async function main() {
     const v = venues[i];
     const id = v.id;
 
-    // If either is missing, we backfill both if we can
     const needs = v.latitude == null || v.longitude == null;
     if (!needs) {
       skipped++;
       continue;
     }
 
+    // If you only have a venue name, this still works (defaults city/state/country).
     const q = buildAddressForQuery(v);
-    if (!q || q.length < 5) {
-      console.log(`[${i + 1}/${venues.length}] id=${id} SKIP (insufficient address fields)`);
+    if (!q || q.length < 3) {
+      console.log(`[${i + 1}/${venues.length}] id=${id} SKIP (insufficient fields)`);
       skipped++;
       continue;
     }
 
-    // Ensure spacing between requests
     const now = Date.now();
     const wait = Math.max(0, MIN_INTERVAL_MS - (now - lastReqAt));
     if (wait > 0) await sleep(wait);
@@ -285,7 +249,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  // Do not leak secrets; just show message
   console.error(`Fatal: ${err?.message || String(err)}`);
   process.exitCode = 1;
 });

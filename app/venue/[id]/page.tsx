@@ -1,4 +1,3 @@
-// app/venue/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,14 +7,18 @@ import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { isVenueAdmin } from "@/lib/venueAdmin";
+import { toggleUpvote, getUpvotesForUpdates, getUserUpvotes } from "@/lib/upvotes";
 
-type Update = {
+type UpdateRow = {
   id: string;
   content: string;
   created_at: string;
   user_id: string;
-  upvote_count?: number;
-  user_has_upvoted?: boolean;
+};
+
+type Update = UpdateRow & {
+  upvote_count: number;
+  user_has_upvoted: boolean;
 };
 
 export default function VenuePage() {
@@ -30,36 +33,14 @@ export default function VenuePage() {
   const [newUpdate, setNewUpdate] = useState("");
   const [user, setUser] = useState<any>(null);
   const [isOwner, setIsOwner] = useState(false);
-
-  // Going state
   const [going, setGoing] = useState(false);
   const [goingCount, setGoingCount] = useState(0);
-  const [goingSaving, setGoingSaving] = useState(false);
-
   const [loading, setLoading] = useState(true);
+  const [upvotingId, setUpvotingId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadData() {
-      const [venueData, matchData] = await Promise.all([
-        fetchVenueById(venueId),
-        matchId ? fetchMatchById(matchId) : Promise.resolve(null),
-      ]);
-
-      setVenue(venueData);
-      setMatch(matchData);
-
-      if (venueData && matchId) {
-        await loadUpdates();
-        await loadGoingStatus();
-      }
-
-      setLoading(false);
-    }
-
     async function checkAuth() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
 
       if (user && venueId) {
@@ -70,8 +51,35 @@ export default function VenuePage() {
       }
     }
 
+    async function loadData() {
+      const [venueData, matchData] = await Promise.all([
+        fetchVenueById(venueId),
+        matchId ? fetchMatchById(matchId) : Promise.resolve(null),
+      ]);
+
+      setVenue(venueData);
+      setMatch(matchData);
+
+      // Load going + updates only if we have a venue + match context
+      if (venueData && matchId) {
+        await loadGoingStatus();
+        await loadUpdates();
+      }
+
+      setLoading(false);
+    }
+
     loadData();
     checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      // Re-check auth + reload updates so upvote state reflects the new user
+      checkAuth().then(() => {
+        if (matchId) loadUpdates();
+      });
+    });
+
+    return () => subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venueId, matchId]);
 
@@ -88,68 +96,75 @@ export default function VenuePage() {
 
       if (error) {
         console.error("Error loading updates:", error);
+        setUpdates([]);
         return;
       }
 
-      setUpdates((data as any) || []);
+      const rows = (data || []) as UpdateRow[];
+      const updateIds = rows.map((r) => r.id);
+
+      // Get counts for all updates
+      const counts = await getUpvotesForUpdates(updateIds);
+
+      // Get which updates current user has upvoted (if signed in)
+      let userUpvotes = new Set<string>();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        userUpvotes = await getUserUpvotes(currentUser.id, updateIds);
+      }
+
+      const enriched: Update[] = rows.map((r) => ({
+        ...r,
+        upvote_count: counts[r.id] ?? 0,
+        user_has_upvoted: userUpvotes.has(r.id),
+      }));
+
+      setUpdates(enriched);
     } catch (err) {
       console.error("loadUpdates: Unexpected error:", err);
+      setUpdates([]);
     }
   }
 
   async function loadGoingStatus() {
     if (!matchId) return;
 
-    // Count
-    const { count, error: countError } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { count } = await supabase
       .from("going")
       .select("*", { count: "exact", head: true })
       .eq("venue_id", venueId)
       .eq("match_id", matchId);
 
-    if (countError) {
-      console.error("Error fetching going count:", countError);
-    }
-
     setGoingCount(count || 0);
 
-    // User status
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase
+        .from("going")
+        .select("id")
+        .eq("venue_id", venueId)
+        .eq("match_id", matchId)
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (!user) {
+      setGoing(!!data);
+    } else {
       setGoing(false);
-      return;
     }
-
-    const { data, error } = await supabase
-      .from("going")
-      .select("id")
-      .eq("venue_id", venueId)
-      .eq("match_id", matchId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (error) {
-      // if RLS blocks or something else, fail gracefully
-      console.error("Error checking user going status:", error);
-      setGoing(false);
-      return;
-    }
-
-    setGoing(!!data);
   }
 
   async function handlePostUpdate() {
     if (!user || !matchId || !newUpdate.trim()) return;
 
-    const { error } = await supabase.from("updates").insert({
+    const payload = {
       venue_id: venueId,
       match_id: matchId,
       content: newUpdate.trim(),
       user_id: user.id,
-    });
+    };
+
+    const { error } = await supabase.from("updates").insert(payload);
 
     if (error) {
       console.error("Failed to post update:", error);
@@ -161,66 +176,90 @@ export default function VenuePage() {
     await loadUpdates();
   }
 
-  async function handleGoingToggle() {
-    if (!matchId) return;
+  async function handleGoing() {
+    if (!matchId || !venue) {
+      alert("Pick a match first");
+      return;
+    }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (!currentUser) {
       alert("Please sign in to mark yourself as going");
       return;
     }
 
-    if (goingSaving) return;
-
-    setGoingSaving(true);
-
     // Optimistic UI
-    const prevGoing = going;
-    const prevCount = goingCount;
-
-    const nextGoing = !prevGoing;
-    const nextCount = Math.max(0, prevCount + (nextGoing ? 1 : -1));
-
+    const nextGoing = !going;
     setGoing(nextGoing);
-    setGoingCount(nextCount);
+    setGoingCount((prev) => Math.max(0, prev + (nextGoing ? 1 : -1)));
 
     try {
-      if (prevGoing) {
-        // Remove
+      if (nextGoing) {
+        const { error } = await supabase
+          .from("going")
+          .insert({ venue_id: venueId, match_id: matchId, user_id: currentUser.id });
+
+        if (error) throw error;
+      } else {
         const { error } = await supabase
           .from("going")
           .delete()
           .eq("venue_id", venueId)
           .eq("match_id", matchId)
-          .eq("user_id", user.id);
-
-        if (error) throw error;
-      } else {
-        // Add
-        const { error } = await supabase.from("going").insert({
-          venue_id: venueId,
-          match_id: matchId,
-          user_id: user.id,
-        });
+          .eq("user_id", currentUser.id);
 
         if (error) throw error;
       }
-
-      // Re-sync actual count (keeps you honest if multiple people click)
-      await loadGoingStatus();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error toggling going:", err);
-
-      // Revert optimistic UI on failure
-      setGoing(prevGoing);
-      setGoingCount(prevCount);
-
+      // rollback
+      setGoing(!nextGoing);
+      setGoingCount((prev) => Math.max(0, prev + (!nextGoing ? 1 : -1)));
       alert("Failed to update. Please try again.");
+    }
+  }
+
+  async function handleUpvote(updateId: string) {
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) {
+      alert("Please sign in to upvote");
+      return;
+    }
+
+    setUpvotingId(updateId);
+
+    try {
+      // optimistic toggle
+      setUpdates((prev) =>
+        prev.map((u) => {
+          if (u.id !== updateId) return u;
+          const nextUpvoted = !u.user_has_upvoted;
+          return {
+            ...u,
+            user_has_upvoted: nextUpvoted,
+            upvote_count: Math.max(0, u.upvote_count + (nextUpvoted ? 1 : -1)),
+          };
+        })
+      );
+
+      const res = await toggleUpvote(updateId, currentUser.id);
+
+      // reconcile with server truth
+      setUpdates((prev) =>
+        prev.map((u) =>
+          u.id === updateId
+            ? { ...u, user_has_upvoted: res.upvoted, upvote_count: res.count }
+            : u
+        )
+      );
+    } catch (err) {
+      console.error("Upvote failed:", err);
+      // If it fails, reload to restore truth
+      await loadUpdates();
+      alert("Upvote failed. Please try again.");
     } finally {
-      setGoingSaving(false);
+      setUpvotingId(null);
     }
   }
 
@@ -269,15 +308,10 @@ export default function VenuePage() {
           <div className="flex flex-wrap gap-4 text-gray-300 mb-6">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                  clipRule="evenodd"
-                />
+                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
               <span>{venue.neighborhood}</span>
             </div>
-
             {venue.address && (
               <div className="flex items-center gap-2">
                 <span>•</span>
@@ -295,21 +329,19 @@ export default function VenuePage() {
             )}
           </div>
 
-          {/* Going Row */}
-          {matchId && (
+          {/* Going Button */}
+          {match && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <button
-                onClick={handleGoingToggle}
-                disabled={goingSaving}
+                onClick={handleGoing}
                 className={`px-6 py-3 rounded-full font-bold transition-all ${
                   going
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    ? "bg-blue-600 text-white"
                     : "bg-white/10 text-white border border-white/20 hover:bg-white/20"
-                } ${goingSaving ? "opacity-70 cursor-not-allowed" : ""}`}
+                }`}
               >
-                {goingSaving ? "Saving..." : going ? "✓ Going" : "Mark as going"}
+                {going ? "✓ I'm going" : "Mark as going"}
               </button>
-
               <span className="text-gray-400 text-sm">
                 {goingCount} {goingCount === 1 ? "person" : "people"} going
               </span>
@@ -332,7 +364,9 @@ export default function VenuePage() {
                 )}
                 <span className="font-semibold text-white truncate">{match.home_team}</span>
               </div>
-              <span className="text-gray-500 font-bold text-sm sm:text-base flex-shrink-0 self-center">vs</span>
+              <span className="text-gray-500 font-bold text-sm sm:text-base flex-shrink-0 self-center">
+                vs
+              </span>
               <div className="flex items-center gap-3 min-w-0 flex-1 sm:justify-end">
                 <span className="font-semibold text-white truncate">{match.away_team}</span>
                 {match.away_team_crest && (
@@ -344,7 +378,9 @@ export default function VenuePage() {
                 )}
               </div>
             </div>
-            <div className="mt-4 text-sm text-gray-400 text-center">{formatMatchTime(match.kickoff_time)}</div>
+            <div className="mt-4 text-sm text-gray-400 text-center">
+              {formatMatchTime(match.kickoff_time)}
+            </div>
           </div>
         )}
 
@@ -374,24 +410,45 @@ export default function VenuePage() {
           )}
 
           {!user && match && (
-            <p className="text-gray-400 text-sm mb-4">Sign in to see live updates from this bar</p>
+            <p className="text-gray-400 text-sm mb-4">
+              Sign in to upvote updates (you can still see them once posted)
+            </p>
           )}
 
-          {/* Updates List */}
-          {user && updates.length === 0 && <p className="text-gray-400 text-center py-8">No updates yet</p>}
-
-          {user && (
+          {/* Empty states */}
+          {updates.length === 0 ? (
+            <p className="text-gray-400 text-center py-8">No updates yet</p>
+          ) : (
             <div className="space-y-3">
               {updates.map((update) => (
                 <div key={update.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">Staff</span>
-                        <span className="text-xs text-gray-500">{new Date(update.created_at).toLocaleString()}</span>
+                        <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
+                          Staff
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(update.created_at).toLocaleString()}
+                        </span>
                       </div>
                       <p className="text-white">{update.content}</p>
                     </div>
+
+                    {/* Upvote */}
+                    <button
+                      onClick={() => handleUpvote(update.id)}
+                      disabled={!user || upvotingId === update.id}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-bold border transition-all flex-shrink-0 ${
+                        update.user_has_upvoted
+                          ? "bg-white/10 border-white/20 text-white"
+                          : "bg-transparent border-white/10 text-gray-300 hover:border-white/20 hover:text-white"
+                      } ${(!user || upvotingId === update.id) ? "opacity-60 cursor-not-allowed" : ""}`}
+                      title={!user ? "Sign in to upvote" : "Upvote"}
+                    >
+                      <span>{update.user_has_upvoted ? "▲" : "△"}</span>
+                      <span>{update.upvote_count}</span>
+                    </button>
                   </div>
                 </div>
               ))}

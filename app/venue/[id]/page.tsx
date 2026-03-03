@@ -257,22 +257,21 @@ export default function VenuePage() {
 
           {/* Going Button */}
           {match && (
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <button
                 onClick={handleGoing}
+                disabled={going}
                 className={`px-6 py-3 rounded-full font-bold transition-all ${
                   going
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    ? 'bg-blue-600 text-white cursor-default'
                     : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
                 }`}
               >
                 {going ? "✓ I'm going" : "Mark as going"}
               </button>
-              {goingCount > 0 && (
-                <span className="text-gray-400 text-sm">
-                  {goingCount} {goingCount === 1 ? 'person' : 'people'} going
-                </span>
-              )}
+              <span className="text-gray-400 text-sm">
+                {goingCount} {goingCount === 1 ? 'person' : 'people'} going
+              </span>
             </div>
           )}
         </div>

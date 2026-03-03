@@ -1,73 +1,92 @@
 import { NextResponse } from "next/server";
 
-type GeoResult = { lat: number; lon: number; display_name?: string };
+export const runtime = "nodejs";
 
-const cache = new Map<string, { ts: number; value: GeoResult | null }>();
-const lastRequestByIp = new Map<string, number>();
+/**
+ * Very small in-memory throttle to be nice to upstream services.
+ * Note: this resets on server restart / new lambda instance.
+ */
+let lastRequestAt = 0;
 
-function getClientIp(req: Request) {
-  const xf = req.headers.get("x-forwarded-for");
-  if (xf) return xf.split(",")[0].trim();
-  return "unknown";
+function sanitizeQuery(q: string) {
+  return q.trim().replace(/\s+/g, " ").slice(0, 200);
 }
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const q = (url.searchParams.get("q") || "").trim();
+  try {
+    const { searchParams } = new URL(req.url);
+    const raw = searchParams.get("query") || "";
+    const query = sanitizeQuery(raw);
 
-  if (!q) {
-    return NextResponse.json({ error: "Missing q" }, { status: 400 });
-  }
+    if (!query) {
+      return NextResponse.json({ error: "Missing query" }, { status: 400 });
+    }
 
-  const ip = getClientIp(req);
+    // Simple throttle: 1 request / second (approx) to respect common Nominatim guidance.
+    const now = Date.now();
+    const delta = now - lastRequestAt;
+    if (delta < 1000) {
+      await new Promise((r) => setTimeout(r, 1000 - delta));
+    }
+    lastRequestAt = Date.now();
 
-  // Soft rate limit: ~1 req/sec per IP (best-effort)
-  const now = Date.now();
-  const last = lastRequestByIp.get(ip) || 0;
-  if (now - last < 900) {
+    const url =
+      "https://nominatim.openstreetmap.org/search?" +
+      new URLSearchParams({
+        q: query,
+        format: "json",
+        addressdetails: "1",
+        limit: "1",
+      }).toString();
+
+    // IMPORTANT: identify your app. Put something real in env.
+    // Nominatim policy expects a valid User-Agent with contact info. :contentReference[oaicite:2]{index=2}
+    const userAgent =
+      process.env.NOMINATIM_USER_AGENT ||
+      "NYCMatchday/0.1 (contact: you@example.com)";
+
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": userAgent,
+        "Accept-Language": "en",
+      },
+      // No caching while iterating; you can add caching later
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      return NextResponse.json(
+        { error: "Geocode upstream error", status: res.status, detail: text.slice(0, 300) },
+        { status: 502 }
+      );
+    }
+
+    const data = (await res.json()) as any[];
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return NextResponse.json({ found: false, query });
+    }
+
+    const top = data[0];
+    const lat = Number(top.lat);
+    const lng = Number(top.lon);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return NextResponse.json({ found: false, query });
+    }
+
+    return NextResponse.json({
+      found: true,
+      query,
+      lat,
+      lng,
+      display_name: top.display_name || null,
+    });
+  } catch (e: any) {
     return NextResponse.json(
-      { error: "Too many requests. Try again in a second." },
-      { status: 429 }
+      { error: "Unexpected error", detail: e?.message || String(e) },
+      { status: 500 }
     );
   }
-  lastRequestByIp.set(ip, now);
-
-  // Cache for 7 days
-  const key = q.toLowerCase();
-  const cached = cache.get(key);
-  if (cached && now - cached.ts < 7 * 24 * 60 * 60 * 1000) {
-    return NextResponse.json({ result: cached.value, cached: true });
-  }
-
-  // Nominatim requirements: provide a real UA/Referer; keep usage light. :contentReference[oaicite:2]{index=2}
-  const endpoint = new URL("https://nominatim.openstreetmap.org/search");
-  endpoint.searchParams.set("format", "json");
-  endpoint.searchParams.set("limit", "1");
-  endpoint.searchParams.set("q", q);
-
-  const res = await fetch(endpoint.toString(), {
-    headers: {
-      // Put something real here (app name + contact)
-      "User-Agent": "nyc-soccer-matchday/1.0 (contact: you@example.com)",
-      "Accept-Language": "en",
-    },
-    // Slightly cache-friendly
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    cache.set(key, { ts: now, value: null });
-    return NextResponse.json({ result: null }, { status: 200 });
-  }
-
-  const data = (await res.json()) as Array<{ lat: string; lon: string; display_name: string }>;
-  const first = data?.[0];
-
-  const result = first
-    ? { lat: Number(first.lat), lon: Number(first.lon), display_name: first.display_name }
-    : null;
-
-  cache.set(key, { ts: now, value: result });
-
-  return NextResponse.json({ result, cached: false });
 }

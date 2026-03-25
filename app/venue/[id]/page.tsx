@@ -7,7 +7,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { fetchVenueById, type Venue } from "@/lib/venues";
 import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
-import { isVenueAdmin } from "@/lib/venueAdmin";
+import { isVenueAdmin, getVenueClaimStatus } from "@/lib/venueAdmin";
+import ClaimVenueModal from "@/components/ClaimVenueModal";
 
 type Update = {
   id: string;
@@ -17,7 +18,6 @@ type Update = {
 };
 
 function alertSupabaseError(context: string, err: any) {
-  // Supabase errors usually look like: { message, code, details, hint }
   const msg =
     err?.message ||
     err?.error_description ||
@@ -49,6 +49,10 @@ export default function VenuePage() {
   const [goingLoading, setGoingLoading] = useState(false);
 
   const [loading, setLoading] = useState(true);
+
+  // Claim modal state
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [claimStatus, setClaimStatus] = useState<any>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -85,14 +89,18 @@ export default function VenuePage() {
       if (user && venueId) {
         const ownerStatus = await isVenueAdmin(user.id, venueId);
         setIsOwner(ownerStatus);
+
+        // Check claim status
+        const status = await getVenueClaimStatus(user.id, venueId);
+        setClaimStatus(status);
       } else {
         setIsOwner(false);
+        setClaimStatus(null);
       }
     }
 
     loadData();
     checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venueId, matchId]);
 
   async function loadUpdates() {
@@ -117,7 +125,6 @@ export default function VenuePage() {
   async function loadGoingStatus() {
     if (!matchId) return;
 
-    // Count
     const { count, error: countError } = await supabase
       .from("going")
       .select("*", { count: "exact", head: true })
@@ -131,7 +138,6 @@ export default function VenuePage() {
       setGoingCount(count || 0);
     }
 
-    // Current user status
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -173,21 +179,18 @@ export default function VenuePage() {
     if (goingLoading) return;
     setGoingLoading(true);
 
-    // optimistic UI
     const nextGoing = !going;
     setGoing(nextGoing);
     setGoingCount((prev) => Math.max(0, prev + (nextGoing ? 1 : -1)));
 
     try {
       if (nextGoing) {
-        // UPSERT prevents duplicates IF you have a unique constraint (recommended)
         const { error } = await supabase.from("going").upsert(
           {
             venue_id: venueId,
             match_id: matchId,
             user_id: user.id,
           },
-          // If you add the unique constraint, keep this:
           { onConflict: "venue_id,match_id,user_id" }
         );
 
@@ -205,7 +208,6 @@ export default function VenuePage() {
 
       await loadGoingStatus();
     } catch (err: any) {
-      // revert optimistic UI
       setGoing(!nextGoing);
       setGoingCount((prev) => Math.max(0, prev + (!nextGoing ? 1 : -1)));
 
@@ -234,6 +236,16 @@ export default function VenuePage() {
 
     setNewUpdate("");
     await loadUpdates();
+  }
+
+  function handleClaimSuccess() {
+    setShowClaimModal(false);
+    alert("Claim submitted! We'll review it and get back to you via email.");
+    
+    // Reload claim status
+    if (user) {
+      getVenueClaimStatus(user.id, venueId).then(setClaimStatus);
+    }
   }
 
   if (loading) {
@@ -274,7 +286,36 @@ export default function VenuePage() {
         </Link>
 
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 mb-6">
-          <h1 className="text-4xl font-black text-white mb-4">{venue.name}</h1>
+          <div className="flex items-start justify-between mb-4">
+            <h1 className="text-4xl font-black text-white">{venue.name}</h1>
+            
+            {/* Claim button - show if not owner and no pending claim */}
+            {user && !isOwner && !claimStatus && (
+              <button
+                onClick={() => setShowClaimModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-blue-700 transition-all flex-shrink-0"
+              >
+                Own this bar?
+              </button>
+            )}
+
+            {/* Show pending status */}
+            {claimStatus?.status === "pending" && (
+              <div className="bg-yellow-600/20 border border-yellow-600/30 text-yellow-300 px-4 py-2 rounded-full text-sm font-bold flex-shrink-0">
+                Claim pending review
+              </div>
+            )}
+
+            {/* Show rejected status */}
+            {claimStatus?.status === "rejected" && (
+              <button
+                onClick={() => setShowClaimModal(true)}
+                className="bg-red-600/20 border border-red-600/30 text-red-300 px-4 py-2 rounded-full text-sm font-bold hover:bg-red-600/30 transition-all flex-shrink-0"
+              >
+                Claim rejected - Try again
+              </button>
+            )}
+          </div>
 
           <div className="flex flex-wrap gap-4 text-gray-300 mb-6">
             <div className="flex items-center gap-2">
@@ -402,6 +443,16 @@ export default function VenuePage() {
           )}
         </div>
       </div>
+
+      {/* Claim Modal */}
+      {showClaimModal && venue && (
+        <ClaimVenueModal
+          venueId={venue.id}
+          venueName={venue.name}
+          onClose={() => setShowClaimModal(false)}
+          onSuccess={handleClaimSuccess}
+        />
+      )}
     </div>
   );
 }

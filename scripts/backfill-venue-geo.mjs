@@ -1,12 +1,7 @@
 #!/usr/bin/env node
 /**
  * Backfill venue latitude/longitude using OpenStreetMap Nominatim
- *
- * Safe defaults:
- * - Uses process.env only
- * - Rate limited (<= 1 req/sec)
- * - --dry-run and --limit flags
- * - Does not log secrets
+ * FIXED: Now correctly maps neighborhoods to boroughs (Brooklyn, Queens, etc.)
  */
 
 import "dotenv/config";
@@ -14,7 +9,6 @@ import { createClient } from "@supabase/supabase-js";
 
 function parseArgs(argv) {
   const args = { dryRun: false, limit: 0 };
-
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--dry-run") args.dryRun = true;
@@ -43,26 +37,56 @@ function norm(s) {
 }
 
 function buildGeocodeCandidates(v) {
-  // Based on your schema: name, neighborhood, address
-  // We bias Manhattan because many of these are in Manhattan neighborhoods.
   const name = norm(v.name);
   const address = norm(v.address);
   const neighborhood = norm(v.neighborhood);
-
   const baseCity = "New York, NY, USA";
-  const borough = "Manhattan";
-
+  
+  // Map neighborhoods to correct boroughs
+  const boroughMap = {
+    // Brooklyn
+    "Park Slope": "Brooklyn",
+    "Williamsburg": "Brooklyn",
+    "Greenpoint": "Brooklyn",
+    "Bushwick": "Brooklyn",
+    "Carroll Gardens": "Brooklyn",
+    "Cobble Hill": "Brooklyn",
+    "Red Hook": "Brooklyn",
+    "Prospect Heights": "Brooklyn",
+    "Dumbo": "Brooklyn",
+    "Downtown Brooklyn": "Brooklyn",
+    "Fort Greene": "Brooklyn",
+    "Bed-Stuy": "Brooklyn",
+    "Crown Heights": "Brooklyn",
+    
+    // Queens
+    "Astoria": "Queens",
+    "Long Island City": "Queens",
+    "Sunnyside": "Queens",
+    "Woodside": "Queens",
+    "Jackson Heights": "Queens",
+    "Forest Hills": "Queens",
+    "Flushing": "Queens",
+    
+    // Bronx
+    "Fordham": "Bronx",
+    "Riverdale": "Bronx",
+    "Yankee Stadium": "Bronx",
+  };
+  
+  const borough = boroughMap[neighborhood] || "Manhattan";
   const candidates = [];
 
+  // Most specific first
   if (address) {
-    candidates.push(`${address}, ${borough}, ${baseCity}`);
-    if (name) candidates.push(`${name}, ${address}, ${borough}, ${baseCity}`);
+    candidates.push(`${address}, ${borough}, New York, NY`);
+    if (name) candidates.push(`${name}, ${address}, ${borough}, New York, NY`);
   }
   if (name && neighborhood) {
-    candidates.push(`${name}, ${neighborhood}, ${borough}, ${baseCity}`);
+    candidates.push(`${name}, ${neighborhood}, ${borough}, New York, NY`);
   }
   if (name) {
-    candidates.push(`${name}, ${borough}, ${baseCity}`);
+    candidates.push(`${name}, ${borough}, New York, NY`);
   }
 
   // De-dupe
@@ -116,9 +140,9 @@ async function main() {
 
   const NOMINATIM_USER_AGENT =
     process.env.NOMINATIM_USER_AGENT ||
-    "NYC Soccer Matchday geocoder (set NOMINATIM_USER_AGENT)";
+    "NYC Soccer Matchday geocoder/1.0 (awaydayz.com)";
 
-  console.log("Backfill venues geo");
+  console.log("Backfill venues geo - FIXED VERSION");
   console.log(`- dryRun: ${dryRun}`);
   console.log(`- limit: ${limit || "none"}`);
   console.log(`- supabaseUrl: ${SUPABASE_URL}`);
@@ -132,8 +156,7 @@ async function main() {
 
   let query = supabase
     .from("venues")
-    .select("id,name,neighborhood,address,latitude,longitude")
-    .or("latitude.is.null,longitude.is.null");
+    .select("id,name,neighborhood,address,latitude,longitude");
 
   if (limit && limit > 0) query = query.limit(limit);
 
@@ -141,11 +164,11 @@ async function main() {
   if (fetchErr) throw new Error(`Supabase fetch error: ${fetchErr.message}`);
 
   if (!venues || venues.length === 0) {
-    console.log("No venues found with missing latitude/longitude. Done.");
+    console.log("No venues found. Done.");
     return;
   }
 
-  console.log(`Found ${venues.length} venues needing geo.`);
+  console.log(`Found ${venues.length} venues to re-geocode.`);
 
   let updated = 0;
   let skipped = 0;
@@ -157,12 +180,6 @@ async function main() {
   for (let i = 0; i < venues.length; i++) {
     const v = venues[i];
     const id = v.id;
-
-    const needs = v.latitude == null || v.longitude == null;
-    if (!needs) {
-      skipped++;
-      continue;
-    }
 
     const candidates = buildGeocodeCandidates(v);
     if (candidates.length === 0) {
@@ -181,14 +198,14 @@ async function main() {
       const wait = Math.max(0, MIN_INTERVAL_MS - (now - lastReqAt));
       if (wait > 0) await sleep(wait);
 
-      console.log(`[${i + 1}/${venues.length}] id=${id} try ${attempt + 1}/${candidates.length}: "${q}"`);
+      console.log(`[${i + 1}/${venues.length}] id=${id} "${v.name}" try ${attempt + 1}/${candidates.length}: "${q}"`);
 
       try {
         lastReqAt = Date.now();
         const resp = await geocodeNominatim({ q, userAgent: NOMINATIM_USER_AGENT });
 
         if (resp.kind === "rate_limited") {
-          console.log(`  - 429 rate limited; backing off 5s and retrying this attempt once...`);
+          console.log(`  - 429 rate limited; backing off 5s...`);
           await sleep(5000);
           lastReqAt = Date.now();
           const resp2 = await geocodeNominatim({ q, userAgent: NOMINATIM_USER_AGENT });

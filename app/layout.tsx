@@ -94,9 +94,26 @@ export default function RootLayout({
               <div className="text-3xl font-black text-white mb-2" style={{ fontFamily: 'Arial, sans-serif', letterSpacing: '-0.02em' }}>
                 awaydayz
               </div>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-400 mb-4">
                 Find your sports bar • NYC's premier matchday companion
               </p>
+              
+              {/* Added venues link */}
+              <div className="flex justify-center gap-4 text-sm">
+                <Link 
+                  href="/venues" 
+                  className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+                >
+                  Browse All Venues
+                </Link>
+                <span className="text-gray-600">•</span>
+                <Link 
+                  href="/venues" 
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  Bar Owners: Claim Your Venue
+                </Link>
+              </div>
             </div>
 
             <div className="flex justify-center gap-6 mb-8">

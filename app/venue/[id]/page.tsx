@@ -53,6 +53,7 @@ export default function VenuePage() {
   // Claim modal state
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [claimStatus, setClaimStatus] = useState<any>(null);
+  const [isClaimed, setIsClaimed] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -96,6 +97,15 @@ export default function VenuePage() {
       } else {
         setIsOwner(false);
         setClaimStatus(null);
+      }
+
+      // Check if venue is already claimed by anyone
+      const { data: existingAdmin } = await supabase
+        .from("venue_admins")
+        .select("id")
+        .eq("venue_id", venueId)
+        .maybeSingle();
+      setIsClaimed(!!existingAdmin);
       }
     }
 
@@ -290,7 +300,7 @@ export default function VenuePage() {
             <h1 className="text-4xl font-black text-white">{venue.name}</h1>
             
             {/* Claim button - show if not owner and no pending claim */}
-            {user && !isOwner && !claimStatus && (
+            {user && !isOwner && !claimStatus && !isClaimed && (
               <button
                 onClick={() => setShowClaimModal(true)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-blue-700 transition-all flex-shrink-0"

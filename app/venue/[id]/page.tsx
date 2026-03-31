@@ -106,7 +106,6 @@ export default function VenuePage() {
         .eq("venue_id", venueId)
         .maybeSingle();
       setIsClaimed(!!existingAdmin);
-      }
     }
 
     loadData();

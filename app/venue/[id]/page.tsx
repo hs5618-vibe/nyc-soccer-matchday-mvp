@@ -102,7 +102,7 @@ export default function VenuePage() {
       // Check if venue is already claimed by anyone
       const { data: existingAdmin } = await supabase
         .from("venue_admins")
-        .select("id")
+        .select("venue_id")
         .eq("venue_id", venueId)
         .maybeSingle();
       setIsClaimed(!!existingAdmin);

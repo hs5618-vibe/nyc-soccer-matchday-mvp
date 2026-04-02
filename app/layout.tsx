@@ -118,7 +118,7 @@ export default function RootLayout({
 
             <div className="flex justify-center gap-6 mb-8">
               <a 
-                href="https://www.instagram.com/themidfieldbattle" 
+                href="https://www.instagram.com/awaydayz_app" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -168,7 +168,7 @@ export default function RootLayout({
 
             <div className="text-center">
               <p className="text-xs text-gray-500">
-                Follow @themidfieldbattle on socials for updates
+                Follow us on socials for updates
               </p>
             </div>
           </div>

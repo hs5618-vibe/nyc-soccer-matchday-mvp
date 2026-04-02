@@ -14,6 +14,7 @@ import {
 type VenueWithMeta = BaseVenue & {
   is_showing: boolean;
   going_count: number;
+  verified_by_owner: boolean;
 };
 
 type LatLng = { lat: number; lng: number };
@@ -120,6 +121,10 @@ function ResultsContent() {
       setMatch(matchData);
 
       const showingIds = new Set((showingVenues || []).map((v) => v.id));
+      const verifiedIds = new Set((showingVenues || []).map((v) => v.id).filter((id) => {
+        const vm = showingVenues.find((v) => v.id === id);
+        return (vm as any)?.verified_by_owner === true;
+      }));
 
       const counts: Record<string, number> = {};
       (goingRows.data || []).forEach((r: any) => {
@@ -131,6 +136,7 @@ function ResultsContent() {
         ...v,
         is_showing: showingIds.has(v.id),
         going_count: counts[v.id] || 0,
+        verified_by_owner: verifiedIds.has(v.id),
       }));
 
       setVenues(merged);
@@ -476,6 +482,11 @@ function ResultsContent() {
                         {venue.is_showing && (
                           <span className="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
                             SHOWING
+                          </span>
+                        )}
+                        {venue.verified_by_owner && (
+                          <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1">
+                            ✓ Verified
                           </span>
                         )}
                       </div>

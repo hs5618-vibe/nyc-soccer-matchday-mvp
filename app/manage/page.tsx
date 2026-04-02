@@ -94,7 +94,8 @@ export default function ManagePage() {
         // Add
         const { error } = await supabase
           .from("venue_matches")
-          .insert({ venue_id: venueId, match_id: matchId });
+          .insert({ venue_id: venueId, match_id: matchId, verified_by_owner: true });
+        // Add
 
         if (error) throw error;
 

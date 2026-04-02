@@ -102,8 +102,8 @@ export async function syncMatchesFromAPI() {
       console.log(`Found ${matches.length} matches for ${LEAGUE_NAMES[leagueId]}`);
 
       const matchesToInsert = matches
-        .filter(m => m.status === 'SCHEDULED' || m.status === 'TIMED')
-        .map(match => ({
+         .filter(m => (m.status === 'SCHEDULED' || m.status === 'TIMED') && m.homeTeam?.name && m.awayTeam?.name)
+          .map(match => ({
           id: `${leagueKey.toLowerCase()}-${match.id}`,
           league: LEAGUE_NAMES[leagueId],
           league_emblem: leagueEmblem,

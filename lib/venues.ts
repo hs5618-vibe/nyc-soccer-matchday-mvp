@@ -33,6 +33,7 @@ export async function fetchVenuesByMatch(matchId: string): Promise<Venue[]> {
     .from("venue_matches")
     .select(`
       venue_id,
+      verified_by_owner,
       venues (
         id,
         name,
@@ -52,7 +53,10 @@ export async function fetchVenuesByMatch(matchId: string): Promise<Venue[]> {
   }
 
   const venues = (data || [])
-    .map((item: any) => item.venues)
+    .map((item: any) => ({
+      ...item.venues,
+      verified_by_owner: item.verified_by_owner ?? false,
+    }))
     .filter((venue: any) => venue !== null);
 
   return venues;

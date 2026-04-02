@@ -88,6 +88,9 @@ function ResultsContent() {
   const [match, setMatch] = useState<Match | null>(null);
   const [venues, setVenues] = useState<VenueWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [interestedCount, setInterestedCount] = useState(0);
+  const [isInterested, setIsInterested] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   // Near-me controls
   const [nearMe, setNearMe] = useState(false);
@@ -139,6 +142,20 @@ function ResultsContent() {
         verified_by_owner: verifiedIds.has(v.id),
       }));
 
+      // Load interested count and user status
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+
+      const { data: interestedRows } = await supabase
+        .from('interested')
+        .select('user_id')
+        .eq('match_id', matchId);
+
+      setInterestedCount((interestedRows || []).length);
+
+      if (user) {
+        setIsInterested((interestedRows || []).some((r: any) => r.user_id === user.id));
+      }
       setVenues(merged);
       setLoading(false);
     }
@@ -243,6 +260,25 @@ function ResultsContent() {
     return arr;
   }, [venuesWithDistance, nearMe, origin]);
 
+  async function toggleInterested() {
+    if (!user) {
+      alert("Please sign in to mark yourself as interested");
+      return;
+    }
+    const next = !isInterested;
+    setIsInterested(next);
+    setInterestedCount(prev => Math.max(0, prev + (next ? 1 : -1)));
+
+    if (next) {
+      await supabase.from('interested').upsert(
+        { match_id: matchId, user_id: user.id },
+        { onConflict: 'match_id,user_id' }
+      );
+    } else {
+      await supabase.from('interested').delete()
+        .eq('match_id', matchId).eq('user_id', user.id);
+    }
+  }
   async function handleUseAddress() {
     const q = addressInput.trim();
     if (!q) return;
@@ -363,12 +399,24 @@ function ResultsContent() {
             </div>
           </div>
 
-          <div className="border-t border-white/10 pt-4 sm:pt-6 text-center">
-            <div className="flex items-center justify-center gap-2 text-gray-300">
+          <div className="border-t border-white/10 pt-4 sm:pt-6">
+            <div className="flex items-center justify-center gap-2 text-gray-300 mb-4">
               <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="text-base sm:text-lg font-semibold">{formatMatchTime(match.kickoff_time)}</span>
+            </div>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={toggleInterested}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                  isInterested
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                }`}
+              >
+                ⚡ Interested · {interestedCount}
+              </button>
             </div>
           </div>
         </div>

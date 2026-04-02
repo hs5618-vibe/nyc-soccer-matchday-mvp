@@ -149,7 +149,7 @@ export async function syncMatchesFromAPI() {
       allMatchesToInsert = [...allMatchesToInsert, ...matchesToInsert];
 
       // Rate limiting: wait 1 second between requests
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
 
     if (allMatchesToInsert.length === 0) {

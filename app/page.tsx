@@ -3,17 +3,50 @@
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { fetchUpcomingMatches, formatMatchTime, type Match } from "@/lib/matches";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function HomePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLeague, setSelectedLeague] = useState<string>("all");
+  const [interestedCounts, setInterestedCounts] = useState<Record<string, number>>({});
+  const [userInterested, setUserInterested] = useState<Record<string, boolean>>({});
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     async function loadMatches() {
       const data = await fetchUpcomingMatches();
       setMatches(data);
+
+      // Get interested counts for all matches
+      const { data: counts } = await supabase
+        .from('interested')
+        .select('match_id');
+
+      const countMap: Record<string, number> = {};
+      (counts || []).forEach((r: any) => {
+        countMap[r.match_id] = (countMap[r.match_id] || 0) + 1;
+      });
+      setInterestedCounts(countMap);
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+
+      if (user) {
+        const { data: userRows } = await supabase
+          .from('interested')
+          .select('match_id')
+          .eq('user_id', user.id);
+
+        const userMap: Record<string, boolean> = {};
+        (userRows || []).forEach((r: any) => {
+          userMap[r.match_id] = true;
+        });
+        setUserInterested(userMap);
+      }
+
       setLoading(false);
     }
     loadMatches();
@@ -66,6 +99,30 @@ export default function HomePage() {
     return filtered;
   }, [matches, searchQuery, selectedLeague]);
 
+  async function toggleInterested(matchId: string) {
+    if (!user) {
+      alert("Please sign in to mark yourself as interested");
+      return;
+    }
+
+    const isInterested = userInterested[matchId];
+
+    setUserInterested(prev => ({ ...prev, [matchId]: !isInterested }));
+    setInterestedCounts(prev => ({
+      ...prev,
+      [matchId]: Math.max(0, (prev[matchId] || 0) + (isInterested ? -1 : 1))
+    }));
+
+    if (isInterested) {
+      await supabase.from('interested').delete()
+        .eq('match_id', matchId).eq('user_id', user.id);
+    } else {
+      await supabase.from('interested').upsert(
+        { match_id: matchId, user_id: user.id },
+        { onConflict: 'match_id,user_id' }
+      );
+    }
+  }
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] font-sans">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
@@ -279,12 +336,24 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* View bars link */}
-                    <div className="flex items-center gap-2 text-blue-400 font-semibold flex-shrink-0 self-end sm:self-auto">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                      </svg>
-                      <span className="text-xs">View bars →</span>
+                    {/* Interested + View bars */}
+                    <div className="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
+                      <button
+                        onClick={(e) => { e.preventDefault(); toggleInterested(match.id); }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                          userInterested[match.id]
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                        }`}
+                      >
+                        ⚡ {interestedCounts[match.id] || 0}
+                      </button>
+                      <div className="flex items-center gap-2 text-blue-400 font-semibold">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-xs">View bars →</span>
+                      </div>
                     </div>
                   </div>
                 </Link>

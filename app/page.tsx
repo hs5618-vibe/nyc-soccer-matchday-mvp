@@ -72,7 +72,7 @@ export default function HomePage() {
         {/* Social Links - Moved up */}
         <div className="flex justify-center gap-4 mb-8">
           <a 
-            href="https://www.instagram.com/themidfieldbattle" 
+            href="https://www.instagram.com/awaydayz_app" 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-gray-400 hover:text-white transition-colors"

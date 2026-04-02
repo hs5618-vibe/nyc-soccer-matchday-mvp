@@ -1,98 +1,68 @@
 import { createClient } from '@supabase/supabase-js';
 
-const API_FOOTBALL_KEY = process.env.API_FOOTBALL_KEY;
+const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY;
+
+// League IDs from Football-Data.org
+const LEAGUES = {
+  PREMIER_LEAGUE: 2021,
+  LA_LIGA: 2014,
+  BUNDESLIGA: 2002,
+  SERIE_A: 2019,
+  LIGUE_1: 2015,
+  CHAMPIONS_LEAGUE: 2001,
+  WORLD_CUP: 2000,
+  EUROS: 2018,
+  EREDIVISIE: 2003,
+  PRIMEIRA_LIGA: 2017,
+  BRASILEIRAO: 2013,
+  CHAMPIONSHIP: 2016,
+};
+
+const LEAGUE_NAMES: Record<number, string> = {
+  2021: 'Premier League',
+  2014: 'La Liga',
+  2002: 'Bundesliga',
+  2019: 'Serie A',
+  2015: 'Ligue 1',
+  2001: 'Champions League',
+  2000: 'World Cup',
+  2018: 'European Championship',
+  2003: 'Eredivisie',
+  2017: 'Primeira Liga',
+  2013: 'Brasileirao',
+  2016: 'Championship',
+};
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-// All competitions we want to show - API-Football league IDs
-const LEAGUE_IDS = [
-  // UEFA Club Competitions
-  2,    // Champions League
-  3,    // Europa League
-  848,  // Conference League
-  531,  // UEFA Super Cup
-
-  // Top 5 European Leagues
-  39,   // Premier League
-  140,  // La Liga
-  78,   // Bundesliga
-  135,  // Serie A
-  61,   // Ligue 1
-
-  // English Cups
-  45,   // FA Cup
-  48,   // Carabao Cup (EFL Cup)
-  528,  // Community Shield
-
-  // Spanish Cups
-  143,  // Copa del Rey
-  556,  // Supercopa de España
-
-  // Italian Cups
-  137,  // Coppa Italia
-  547,  // Supercoppa Italiana
-
-  // German Cups
-  529,  // DFB Pokal
-  530,  // DFL Supercup
-
-  // French Cups
-  66,   // Coupe de France
-  526,  // Trophée des Champions
-
-  // Other European Leagues
-  88,   // Eredivisie (Netherlands)
-  94,   // Primeira Liga (Portugal)
-  197,  // Super League (Greece)
-  144,  // Jupiler Pro League (Belgium)
-  203,  // Süper Lig (Turkey)
-
-  // South American
-  13,   // Copa Libertadores
-  11,   // Copa Sudamericana
-  71,   // Brasileirao Serie A
-  128,  // Liga Profesional (Argentina)
-
-  // North America
-  253,  // MLS (USA)
-  262,  // Liga MX (Mexico)
-
-  // Middle East
-  307,  // Saudi Pro League
-
-  // International / National Teams
-  1,    // World Cup
-  4,    // Euro Championship
-  5,    // UEFA Nations League
-  6,    // Africa Cup of Nations
-  9,    // Copa America
-  10,   // FIFA Friendlies
-  15,   // FIFA Club World Cup
-  34,   // World Cup Qualification (UEFA)
-];
-
-type APIFootballFixture = {
-  fixture: {
-    id: number;
-    date: string;
-    status: { short: string };
+type FootballDataMatch = {
+  id: number;
+  utcDate: string;
+  status: string;
+  homeTeam: {
+    name: string;
+    crest: string;
   };
-  league: {
+  awayTeam: {
+    name: string;
+    crest: string;
+  };
+};
+
+type FootballDataResponse = {
+  matches: FootballDataMatch[];
+  competition: {
     id: number;
     name: string;
-    logo: string;
-  };
-  teams: {
-    home: { name: string; logo: string };
-    away: { name: string; logo: string };
+    emblem: string;
   };
 };
 
 export async function syncMatchesFromAPI() {
-  if (!API_FOOTBALL_KEY) {
-    console.error("API_FOOTBALL_KEY not set");
+  if (!FOOTBALL_DATA_API_KEY) {
+    console.error("FOOTBALL_DATA_API_KEY not set");
     return { success: false, error: "API key missing" };
   }
 
@@ -103,53 +73,52 @@ export async function syncMatchesFromAPI() {
 
     const dateFrom = today.toISOString().split('T')[0];
     const dateTo = thirtyDaysFromNow.toISOString().split('T')[0];
-    const season = today.getMonth() >= 6 ? today.getFullYear() : today.getFullYear() - 1;
 
     console.log(`Fetching matches from ${dateFrom} to ${dateTo}...`);
 
     let allMatchesToInsert: any[] = [];
 
-    // Fetch matches for each league
-    for (const leagueId of LEAGUE_IDS) {
-      console.log(`Fetching league ${leagueId}...`);
+    for (const [leagueKey, leagueId] of Object.entries(LEAGUES)) {
+      console.log(`Fetching ${LEAGUE_NAMES[leagueId]} matches...`);
 
       const response = await fetch(
-        `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}&from=${dateFrom}&to=${dateTo}`,
+        `https://api.football-data.org/v4/competitions/${leagueId}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`,
         {
           headers: {
-            'x-apisports-key': API_FOOTBALL_KEY,
+            'X-Auth-Token': FOOTBALL_DATA_API_KEY,
           },
         }
       );
 
       if (!response.ok) {
-        console.error(`API error for league ${leagueId}: ${response.status}`);
+        console.error(`API error for ${LEAGUE_NAMES[leagueId]}: ${response.status}`);
         continue;
       }
 
-      const data = await response.json();
-      const fixtures: APIFootballFixture[] = data.response || [];
+      const data: FootballDataResponse = await response.json();
+      const matches: FootballDataMatch[] = data.matches || [];
+      const leagueEmblem = data.competition?.emblem || '';
 
-      console.log(`Found ${fixtures.length} matches for league ${leagueId}`);
+      console.log(`Found ${matches.length} matches for ${LEAGUE_NAMES[leagueId]}`);
 
-      const matchesToInsert = fixtures
-        .filter(f => ['NS', 'TBD'].includes(f.fixture.status.short))
-        .map(f => ({
-          id: `apif-${f.fixture.id}`,
-          league: f.league.name,
-          league_emblem: f.league.logo,
-          home_team: f.teams.home.name,
-          away_team: f.teams.away.name,
-          home_team_crest: f.teams.home.logo,
-          away_team_crest: f.teams.away.logo,
-          kickoff_time: f.fixture.date,
+      const matchesToInsert = matches
+        .filter(m => m.status === 'SCHEDULED' || m.status === 'TIMED')
+        .map(match => ({
+          id: `${leagueKey.toLowerCase()}-${match.id}`,
+          league: LEAGUE_NAMES[leagueId],
+          league_emblem: leagueEmblem,
+          home_team: match.homeTeam.name,
+          away_team: match.awayTeam.name,
+          home_team_crest: match.homeTeam.crest,
+          away_team_crest: match.awayTeam.crest,
+          kickoff_time: match.utcDate,
           status: 'upcoming',
         }));
 
       allMatchesToInsert = [...allMatchesToInsert, ...matchesToInsert];
 
       // Rate limiting: wait 1 second between requests
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     if (allMatchesToInsert.length === 0) {
@@ -171,7 +140,6 @@ export async function syncMatchesFromAPI() {
 
     console.log(`Successfully synced ${upsertedMatches?.length || 0} matches`);
 
-    // Mark old matches as finished
     const { error: updateError } = await supabaseAdmin
       .from('matches')
       .update({ status: 'finished' })
@@ -193,3 +161,4 @@ export async function syncMatchesFromAPI() {
     return { success: false, error: error.message };
   }
 }
+```

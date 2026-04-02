@@ -21,7 +21,31 @@ export default function HomePage() {
 
   const leagues = useMemo(() => {
     const uniqueLeagues = Array.from(new Set(matches.map(m => m.league)));
-    return ['all', ...uniqueLeagues.sort()];
+    const leagueOrder = [
+      'World Cup',
+      'European Championship',
+      'Champions League',
+      'Premier League',
+      'La Liga',
+      'Serie A',
+      'Bundesliga',
+      'Ligue 1',
+      'Eredivisie',
+      'Primeira Liga',
+      'Brasileirao',
+      'Championship',
+    ];
+
+    const sorted = [...uniqueLeagues].sort((a, b) => {
+      const aIndex = leagueOrder.indexOf(a);
+      const bIndex = leagueOrder.indexOf(b);
+      if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+
+    return ['all', ...sorted];
   }, [matches]);
 
   const filteredMatches = useMemo(() => {

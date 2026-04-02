@@ -103,7 +103,7 @@ export async function syncMatchesFromAPI() {
 
     const dateFrom = today.toISOString().split('T')[0];
     const dateTo = thirtyDaysFromNow.toISOString().split('T')[0];
-    const season = today.getFullYear();
+    const season = today.getMonth() >= 6 ? today.getFullYear() : today.getFullYear() - 1;
 
     console.log(`Fetching matches from ${dateFrom} to ${dateTo}...`);
 

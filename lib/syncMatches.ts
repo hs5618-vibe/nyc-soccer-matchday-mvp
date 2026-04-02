@@ -161,4 +161,3 @@ export async function syncMatchesFromAPI() {
     return { success: false, error: error.message };
   }
 }
-```

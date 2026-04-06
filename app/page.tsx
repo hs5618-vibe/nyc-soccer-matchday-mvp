@@ -211,6 +211,12 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Browse Venues Link */}
+        <div className="flex justify-end mb-4">
+          <Link href="/venues" className="text-sm text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+            Browse all venues →
+          </Link>
+        </div>
         {/* League Filter Pills */}
         <div className="mb-8">
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">

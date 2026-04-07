@@ -204,4 +204,82 @@ export default function ManagePage() {
 
         {/* Venues */}
         <div className="space-y-6">
-          {userV
+          {userVenues.map((userVenue) => {
+            const venue = userVenue.venues;
+            const venueMatchIds = venueMatches
+              .filter(vm => vm.venue_id === venue.id)
+              .map(vm => vm.match_id);
+
+            const allFilteredTicked = filteredMatches.every(m => venueMatchIds.includes(m.id));
+
+            return (
+              <div key={venue.id} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-white mb-1">{venue.name}</h2>
+                  <p className="text-gray-400">{venue.neighborhood}</p>
+                </div>
+
+                {filteredMatches.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No matches found</p>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">
+                        {filteredMatches.length} matches
+                      </h3>
+                      {!allFilteredTicked && (
+                        <button
+                          onClick={() => tickAll(venue.id, venueMatchIds)}
+                          className="text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          ✓ Tick all {selectedLeague !== 'all' ? selectedLeague : searchQuery ? `"${searchQuery}"` : ''} matches
+                        </button>
+                      )}
+                    </div>
+                    {filteredMatches.map((match) => {
+                      const isShowing = venueMatchIds.includes(match.id);
+                      const isSaving = saving === `${venue.id}-${match.id}`;
+                      
+                      return (
+                        <div key={match.id} className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-white mb-1 truncate">
+                                {match.home_team} vs {match.away_team}
+                              </p>
+                              <p className="text-sm text-gray-400">
+                                {match.league} • {new Date(match.kickoff_time).toLocaleString("en-US", {
+                                  weekday: "short",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                            </div>
+                            <label className="flex items-center gap-3 cursor-pointer flex-shrink-0">
+                              <span className="text-sm font-semibold text-gray-300 hidden sm:inline">
+                                {isSaving ? "Saving..." : "We're showing this"}
+                              </span>
+                              <input
+                                type="checkbox"
+                                checked={isShowing}
+                                disabled={isSaving}
+                                onChange={() => toggleMatch(venue.id, match.id, isShowing)}
+                                className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

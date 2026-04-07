@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { getUserVenues } from "@/lib/venueAdmin";
@@ -21,6 +21,7 @@ type Match = {
   home_team: string;
   away_team: string;
   kickoff_time: string;
+  league: string;
 };
 
 type VenueMatch = {
@@ -34,8 +35,11 @@ export default function ManagePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [venueMatches, setVenueMatches] = useState<VenueMatch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [saving, setSaving] = useState<string | null>(null); // Track which match is being saved
+  const [saving, setSaving] = useState<string | null>(null);
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLeague, setSelectedLeague] = useState("all");
 
   useEffect(() => {
     async function loadData() {
@@ -46,8 +50,6 @@ export default function ManagePage() {
         return;
       }
 
-      setUserId(user.id);
-
       const venues = await getUserVenues(user.id);
       if (venues.length === 0) {
         router.push("/");
@@ -57,9 +59,8 @@ export default function ManagePage() {
       setUserVenues(venues);
 
       const upcomingMatches = await fetchUpcomingMatches();
-      setMatches(upcomingMatches);
+      setMatches(upcomingMatches as Match[]);
 
-      // Fetch existing venue-match associations
       const venueIds = venues.map(v => v.venues.id);
       const { data: vmData } = await supabase
         .from("venue_matches")
@@ -73,32 +74,44 @@ export default function ManagePage() {
     loadData();
   }, [router]);
 
+  const leagues = useMemo(() => {
+    const unique = Array.from(new Set(matches.map(m => m.league)));
+    return ['all', ...unique.sort()];
+  }, [matches]);
+
+  const filteredMatches = useMemo(() => {
+    let filtered = matches;
+    if (selectedLeague !== 'all') {
+      filtered = filtered.filter(m => m.league === selectedLeague);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(m =>
+        m.home_team.toLowerCase().includes(q) ||
+        m.away_team.toLowerCase().includes(q)
+      );
+    }
+    return filtered;
+  }, [matches, selectedLeague, searchQuery]);
+
   async function toggleMatch(venueId: string, matchId: string, isShowing: boolean) {
     setSaving(`${venueId}-${matchId}`);
-    
     try {
       if (isShowing) {
-        // Remove
         const { error } = await supabase
           .from("venue_matches")
           .delete()
           .eq("venue_id", venueId)
           .eq("match_id", matchId);
-
         if (error) throw error;
-
         setVenueMatches(prev => prev.filter(
           vm => !(vm.venue_id === venueId && vm.match_id === matchId)
         ));
       } else {
-        // Add
         const { error } = await supabase
           .from("venue_matches")
           .insert({ venue_id: venueId, match_id: matchId, verified_by_owner: true });
-        // Add
-
         if (error) throw error;
-
         setVenueMatches(prev => [...prev, { venue_id: venueId, match_id: matchId }]);
       }
     } catch (error) {
@@ -107,6 +120,31 @@ export default function ManagePage() {
     } finally {
       setSaving(null);
     }
+  }
+
+  async function tickAll(venueId: string, venueMatchIds: string[]) {
+    const toAdd = filteredMatches.filter(m => !venueMatchIds.includes(m.id));
+    if (toAdd.length === 0) return;
+
+    const rows = toAdd.map(m => ({
+      venue_id: venueId,
+      match_id: m.id,
+      verified_by_owner: true,
+    }));
+
+    const { error } = await supabase
+      .from("venue_matches")
+      .upsert(rows, { onConflict: 'venue_id,match_id' });
+
+    if (error) {
+      alert("Failed to tick all. Please try again.");
+      return;
+    }
+
+    setVenueMatches(prev => [
+      ...prev,
+      ...toAdd.map(m => ({ venue_id: venueId, match_id: m.id }))
+    ]);
   }
 
   if (loading) {
@@ -123,7 +161,6 @@ export default function ManagePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {/* Header */}
         <Link 
           href="/" 
           className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition-colors"
@@ -139,75 +176,32 @@ export default function ManagePage() {
           <p className="text-gray-400">Update which matches you're showing</p>
         </div>
 
+        {/* Search + League Filter */}
+        <div className="mb-6 space-y-3">
+          <input
+            type="text"
+            placeholder="Search for a team..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {leagues.map(league => (
+              <button
+                key={league}
+                onClick={() => setSelectedLeague(league)}
+                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
+                  selectedLeague === league
+                    ? 'bg-white/10 text-white border border-white/20'
+                    : 'bg-transparent text-gray-400 border border-white/10 hover:border-white/20'
+                }`}
+              >
+                {league === 'all' ? 'All' : league}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Venues */}
         <div className="space-y-6">
-          {userVenues.map((userVenue) => {
-            const venue = userVenue.venues;
-            const venueMatchIds = venueMatches
-              .filter(vm => vm.venue_id === venue.id)
-              .map(vm => vm.match_id);
-
-            return (
-              <div key={venue.id} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-white mb-1">{venue.name}</h2>
-                  <p className="text-gray-400">{venue.neighborhood}</p>
-                </div>
-
-                {matches.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No upcoming matches</p>
-                ) : (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">Upcoming Matches</h3>
-                    {matches.map((match) => {
-                      const isShowing = venueMatchIds.includes(match.id);
-                      const isSaving = saving === `${venue.id}-${match.id}`;
-                      
-                      return (
-                        <div key={match.id} className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-white mb-1 truncate">
-                                {match.home_team} vs {match.away_team}
-                              </p>
-                              <p className="text-sm text-gray-400">
-                                {new Date(match.kickoff_time).toLocaleString("en-US", {
-                                  weekday: "short",
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                })}
-                              </p>
-                            </div>
-                            <label className="flex items-center gap-3 cursor-pointer flex-shrink-0">
-                              <span className="text-sm font-semibold text-gray-300 hidden sm:inline">
-                                {isSaving ? "Saving..." : "We're showing this"}
-                              </span>
-                              <input
-                                type="checkbox"
-                                checked={isShowing}
-                                disabled={isSaving}
-                                onChange={() => toggleMatch(venue.id, match.id, isShowing)}
-                                className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                              />
-                            </label>
-                          </div>
-                          {isSaving && (
-                            <div className="mt-2 text-xs text-blue-400 text-right">
-                              ✓ Saved
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
+          {userV

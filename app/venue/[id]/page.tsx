@@ -54,6 +54,10 @@ export default function VenuePage() {
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [claimStatus, setClaimStatus] = useState<any>(null);
   const [isClaimed, setIsClaimed] = useState(false);
+  const [bio, setBio] = useState<string>("");
+  const [editingBio, setEditingBio] = useState(false);
+  const [bioInput, setBioInput] = useState("");
+  const [savingBio, setSavingBio] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -65,6 +69,7 @@ export default function VenuePage() {
 
         setVenue(venueData);
         setMatch(matchData);
+        if (venueData) setBio((venueData as any).bio || "");
 
         if (venueData && matchId) {
           await loadUpdates();
@@ -247,6 +252,21 @@ export default function VenuePage() {
     await loadUpdates();
   }
 
+  async function handleSaveBio() {
+    setSavingBio(true);
+    const { error } = await supabase
+      .from("venues")
+      .update({ bio: bioInput })
+      .eq("id", venueId);
+
+    if (error) {
+      alert("Failed to save bio.");
+    } else {
+      setBio(bioInput);
+      setEditingBio(false);
+    }
+    setSavingBio(false);
+  }
   function handleClaimSuccess() {
     setShowClaimModal(false);
     alert("Claim submitted! We'll review it and get back to you via email.");
@@ -326,6 +346,51 @@ export default function VenuePage() {
             )}
           </div>
 
+          {/* Bio */}
+          {(bio || isOwner) && (
+            <div className="mb-4">
+              {!editingBio ? (
+                <div className="flex items-start gap-2">
+                  <p className="text-gray-300 text-sm flex-1">
+                    {bio || <span className="text-gray-500 italic">No description yet</span>}
+                  </p>
+                  {isOwner && (
+                    <button
+                      onClick={() => { setEditingBio(true); setBioInput(bio); }}
+                      className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0"
+                    >
+                      {bio ? "Edit" : "Add description"}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <textarea
+                    value={bioInput}
+                    onChange={(e) => setBioInput(e.target.value)}
+                    placeholder="Tell fans about your bar — atmosphere, screens, specials..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                    rows={3}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveBio}
+                      disabled={savingBio}
+                      className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all"
+                    >
+                      {savingBio ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      onClick={() => setEditingBio(false)}
+                      className="bg-white/10 text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-white/20 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap gap-4 text-gray-300 mb-6">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

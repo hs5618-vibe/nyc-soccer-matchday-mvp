@@ -146,6 +146,27 @@ export default function ManagePage() {
       ...toAdd.map(m => ({ venue_id: venueId, match_id: m.id }))
     ]);
   }
+  async function untickAll(venueId: string, venueMatchIds: string[]) {
+    const toRemove = filteredMatches.filter(m => venueMatchIds.includes(m.id));
+    if (toRemove.length === 0) return;
+
+    const toRemoveIds = toRemove.map(m => m.id);
+
+    const { error } = await supabase
+      .from("venue_matches")
+      .delete()
+      .eq("venue_id", venueId)
+      .in("match_id", toRemoveIds);
+
+    if (error) {
+      alert("Failed to untick all. Please try again.");
+      return;
+    }
+
+    setVenueMatches(prev => prev.filter(
+      vm => !(vm.venue_id === venueId && toRemoveIds.includes(vm.match_id))
+    ));
+  }
 
   if (loading) {
     return (
@@ -227,14 +248,24 @@ export default function ManagePage() {
                       <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">
                         {filteredMatches.length} matches
                       </h3>
-                      {!allFilteredTicked && (
-                        <button
-                          onClick={() => tickAll(venue.id, venueMatchIds)}
-                          className="text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
-                        >
-                          ✓ Tick all {selectedLeague !== 'all' ? selectedLeague : searchQuery ? `"${searchQuery}"` : ''} matches
-                        </button>
-                      )}
+                      <div className="flex gap-3">
+                        {!allFilteredTicked && (
+                          <button
+                            onClick={() => tickAll(venue.id, venueMatchIds)}
+                            className="text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                          >
+                            ✓ Tick all
+                          </button>
+                        )}
+                        {venueMatchIds.some(id => filteredMatches.map(m => m.id).includes(id)) && (
+                          <button
+                            onClick={() => untickAll(venue.id, venueMatchIds)}
+                            className="text-sm font-semibold text-red-400 hover:text-red-300 transition-colors"
+                          >
+                            ✗ Untick all
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {filteredMatches.map((match) => {
                       const isShowing = venueMatchIds.includes(match.id);

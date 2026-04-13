@@ -215,7 +215,7 @@ export default function AdminPage() {
     const result = await res.json();
 
     if (result.success) {
-      setOnboardMessage(`✅ Done! ${onboardEmail} is now set up as owner of this bar. Send them the login link!`);
+      setOnboardMessage(`✅ Done! ${onboardEmail} is now set up as owner of this bar. Login link sent to their email!`);
       setOnboardEmail("");
       setOnboardVenueId("");
       await loadVenueAdmins();

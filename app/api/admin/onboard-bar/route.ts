@@ -14,21 +14,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Email and venueId required" });
     }
 
-    // Find user by email
+    // Find existing user by email
     const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (listError) {
       return NextResponse.json({ success: false, error: listError.message });
     }
 
-    const user = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    const existingUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
 
     let userId: string;
 
-    if (user) {
-      userId = user.id;
+    if (existingUser) {
+      userId = existingUser.id;
     } else {
-      // Create user with magic link
+      // Create new user
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
         email_confirm: true,
@@ -50,7 +50,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: adminError.message });
     }
 
-    return NextResponse.json({ success: true });
+    // Send magic link email so they can log in
+    const { error: magicLinkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+      options: {
+        redirectTo: 'https://awaydayz.co/manage',
+      }
+    });
+
+    if (magicLinkError) {
+      // Still success even if email fails — just warn
+      return NextResponse.json({ 
+        success: true, 
+        warning: "Bar added but failed to send login email: " + magicLinkError.message 
+      });
+    }
+
+    return NextResponse.json({ success: true, emailSent: true });
 
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message });

@@ -54,7 +54,12 @@ export default function AdminPage() {
   const [venueAdmins, setVenueAdmins] = useState<VenueAdmin[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"claims" | "admins" | "reports">("claims");
+  const [activeTab, setActiveTab] = useState<"claims" | "admins" | "reports" | "onboard">("claims");
+  const [allVenues, setAllVenues] = useState<{id: string, name: string, neighborhood: string}[]>([]);
+  const [onboardEmail, setOnboardEmail] = useState("");
+  const [onboardVenueId, setOnboardVenueId] = useState("");
+  const [onboardLoading, setOnboardLoading] = useState(false);
+  const [onboardMessage, setOnboardMessage] = useState("");
   const [stats, setStats] = useState({
     totalVenues: 0,
     pendingClaims: 0,
@@ -82,6 +87,7 @@ export default function AdminPage() {
         loadVenueAdmins(),
         loadReports(),
         loadStats(),
+        loadAllVenues(),
       ]);
 
       setLoading(false);
@@ -170,6 +176,56 @@ export default function AdminPage() {
     await loadVenueAdmins();
   }
 
+  async function loadAllVenues() {
+    const { data } = await supabase
+      .from("venues")
+      .select("id, name, neighborhood")
+      .order("name");
+    setAllVenues(data || []);
+  }
+
+  async function onboardBar() {
+    if (!onboardEmail.trim() || !onboardVenueId) {
+      setOnboardMessage("Please enter an email and select a venue.");
+      return;
+    }
+
+    setOnboardLoading(true);
+    setOnboardMessage("");
+
+    // Find or create user by email
+    const { data: userData, error: userError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", onboardEmail.trim().toLowerCase())
+      .maybeSingle();
+
+    // Check auth.users directly
+    const { data: authData } = await supabase.auth.admin
+      ? { data: null }
+      : { data: null };
+
+    // Use service role to find user
+    const res = await fetch("/api/admin/onboard-bar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: onboardEmail.trim(), venueId: onboardVenueId }),
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      setOnboardMessage(`✅ Done! ${onboardEmail} is now set up as owner of this bar. Send them the login link!`);
+      setOnboardEmail("");
+      setOnboardVenueId("");
+      await loadVenueAdmins();
+      await loadStats();
+    } else {
+      setOnboardMessage(`❌ Error: ${result.error}`);
+    }
+
+    setOnboardLoading(false);
+  }
   async function removeAdmin(adminId: string) {
     if (!confirm("Remove this admin?")) return;
 
@@ -264,6 +320,16 @@ export default function AdminPage() {
           >
             Reports ({reports.length})
           </button>
+          <button
+            onClick={() => setActiveTab("onboard")}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+              activeTab === "onboard"
+                ? "bg-green-600 text-white"
+                : "bg-white/5 text-gray-400 border border-white/10 hover:border-white/20"
+            }`}
+          >
+            ⚡ Onboard Bar
+          </button>
         </div>
 
         {/* Pending Claims */}
@@ -346,6 +412,67 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Onboard Bar */}
+        {activeTab === "onboard" && (
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6">
+            <h2 className="text-xl font-bold text-white mb-2">Onboard a Bar Directly</h2>
+            <p className="text-gray-400 text-sm mb-6">Skip the claim process — add a bar owner directly by email. They just need to log in once at awaydayz.co to access their Manage tab.</p>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-sm text-gray-400 mb-2 block">Bar owner email</label>
+                <input
+                  type="email"
+                  value={onboardEmail}
+                  onChange={(e) => setOnboardEmail(e.target.value)}
+                  placeholder="owner@theirbar.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 mb-2 block">Select bar</label>
+                <select
+                  value={onboardVenueId}
+                  onChange={(e) => setOnboardVenueId(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a venue...</option>
+                  {allVenues.map(v => (
+                    <option key={v.id} value={v.id} className="bg-gray-900">
+                      {v.name} — {v.neighborhood}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={onboardBar}
+                disabled={onboardLoading}
+                className="w-full bg-green-600 text-white px-6 py-3 rounded-full font-bold hover:bg-green-700 disabled:opacity-50 transition-all"
+              >
+                {onboardLoading ? "Setting up..." : "⚡ Add as bar owner"}
+              </button>
+              {onboardMessage && (
+                <p className="text-sm text-center mt-2 text-gray-300">{onboardMessage}</p>
+              )}
+            </div>
+
+            <div className="border-t border-white/10 pt-6">
+              <h3 className="text-lg font-bold text-white mb-4">Manage Matches for Any Bar</h3>
+              <p className="text-gray-400 text-sm mb-4">Select a bar and tick matches on their behalf.</p>
+              <select
+                onChange={(e) => window.location.href = `/admin/manage-venue?venue=${e.target.value}`}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a venue to manage...</option>
+                {allVenues.map(v => (
+                  <option key={v.id} value={v.id} className="bg-gray-900">
+                    {v.name} — {v.neighborhood}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
         {/* Reports */}
         {activeTab === "reports" && (
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6">

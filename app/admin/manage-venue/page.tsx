@@ -33,6 +33,7 @@ function ManageVenueContent() {
   const [saving, setSaving] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLeague, setSelectedLeague] = useState("all");
+  const [venueDefaults, setVenueDefaults] = useState<{venue_id: string, league: string | null, team: string | null}[]>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -65,7 +66,11 @@ function ManageVenueContent() {
         .select("venue_id, match_id")
         .eq("venue_id", venueId);
       setVenueMatches(vmData || []);
-
+      const { data: defaultsData } = await supabase
+        .from("venue_defaults")
+        .select("venue_id, league, team")
+        .eq("venue_id", venueId);
+      setVenueDefaults(defaultsData || []);
       setLoading(false);
     }
 
@@ -111,6 +116,32 @@ function ManageVenueContent() {
     }
   }
 
+  async function toggleDefault() {
+    if (!venueId) return;
+    if (selectedLeague === 'all' && !searchQuery.trim()) return;
+
+    const league = selectedLeague !== 'all' ? selectedLeague : null;
+    const team = searchQuery.trim() || null;
+
+    const existing = venueDefaults.find(d =>
+      d.venue_id === venueId && d.league === league && d.team === team
+    );
+
+    if (existing) {
+      await supabase.from("venue_defaults").delete()
+        .eq("venue_id", venueId)
+        .eq("league", league || '')
+        .eq("team", team || '');
+      setVenueDefaults(prev => prev.filter(d =>
+        !(d.venue_id === venueId && d.league === league && d.team === team)
+      ));
+    } else {
+      const { data } = await supabase.from("venue_defaults")
+        .upsert({ venue_id: venueId, league, team }, { onConflict: 'venue_id,league,team' })
+        .select().single();
+      if (data) setVenueDefaults(prev => [...prev, data]);
+    }
+  }
   async function tickAll() {
     if (!venueId) return;
     const toAdd = filteredMatches.filter(m => !venueMatchIds.includes(m.id));
@@ -197,7 +228,24 @@ function ManageVenueContent() {
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">
                   {filteredMatches.length} matches
                 </h3>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
+                  {selectedLeague !== 'all' || searchQuery.trim() ? (() => {
+                    const league = selectedLeague !== 'all' ? selectedLeague : null;
+                    const team = searchQuery.trim() || null;
+                    const isDefault = venueDefaults.some(d =>
+                      d.venue_id === venueId && d.league === league && d.team === team
+                    );
+                    return (
+                      <button
+                        onClick={toggleDefault}
+                        className={`text-sm font-semibold transition-colors ${
+                          isDefault ? 'text-green-400 hover:text-red-400' : 'text-gray-400 hover:text-green-400'
+                        }`}
+                      >
+                        {isDefault ? '★ Default (click to remove)' : '☆ Set as default'}
+                      </button>
+                    );
+                  })() : null}
                   {!allFilteredTicked && (
                     <button onClick={tickAll} className="text-sm font-semibold text-blue-400 hover:text-blue-300">
                       ✓ Tick all

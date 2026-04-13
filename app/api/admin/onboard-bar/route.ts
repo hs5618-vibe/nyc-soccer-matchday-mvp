@@ -51,11 +51,10 @@ export async function POST(request: Request) {
     }
 
     // Send magic link email so they can log in
-    const { error: magicLinkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
+    const { error: magicLinkError } = await supabaseAdmin.auth.signInWithOtp({
       email,
       options: {
-        redirectTo: 'https://awaydayz.co/manage',
+        emailRedirectTo: 'https://awaydayz.co/manage',
       }
     });
 

@@ -36,6 +36,7 @@ export default function ManagePage() {
   const [venueMatches, setVenueMatches] = useState<VenueMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [venueDefaults, setVenueDefaults] = useState<{venue_id: string, league: string | null, team: string | null}[]>([]);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,6 +69,11 @@ export default function ManagePage() {
         .in("venue_id", venueIds);
 
       setVenueMatches(vmData || []);
+      const { data: defaultsData } = await supabase
+        .from("venue_defaults")
+        .select("venue_id, league, team")
+        .in("venue_id", venueIds);
+      setVenueDefaults(defaultsData || []);
       setLoading(false);
     }
 
@@ -145,6 +151,33 @@ export default function ManagePage() {
       ...prev,
       ...toAdd.map(m => ({ venue_id: venueId, match_id: m.id }))
     ]);
+  }
+  async function toggleDefault(venueId: string) {
+    if (selectedLeague === 'all' && !searchQuery.trim()) return;
+
+    const league = selectedLeague !== 'all' ? selectedLeague : null;
+    const team = searchQuery.trim() || null;
+
+    const existing = venueDefaults.find(d =>
+      d.venue_id === venueId &&
+      d.league === league &&
+      d.team === team
+    );
+
+    if (existing) {
+      await supabase.from("venue_defaults").delete()
+        .eq("venue_id", venueId)
+        .eq("league", league || '')
+        .eq("team", team || '');
+      setVenueDefaults(prev => prev.filter(d =>
+        !(d.venue_id === venueId && d.league === league && d.team === team)
+      ));
+    } else {
+      const { data } = await supabase.from("venue_defaults")
+        .upsert({ venue_id: venueId, league, team }, { onConflict: 'venue_id,league,team' })
+        .select().single();
+      if (data) setVenueDefaults(prev => [...prev, data]);
+    }
   }
   async function untickAll(venueId: string, venueMatchIds: string[]) {
     const toRemove = filteredMatches.filter(m => venueMatchIds.includes(m.id));
@@ -248,7 +281,26 @@ export default function ManagePage() {
                       <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">
                         {filteredMatches.length} matches
                       </h3>
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 flex-wrap">
+                        {selectedLeague !== 'all' || searchQuery.trim() ? (() => {
+                          const league = selectedLeague !== 'all' ? selectedLeague : null;
+                          const team = searchQuery.trim() || null;
+                          const isDefault = venueDefaults.some(d =>
+                            d.venue_id === venue.id && d.league === league && d.team === team
+                          );
+                          return (
+                            <button
+                              onClick={() => toggleDefault(venue.id)}
+                              className={`text-sm font-semibold transition-colors ${
+                                isDefault
+                                  ? 'text-green-400 hover:text-red-400'
+                                  : 'text-gray-400 hover:text-green-400'
+                              }`}
+                            >
+                              {isDefault ? '★ Default (click to remove)' : '☆ Set as default'}
+                            </button>
+                          );
+                        })() : null}
                         {!allFilteredTicked && (
                           <button
                             onClick={() => tickAll(venue.id, venueMatchIds)}

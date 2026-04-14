@@ -367,11 +367,13 @@ export default function VenuePage() {
                 <div>
                   <textarea
                     value={bioInput}
-                    onChange={(e) => setBioInput(e.target.value)}
+                    onChange={(e) => setBioInput(e.target.value.slice(0, 500))}
                     placeholder="Tell fans about your bar — atmosphere, screens, specials..."
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
                     rows={3}
+                    maxLength={500}
                   />
+                  <p className="text-xs text-gray-500 text-right mb-2">{bioInput.length}/500</p>
                   <div className="flex gap-2">
                     <button
                       onClick={handleSaveBio}

@@ -58,6 +58,24 @@ export default function VenuePage() {
   const [editingBio, setEditingBio] = useState(false);
   const [bioInput, setBioInput] = useState("");
   const [savingBio, setSavingBio] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
+    setBookmarked(saved.includes(venueId));
+  }, [venueId]);
+
+  function toggleBookmark() {
+    const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
+    let updated;
+    if (bookmarked) {
+      updated = saved.filter((id: string) => id !== venueId);
+    } else {
+      updated = [...saved, venueId];
+    }
+    localStorage.setItem('savedBars', JSON.stringify(updated));
+    setBookmarked(!bookmarked);
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -317,6 +335,15 @@ export default function VenuePage() {
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 mb-6">
           <div className="flex items-start justify-between mb-4">
             <h1 className="text-4xl font-black text-white">{venue.name}</h1>
+            <button
+              onClick={toggleBookmark}
+              className={`flex-shrink-0 ml-2 transition-all hover:scale-110 p-1 ${bookmarked ? 'text-pink-400' : 'text-gray-500 hover:text-pink-400'}`}
+              title={bookmarked ? "Remove from saved" : "Save this bar"}
+            >
+              <svg className="w-7 h-7" fill={bookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
             
             {/* Claim button - show if not owner and no pending claim */}
             {user && !isOwner && !claimStatus && !isClaimed && (

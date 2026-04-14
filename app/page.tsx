@@ -13,7 +13,20 @@ export default function HomePage() {
   const [interestedCounts, setInterestedCounts] = useState<Record<string, number>>({});
   const [userInterested, setUserInterested] = useState<Record<string, boolean>>({});
   const [user, setUser] = useState<any>(null);
+  const [savedBars, setSavedBars] = useState<{id: string, name: string}[]>([]);
 
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
+    if (saved.length === 0) return;
+    async function loadSavedBars() {
+      const { data } = await supabase
+        .from('venues')
+        .select('id, name')
+        .in('id', saved);
+      setSavedBars(data || []);
+    }
+    loadSavedBars();
+  }, []);
   useEffect(() => {
     async function loadMatches() {
       const data = await fetchUpcomingMatches();
@@ -198,6 +211,23 @@ export default function HomePage() {
           </a>
         </div>
 
+        {/* Saved Bars */}
+        {savedBars.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">❤️ Your Saved Bars</h2>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {savedBars.map(bar => (
+                <Link
+                  key={bar.id}
+                  href={`/venue/${bar.id}`}
+                  className="flex-shrink-0 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition-all"
+                >
+                  {bar.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Search Bar */}
         <div className="mb-6">
           <div className="relative">

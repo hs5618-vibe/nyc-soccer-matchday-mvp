@@ -91,6 +91,7 @@ function ResultsContent() {
   const [interestedCount, setInterestedCount] = useState(0);
   const [isInterested, setIsInterested] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [verifiedDates, setVerifiedDates] = useState<Record<string, string>>({});
 
   // Near-me controls
   const [nearMe, setNearMe] = useState(false);
@@ -128,7 +129,13 @@ function ResultsContent() {
         const vm = showingVenues.find((v) => v.id === id);
         return (vm as any)?.verified_by_owner === true;
       }));
-
+      const vDates: Record<string, string> = {};
+      (showingVenues || []).forEach((v: any) => {
+        if (v.verified_by_owner && v.created_at) {
+          vDates[v.id] = v.created_at;
+        }
+      });
+      setVerifiedDates(vDates);
       const counts: Record<string, number> = {};
       (goingRows.data || []).forEach((r: any) => {
         const vid = String(r.venue_id);
@@ -254,11 +261,15 @@ function ResultsContent() {
     arr.sort((a, b) => {
       if (a.is_showing !== b.is_showing) return a.is_showing ? -1 : 1;
       if (a.going_count !== b.going_count) return b.going_count - a.going_count;
+      if (a.verified_by_owner !== b.verified_by_owner) return a.verified_by_owner ? -1 : 1;
+      const aDate = verifiedDates[a.id] || "9999";
+      const bDate = verifiedDates[b.id] || "9999";
+      if (aDate !== bDate) return aDate.localeCompare(bDate);
       return a.name.localeCompare(b.name);
     });
 
     return arr;
-  }, [venuesWithDistance, nearMe, origin]);
+  }, [venuesWithDistance, nearMe, origin, verifiedDates]);
 
   async function toggleInterested() {
     if (!user) {

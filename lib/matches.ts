@@ -14,15 +14,15 @@ export type Match = {
 
 export async function fetchUpcomingMatches(): Promise<Match[]> {
   const now = new Date();
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(now.getDate() + 30);
+  const ninetyDaysFromNow = new Date();
+  ninetyDaysFromNow.setDate(now.getDate() + 90);
 
   const { data, error } = await supabase
     .from("matches")
     .select("*")
     .eq("status", "upcoming")
     .gte("kickoff_time", now.toISOString())
-    .lte("kickoff_time", thirtyDaysFromNow.toISOString())
+    .lte("kickoff_time", ninetyDaysFromNow.toISOString())
     .order("kickoff_time", { ascending: true });
 
   if (error) {

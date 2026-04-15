@@ -10,6 +10,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLeague, setSelectedLeague] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [interestedCounts, setInterestedCounts] = useState<Record<string, number>>({});
   const [userInterested, setUserInterested] = useState<Record<string, boolean>>({});
   const [user, setUser] = useState<any>(null);
@@ -109,8 +111,18 @@ export default function HomePage() {
       );
     }
 
+    if (dateFrom) {
+      filtered = filtered.filter(match => match.kickoff_time >= new Date(dateFrom).toISOString());
+    }
+
+    if (dateTo) {
+      const toEnd = new Date(dateTo);
+      toEnd.setHours(23, 59, 59);
+      filtered = filtered.filter(match => match.kickoff_time <= toEnd.toISOString());
+    }
+
     return filtered;
-  }, [matches, searchQuery, selectedLeague]);
+  }, [matches, searchQuery, selectedLeague, dateFrom, dateTo]);
 
   async function toggleInterested(matchId: string) {
     if (!user) {
@@ -239,6 +251,37 @@ export default function HomePage() {
               className="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-5 py-4 text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
+        </div>
+        {/* Date Filter */}
+        <div className="flex gap-3 mb-6">
+          <div className="flex-1">
+            <label className="text-xs text-gray-500 mb-1 block">From</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="text-xs text-gray-500 mb-1 block">To</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          {(dateFrom || dateTo) && (
+            <div className="flex items-end pb-0.5">
+              <button
+                onClick={() => { setDateFrom(""); setDateTo(""); }}
+                className="text-xs text-gray-400 hover:text-white px-3 py-2.5 border border-white/10 rounded-xl transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Browse Venues Link */}

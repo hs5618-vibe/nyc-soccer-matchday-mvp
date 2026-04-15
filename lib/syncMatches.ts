@@ -68,11 +68,11 @@ export async function syncMatchesFromAPI() {
 
   try {
     const today = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(today.getDate() + 30);
+    const ninetyDaysFromNow = new Date();
+    ninetyDaysFromNow.setDate(today.getDate() + 90);
 
     const dateFrom = today.toISOString().split('T')[0];
-    const dateTo = thirtyDaysFromNow.toISOString().split('T')[0];
+    const dateTo = ninetyDaysFromNow.toISOString().split('T')[0];
 
     console.log(`Fetching matches from ${dateFrom} to ${dateTo}...`);
 

@@ -92,6 +92,7 @@ function ResultsContent() {
   const [isInterested, setIsInterested] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [verifiedDates, setVerifiedDates] = useState<Record<string, string>>({});
+  const [engagementScores, setEngagementScores] = useState<Record<string, number>>({});
 
   // Near-me controls
   const [nearMe, setNearMe] = useState(false);
@@ -164,6 +165,21 @@ function ResultsContent() {
         setIsInterested((interestedRows || []).some((r: any) => r.user_id === user.id));
       }
       setVenues(merged);
+      const { data: engagementData } = await supabase.rpc('get_venue_engagement');
+      const scores: Record<string, number> = {};
+      const now = new Date();
+      (engagementData || []).forEach((row: any) => {
+        let score = 0;
+        if (row.last_login) {
+          const daysSince = (now.getTime() - new Date(row.last_login).getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSince <= 7) score += 3;
+          else if (daysSince <= 30) score += 2;
+          else score += 1;
+        }
+        if (row.has_bio) score += 1;
+        scores[row.venue_id] = score;
+      });
+      setEngagementScores(scores);
       setLoading(false);
     }
 
@@ -262,6 +278,9 @@ function ResultsContent() {
       if (a.is_showing !== b.is_showing) return a.is_showing ? -1 : 1;
       if (a.going_count !== b.going_count) return b.going_count - a.going_count;
       if (a.verified_by_owner !== b.verified_by_owner) return a.verified_by_owner ? -1 : 1;
+      const aScore = engagementScores[a.id] || 0;
+      const bScore = engagementScores[b.id] || 0;
+      if (aScore !== bScore) return bScore - aScore;
       const aDate = verifiedDates[a.id] || "9999";
       const bDate = verifiedDates[b.id] || "9999";
       if (aDate !== bDate) return aDate.localeCompare(bDate);
@@ -269,7 +288,7 @@ function ResultsContent() {
     });
 
     return arr;
-  }, [venuesWithDistance, nearMe, origin, verifiedDates]);
+  }, [venuesWithDistance, nearMe, origin, verifiedDates, engagementScores]);
 
   async function toggleInterested() {
     if (!user) {

@@ -1,5 +1,7 @@
 "use client";
 
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { fetchUpcomingMatches, formatMatchTime, type Match } from "@/lib/matches";
@@ -10,8 +12,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLeague, setSelectedLeague] = useState<string>("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | null>(null);
+  const [dateTo, setDateTo] = useState<Date | null>(null);
   const [interestedCounts, setInterestedCounts] = useState<Record<string, number>>({});
   const [userInterested, setUserInterested] = useState<Record<string, boolean>>({});
   const [user, setUser] = useState<any>(null);
@@ -111,11 +113,11 @@ export default function HomePage() {
       );
     }
 
-    if (dateFrom && new Date(dateFrom).toString() !== 'Invalid Date') {
-      filtered = filtered.filter(match => match.kickoff_time >= new Date(dateFrom).toISOString());
+    if (dateFrom) {
+      filtered = filtered.filter(match => match.kickoff_time >= dateFrom.toISOString());
     }
 
-    if (dateTo && new Date(dateTo).toString() !== 'Invalid Date') {
+    if (dateTo) {
       const toEnd = new Date(dateTo);
       toEnd.setHours(23, 59, 59);
       filtered = filtered.filter(match => match.kickoff_time <= toEnd.toISOString());
@@ -256,29 +258,38 @@ export default function HomePage() {
         <div className="mb-6">
           <div className="flex flex-col gap-2">
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">From (MM/DD/YYYY)</label>
-              <input
-                type="text"
-                placeholder="e.g. 04/22/2026"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
+              <label className="text-xs text-gray-500 mb-1 block">From</label>
+              <DatePicker
+                selected={dateFrom}
+                onChange={(date) => setDateFrom(date)}
+                selectsStart
+                startDate={dateFrom}
+                endDate={dateTo}
+                placeholderText="Select start date"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                wrapperClassName="w-full"
+                calendarClassName="bg-gray-900 border border-white/10 text-white"
               />
             </div>
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">To (MM/DD/YYYY)</label>
-              <input
-                type="text"
-                placeholder="e.g. 04/30/2026"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+              <label className="text-xs text-gray-500 mb-1 block">To</label>
+              <DatePicker
+                selected={dateTo}
+                onChange={(date) => setDateTo(date)}
+                selectsEnd
+                startDate={dateFrom}
+                endDate={dateTo}
+                minDate={dateFrom || undefined}
+                placeholderText="Select end date"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                wrapperClassName="w-full"
+                calendarClassName="bg-gray-900 border border-white/10 text-white"
               />
             </div>
           </div>
           {(dateFrom || dateTo) && (
             <button
-              onClick={() => { setDateFrom(""); setDateTo(""); }}
+              onClick={() => { setDateFrom(null); setDateTo(null); }}
               className="mt-2 text-xs text-gray-400 hover:text-white px-3 py-2 border border-white/10 rounded-xl transition-colors w-full"
             >
               Clear dates

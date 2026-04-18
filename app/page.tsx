@@ -253,7 +253,7 @@ export default function HomePage() {
           </div>
         </div>
         {/* Date Filter */}
-        <div className="mb-6 overflow-hidden">
+        <div className="mb-6" style={{width: '100%', overflow: 'hidden'}}>
           <div className="flex flex-col gap-2">
             <div className="w-full">
               <label className="text-xs text-gray-500 mb-1 block">From</label>
@@ -261,7 +261,8 @@ export default function HomePage() {
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full max-w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 box-border"
+                style={{width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="w-full">
@@ -270,7 +271,8 @@ export default function HomePage() {
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="w-full max-w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 box-border"
+                style={{width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>

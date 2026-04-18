@@ -253,7 +253,7 @@ export default function HomePage() {
           </div>
         </div>
         {/* Date Filter */}
-        <div className="mb-6">
+        <div className="mb-6 overflow-hidden">
           <div className="flex flex-col gap-2">
             <div className="w-full">
               <label className="text-xs text-gray-500 mb-1 block">From</label>

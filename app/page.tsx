@@ -111,11 +111,11 @@ export default function HomePage() {
       );
     }
 
-    if (dateFrom) {
+    if (dateFrom && new Date(dateFrom).toString() !== 'Invalid Date') {
       filtered = filtered.filter(match => match.kickoff_time >= new Date(dateFrom).toISOString());
     }
 
-    if (dateTo) {
+    if (dateTo && new Date(dateTo).toString() !== 'Invalid Date') {
       const toEnd = new Date(dateTo);
       toEnd.setHours(23, 59, 59);
       filtered = filtered.filter(match => match.kickoff_time <= toEnd.toISOString());
@@ -253,26 +253,26 @@ export default function HomePage() {
           </div>
         </div>
         {/* Date Filter */}
-        <div className="mb-6" style={{width: '100%', overflow: 'hidden'}}>
+        <div className="mb-6">
           <div className="flex flex-col gap-2">
-            <div className="w-full">
-              <label className="text-xs text-gray-500 mb-1 block">From</label>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">From (MM/DD/YYYY)</label>
               <input
-                type="date"
+                type="text"
+                placeholder="e.g. 04/22/2026"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                style={{width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div className="w-full">
-              <label className="text-xs text-gray-500 mb-1 block">To</label>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">To (MM/DD/YYYY)</label>
               <input
-                type="date"
+                type="text"
+                placeholder="e.g. 04/30/2026"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                style={{width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>

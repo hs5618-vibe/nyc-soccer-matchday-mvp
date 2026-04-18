@@ -254,7 +254,7 @@ export default function HomePage() {
         </div>
         {/* Date Filter */}
         <div className="mb-6">
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-2">
             <div className="flex-1">
               <label className="text-xs text-gray-500 mb-1 block">From</label>
               <input

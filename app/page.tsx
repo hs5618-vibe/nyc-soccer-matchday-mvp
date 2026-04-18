@@ -253,34 +253,34 @@ export default function HomePage() {
           </div>
         </div>
         {/* Date Filter */}
-        <div className="flex gap-3 mb-6">
-          <div className="flex-1">
-            <label className="text-xs text-gray-500 mb-1 block">From</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="text-xs text-gray-500 mb-1 block">To</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        <div className="mb-6">
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 mb-1 block">From</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 mb-1 block">To</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
           {(dateFrom || dateTo) && (
-            <div className="flex items-end pb-0.5">
-              <button
-                onClick={() => { setDateFrom(""); setDateTo(""); }}
-                className="text-xs text-gray-400 hover:text-white px-3 py-2.5 border border-white/10 rounded-xl transition-colors"
-              >
-                Clear
-              </button>
-            </div>
+            <button
+              onClick={() => { setDateFrom(""); setDateTo(""); }}
+              className="mt-2 text-xs text-gray-400 hover:text-white px-3 py-2 border border-white/10 rounded-xl transition-colors w-full"
+            >
+              Clear dates
+            </button>
           )}
         </div>
 

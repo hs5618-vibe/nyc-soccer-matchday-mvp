@@ -261,7 +261,7 @@ export default function HomePage() {
               <label className="text-xs text-gray-500 mb-1 block">From</label>
               <DatePicker
                 selected={dateFrom}
-                onChange={(date) => setDateFrom(date)}
+                onChange={(date: Date | null) => setDateFrom(date)}
                 selectsStart
                 startDate={dateFrom}
                 endDate={dateTo}
@@ -275,7 +275,7 @@ export default function HomePage() {
               <label className="text-xs text-gray-500 mb-1 block">To</label>
               <DatePicker
                 selected={dateTo}
-                onChange={(date) => setDateTo(date)}
+                onChange={(date: Date | null) => setDateTo(date)}
                 selectsEnd
                 startDate={dateFrom}
                 endDate={dateTo}

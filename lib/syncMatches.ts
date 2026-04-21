@@ -92,10 +92,12 @@ export async function syncMatchesFromAPI() {
 
       if (!response.ok) {
         console.error(`API error for ${LEAGUE_NAMES[leagueId]}: ${response.status}`);
+        await new Promise(resolve => setTimeout(resolve, 6000));
         continue;
       }
 
       const data: FootballDataResponse = await response.json();
+      await new Promise(resolve => setTimeout(resolve, 6000));
       const matches: FootballDataMatch[] = data.matches || [];
       const leagueEmblem = data.competition?.emblem || '';
 

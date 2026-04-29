@@ -34,6 +34,10 @@ function ManageVenueContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLeague, setSelectedLeague] = useState("all");
   const [venueDefaults, setVenueDefaults] = useState<{venue_id: string, league: string | null, team: string | null}[]>([]);
+  const [bio, setBio] = useState("");
+  const [bioInput, setBioInput] = useState("");
+  const [editingBio, setEditingBio] = useState(false);
+  const [savingBio, setSavingBio] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -51,10 +55,11 @@ function ManageVenueContent() {
       // Load venue name
       const { data: venueData } = await supabase
         .from("venues")
-        .select("name")
+        .select("name, bio")
         .eq("id", venueId)
         .single();
       setVenueName(venueData?.name || venueId);
+      setBio(venueData?.bio || "");
 
       // Load matches
       const upcomingMatches = await fetchUpcomingMatches();
@@ -142,6 +147,21 @@ function ManageVenueContent() {
       if (data) setVenueDefaults(prev => [...prev, data]);
     }
   }
+  async function handleSaveBio() {
+    if (!venueId) return;
+    setSavingBio(true);
+    const { error } = await supabase
+      .from("venues")
+      .update({ bio: bioInput })
+      .eq("id", venueId);
+    if (error) {
+      alert("Failed to save bio.");
+    } else {
+      setBio(bioInput);
+      setEditingBio(false);
+    }
+    setSavingBio(false);
+  }
   async function tickAll() {
     if (!venueId) return;
     const toAdd = filteredMatches.filter(m => !venueMatchIds.includes(m.id));
@@ -191,6 +211,51 @@ function ManageVenueContent() {
             <h1 className="text-4xl font-black text-white">{venueName}</h1>
           </div>
           <p className="text-gray-400">Managing matches on behalf of this bar</p>
+        </div>
+
+        {/* Bio */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">Bar Description</h3>
+            {!editingBio && (
+              <button
+                onClick={() => { setEditingBio(true); setBioInput(bio); }}
+                className="text-xs text-blue-400 hover:text-blue-300"
+              >
+                {bio ? "Edit" : "Add description"}
+              </button>
+            )}
+          </div>
+          {!editingBio ? (
+            <p className="text-sm text-gray-300">{bio || <span className="text-gray-500 italic">No description yet</span>}</p>
+          ) : (
+            <div>
+              <textarea
+                value={bioInput}
+                onChange={(e) => setBioInput(e.target.value.slice(0, 500))}
+                placeholder="Tell fans about this bar..."
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                rows={3}
+                maxLength={500}
+              />
+              <p className="text-xs text-gray-500 text-right mb-2">{bioInput.length}/500</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveBio}
+                  disabled={savingBio}
+                  className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all"
+                >
+                  {savingBio ? "Saving..." : "Save"}
+                </button>
+                <button
+                  onClick={() => setEditingBio(false)}
+                  className="bg-white/10 text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-white/20 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Search + League Filter */}

@@ -10,6 +10,31 @@ import {
   fetchAllVenues,
   type Venue as BaseVenue,
 } from "@/lib/venues";
+const TEAM_CRESTS: Record<string, string> = {
+  'Arsenal FC': 'https://crests.football-data.org/57.png',
+  'Liverpool FC': 'https://crests.football-data.org/64.png',
+  'Manchester City FC': 'https://crests.football-data.org/65.png',
+  'Manchester United FC': 'https://crests.football-data.org/66.png',
+  'Tottenham Hotspur FC': 'https://crests.football-data.org/73.png',
+  'Newcastle United FC': 'https://crests.football-data.org/67.png',
+  'Everton FC': 'https://crests.football-data.org/62.png',
+  'Brentford FC': 'https://crests.football-data.org/402.png',
+  'Chelsea FC': 'https://crests.football-data.org/61.png',
+  'FC Barcelona': 'https://crests.football-data.org/81.png',
+  'FC Bayern München': 'https://crests.football-data.org/5.png',
+  'Paris Saint-Germain FC': 'https://crests.football-data.org/524.png',
+  'AS Roma': 'https://crests.football-data.org/100.png',
+  'SS Lazio': 'https://crests.football-data.org/110.png',
+  'SSC Napoli': 'https://crests.football-data.org/113.png',
+  'Club Atlético de Madrid': 'https://crests.football-data.org/78.png',
+  'Spain': 'https://crests.football-data.org/760.svg',
+  'Colombia': 'https://crests.football-data.org/818.svg',
+  'Argentina': 'https://crests.football-data.org/762.png',
+  'Brazil': 'https://crests.football-data.org/764.svg',
+  'Mexico': 'https://crests.football-data.org/769.svg',
+  'Uruguay': 'https://crests.football-data.org/758.svg',
+  'Boca Juniors': 'https://crests.football-data.org/null.png',
+};
 
 type VenueWithMeta = BaseVenue & {
   is_showing: boolean;
@@ -247,7 +272,10 @@ function ResultsContent() {
   }, [venues, nearMe, origin]);
 
   const sortedVenues = useMemo(() => {
-    const arr = [...venuesWithDistance];
+    const arr = [...venuesWithDistance].filter((v: any) => {
+      if (v.is_featured && match?.league !== 'World Cup') return false;
+      return true;
+    });
 
     if (nearMe && origin) {
       // Primary sort by distance ascending.
@@ -289,7 +317,7 @@ function ResultsContent() {
     });
 
     return arr;
-  }, [venuesWithDistance, nearMe, origin, verifiedDates, engagementScores]);
+  }, [venuesWithDistance, nearMe, origin, verifiedDates, engagementScores, match]);
 
   async function toggleInterested() {
     if (!user) {
@@ -575,9 +603,20 @@ function ResultsContent() {
                           </span>
                         )}
                         {(venue as any).supported_teams?.slice(0, 2).map((team: string) => (
-                          <span key={team} className="bg-white/10 border border-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                            {team}
-                          </span>
+                          TEAM_CRESTS[team] ? (
+                            <img
+                              key={team}
+                              src={TEAM_CRESTS[team]}
+                              alt={team}
+                              title={team}
+                              className="w-5 h-5 object-contain flex-shrink-0"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <span key={team} className="bg-white/10 border border-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                              {team}
+                            </span>
+                          )
                         ))}
                       </div>
 

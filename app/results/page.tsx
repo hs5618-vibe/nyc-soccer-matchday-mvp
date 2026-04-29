@@ -568,6 +568,16 @@ function ResultsContent() {
                             ✓ Verified
                           </span>
                         )}
+                        {(venue as any).is_featured && (
+                          <span className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                            🏆 FIFA Fan Zone
+                          </span>
+                        )}
+                        {(venue as any).supported_teams?.slice(0, 2).map((team: string) => (
+                          <span key={team} className="bg-white/10 border border-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                            {team}
+                          </span>
+                        ))}
                       </div>
 
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">

@@ -357,7 +357,7 @@ export default function VenuePage() {
               </div>
             )}
             {/* Claim button - show if not owner and no pending claim */}
-            {user && !isOwner && !claimStatus && !isClaimed && (
+            {user && !isOwner && !claimStatus && !isClaimed && !venueId?.startsWith('wc-fan-zone') && (
               <button
                 onClick={() => setShowClaimModal(true)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-blue-700 transition-all flex-shrink-0"

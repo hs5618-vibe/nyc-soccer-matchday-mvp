@@ -275,6 +275,7 @@ function ResultsContent() {
 
     // Default sort (your existing logic)
     arr.sort((a, b) => {
+      if ((a as any).is_featured !== (b as any).is_featured) return (a as any).is_featured ? -1 : 1;
       if (a.is_showing !== b.is_showing) return a.is_showing ? -1 : 1;
       if (a.going_count !== b.going_count) return b.going_count - a.going_count;
       if (a.verified_by_owner !== b.verified_by_owner) return a.verified_by_owner ? -1 : 1;

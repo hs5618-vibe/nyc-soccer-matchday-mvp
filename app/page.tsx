@@ -14,6 +14,8 @@ export default function HomePage() {
   const [selectedLeague, setSelectedLeague] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | null>(null);
   const [dateTo, setDateTo] = useState<Date | null>(null);
+  const [activeFilter, setActiveFilter] = useState('');
+  const [showCustom, setShowCustom] = useState(false);
   const [interestedCounts, setInterestedCounts] = useState<Record<string, number>>({});
   const [userInterested, setUserInterested] = useState<Record<string, boolean>>({});
   const [user, setUser] = useState<any>(null);
@@ -256,23 +258,70 @@ export default function HomePage() {
         </div>
         {/* Date Filter */}
         <div className="mb-6">
-          <div className="flex flex-col gap-2">
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">From</label>
+          <div className="flex gap-2 flex-wrap">
+            {['Today', 'This Week', 'This Month', 'Custom'].map((label) => (
+              <button
+                key={label}
+                onClick={() => {
+                  const now = new Date();
+                  if (label === 'Today') {
+                    setDateFrom(new Date(now.setHours(0,0,0,0)));
+                    setDateTo(new Date(new Date().setHours(23,59,59,999)));
+                    setShowCustom(false);
+                  } else if (label === 'This Week') {
+                    const start = new Date(now);
+                    start.setDate(now.getDate() - now.getDay());
+                    start.setHours(0,0,0,0);
+                    const end = new Date(start);
+                    end.setDate(start.getDate() + 6);
+                    end.setHours(23,59,59,999);
+                    setDateFrom(start);
+                    setDateTo(end);
+                    setShowCustom(false);
+                  } else if (label === 'This Month') {
+                    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                    setDateFrom(start);
+                    setDateTo(end);
+                    setShowCustom(false);
+                  } else {
+                    setDateFrom(null);
+                    setDateTo(null);
+                    setShowCustom(true);
+                  }
+                  setActiveFilter(label);
+                }}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                  activeFilter === label
+                    ? 'bg-white/10 text-white border border-white/20'
+                    : 'bg-transparent text-gray-400 border border-white/10 hover:border-white/20'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+            {(dateFrom || dateTo || activeFilter) && (
+              <button
+                onClick={() => { setDateFrom(null); setDateTo(null); setActiveFilter(''); setShowCustom(false); }}
+                className="px-4 py-2 rounded-full text-sm font-semibold text-red-400 border border-white/10 hover:border-red-400/30 transition-all"
+              >
+                ✕ Clear
+              </button>
+            )}
+          </div>
+          {showCustom && (
+            <div className="mt-3 flex flex-col gap-2">
               <DatePicker
                 selected={dateFrom}
                 onChange={(date: Date | null) => setDateFrom(date)}
                 selectsStart
                 startDate={dateFrom}
                 endDate={dateTo}
-                placeholderText="Select start date"
+                placeholderText="From date"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 wrapperClassName="w-full"
                 calendarClassName="bg-gray-900 border border-white/10 text-white"
               />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">To</label>
               <DatePicker
                 selected={dateTo}
                 onChange={(date: Date | null) => setDateTo(date)}
@@ -280,20 +329,12 @@ export default function HomePage() {
                 startDate={dateFrom}
                 endDate={dateTo}
                 minDate={dateFrom || undefined}
-                placeholderText="Select end date"
+                placeholderText="To date"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 wrapperClassName="w-full"
                 calendarClassName="bg-gray-900 border border-white/10 text-white"
               />
             </div>
-          </div>
-          {(dateFrom || dateTo) && (
-            <button
-              onClick={() => { setDateFrom(null); setDateTo(null); }}
-              className="mt-2 text-xs text-gray-400 hover:text-white px-3 py-2 border border-white/10 rounded-xl transition-colors w-full"
-            >
-              Clear dates
-            </button>
           )}
         </div>
 

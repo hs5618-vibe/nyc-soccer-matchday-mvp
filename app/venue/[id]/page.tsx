@@ -353,7 +353,8 @@ export default function VenuePage() {
             {/* FIFA Fan Zone Badge */}
             {venueId?.startsWith('wc-fan-zone') && (
               <div className="flex items-center gap-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 px-3 py-1 rounded-full text-xs font-bold flex-shrink-0">
-                🏆 Official FIFA Fan Zone
+                <img src="https://crests.football-data.org/wm26.png" className="w-5 h-5 object-contain" alt="World Cup 2026" />
+                Official Fan Zone
               </div>
             )}
             {/* Claim button - show if not owner and no pending claim */}

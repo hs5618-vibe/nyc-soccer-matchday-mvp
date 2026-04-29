@@ -569,8 +569,9 @@ function ResultsContent() {
                           </span>
                         )}
                         {(venue as any).is_featured && (
-                          <span className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                            🏆 FIFA Fan Zone
+                          <span className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                            <img src="https://crests.football-data.org/wm26.png" className="w-4 h-4 object-contain" alt="WC26" />
+                            Official Fan Zone
                           </span>
                         )}
                         {(venue as any).supported_teams?.slice(0, 2).map((team: string) => (

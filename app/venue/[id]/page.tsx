@@ -225,8 +225,13 @@ export default function VenuePage() {
           },
           { onConflict: "venue_id,match_id,user_id" }
         );
-
         if (error) throw error;
+
+        // Also mark as interested in the match
+        await supabase.from("interested").upsert(
+          { match_id: matchId, user_id: user.id },
+          { onConflict: "match_id,user_id" }
+        );
       } else {
         const { error } = await supabase
           .from("going")

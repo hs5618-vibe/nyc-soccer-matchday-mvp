@@ -602,7 +602,7 @@ function ResultsContent() {
                             Official Fan Zone
                           </span>
                         )}
-                        {(venue as any).supported_teams?.slice(0, 2).map((team: string) => (
+                        {(venue as any).supported_teams?.slice(0, 3).map((team: string) => (
                           TEAM_CRESTS[team] ? (
                             <img
                               key={team}

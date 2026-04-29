@@ -350,6 +350,12 @@ export default function VenuePage() {
               </svg>
             </button>
             
+            {/* FIFA Fan Zone Badge */}
+            {venueId?.startsWith('wc-fan-zone') && (
+              <div className="flex items-center gap-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 px-3 py-1 rounded-full text-xs font-bold flex-shrink-0">
+                🏆 Official FIFA Fan Zone
+              </div>
+            )}
             {/* Claim button - show if not owner and no pending claim */}
             {user && !isOwner && !claimStatus && !isClaimed && (
               <button
@@ -423,6 +429,19 @@ export default function VenuePage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+          {/* Supported Teams */}
+          {(venue as any).supported_teams?.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(venue as any).supported_teams.map((team: string) => (
+                <span
+                  key={team}
+                  className="bg-white/10 border border-white/20 text-white text-xs font-bold px-3 py-1 rounded-full"
+                >
+                  {team}
+                </span>
+              ))}
             </div>
           )}
           <div className="flex flex-wrap gap-4 text-gray-300 mb-6">

@@ -479,7 +479,7 @@ export default function HomePage() {
                             : 'bg-white/10 text-gray-300 hover:bg-white/20'
                         }`}
                       >
-                        ⚡ Interested · {interestedCounts[match.id] || 0}
+                        ⚡ Interested{(interestedCounts[match.id] || 0) >= 5 ? ` · ${interestedCounts[match.id]}` : ''}
                       </button>
                       <div className="flex items-center gap-2 text-blue-400 font-semibold">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

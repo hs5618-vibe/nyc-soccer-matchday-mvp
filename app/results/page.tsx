@@ -483,7 +483,7 @@ function ResultsContent() {
                     : 'bg-white/10 text-gray-300 hover:bg-white/20'
                 }`}
               >
-                ⚡ Interested · {interestedCount}
+                ⚡ Interested{interestedCount >= 5 ? ` · ${interestedCount}` : ''}
               </button>
             </div>
           </div>

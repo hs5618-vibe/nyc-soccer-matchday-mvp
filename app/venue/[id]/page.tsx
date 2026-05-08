@@ -538,9 +538,11 @@ export default function VenuePage() {
                 {going ? "✓ I'm going" : "Mark as going"}
               </button>
 
-              <span className="text-gray-400 text-sm">
-                {goingCount} {goingCount === 1 ? "person" : "people"} going
-              </span>
+              {goingCount >= 5 && (
+                <span className="text-gray-400 text-sm">
+                  {goingCount} {goingCount === 1 ? "person" : "people"} going
+                </span>
+              )}
             </div>
           )}
         </div>

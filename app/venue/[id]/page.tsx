@@ -84,6 +84,7 @@ export default function VenuePage() {
   const [bioInput, setBioInput] = useState("");
   const [savingBio, setSavingBio] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
@@ -117,6 +118,25 @@ export default function VenuePage() {
         if (venueData && matchId) {
           await loadUpdates();
           await loadGoingStatus();
+        }
+
+        // Load upcoming fixtures for this venue
+        const { data: vmRows } = await supabase
+          .from('venue_matches')
+          .select('match_id')
+          .eq('venue_id', venueId);
+
+        if (vmRows && vmRows.length > 0) {
+          const matchIds = vmRows.map((r: any) => r.match_id);
+          const { data: upcomingData } = await supabase
+            .from('matches')
+            .select('*')
+            .in('id', matchIds)
+            .eq('status', 'upcoming')
+            .gte('kickoff_time', new Date().toISOString())
+            .order('kickoff_time', { ascending: true })
+            .limit(5);
+          setUpcomingMatches((upcomingData || []) as Match[]);
         }
       } finally {
         setLoading(false);
@@ -581,6 +601,30 @@ export default function VenuePage() {
           </div>
         )}
 
+        {/* Upcoming Fixtures */}
+        {upcomingMatches.length > 0 && (
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 mb-6">
+            <h2 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">Upcoming Fixtures</h2>
+            <div className="space-y-3">
+              {upcomingMatches.map((m) => (
+                <Link
+                  key={m.id}
+                  href={`/venue/${venueId}?match=${m.id}`}
+                  className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-2xl p-3 hover:bg-white/10 transition-all"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {m.home_team_crest && <img src={m.home_team_crest} className="w-6 h-6 object-contain flex-shrink-0" />}
+                    <span className="text-sm font-semibold text-white truncate">{m.home_team}</span>
+                    <span className="text-gray-500 text-xs flex-shrink-0">vs</span>
+                    <span className="text-sm font-semibold text-white truncate">{m.away_team}</span>
+                    {m.away_team_crest && <img src={m.away_team_crest} className="w-6 h-6 object-contain flex-shrink-0" />}
+                  </div>
+                  <span className="text-xs text-gray-400 flex-shrink-0">{formatMatchTime(m.kickoff_time)}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6">
           <h2 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">Live Updates</h2>
 

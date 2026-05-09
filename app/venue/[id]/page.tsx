@@ -435,7 +435,7 @@ export default function VenuePage() {
                 className="w-full h-48 sm:h-64 object-cover"
               />
               {(isOwner || isSystemAdmin) && (
-                <label className="absolute bottom-3 right-3
+                <label className="absolute bottom-3 right-3 bg-black/60 hover:bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-all">
                   {uploadingImage ? 'Uploading...' : '📷 Change photo'}
                   <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
                 </label>

@@ -37,6 +37,8 @@ export default function ManagePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [venueDefaults, setVenueDefaults] = useState<{venue_id: string, league: string | null, team: string | null}[]>([]);
+  const [venueImages, setVenueImages] = useState<Record<string, string>>({});
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,6 +76,15 @@ export default function ManagePage() {
         .select("venue_id, league, team")
         .in("venue_id", venueIds);
       setVenueDefaults(defaultsData || []);
+      const { data: imageData } = await supabase
+        .from('venues')
+        .select('id, image_url')
+        .in('id', venueIds);
+      const imageMap: Record<string, string> = {};
+      (imageData || []).forEach((v: any) => {
+        if (v.image_url) imageMap[v.id] = v.image_url;
+      });
+      setVenueImages(imageMap);
       setLoading(false);
     }
 
@@ -128,6 +139,33 @@ export default function ManagePage() {
     }
   }
 
+  async function handleImageUpload(venueId: string, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(venueId);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${venueId}/cover-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('venue-images')
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage
+        .from('venue-images')
+        .getPublicUrl(path);
+      await supabase.from('venues').update({ image_url: publicUrl }).eq('id', venueId);
+      setVenueImages(prev => ({ ...prev, [venueId]: publicUrl }));
+    } catch {
+      alert('Failed to upload image.');
+    } finally {
+      setUploadingImage(null);
+    }
+  }
+
+  async function handleRemoveImage(venueId: string) {
+    await supabase.from('venues').update({ image_url: null }).eq('id', venueId);
+    setVenueImages(prev => { const n = { ...prev }; delete n[venueId]; return n; });
+  }
   async function tickAll(venueId: string, venueMatchIds: string[]) {
     const toAdd = filteredMatches.filter(m => !venueMatchIds.includes(m.id));
     if (toAdd.length === 0) return;
@@ -270,7 +308,30 @@ export default function ManagePage() {
               <div key={venue.id} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6">
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold text-white mb-1">{venue.name}</h2>
-                  <p className="text-gray-400">{venue.neighborhood}</p>
+                  <p className="text-gray-400 mb-4">{venue.neighborhood}</p>
+                  {/* Cover Photo */}
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-2">Cover Photo</p>
+                    {venueImages[venue.id] ? (
+                      <div className="relative inline-block">
+                        <img src={venueImages[venue.id]} alt={venue.name} className="w-full h-40 object-cover rounded-xl" />
+                        <div className="absolute bottom-2 right-2 flex gap-2">
+                          <label className="bg-black/60 hover:bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-all">
+                            {uploadingImage === venue.id ? 'Uploading...' : '📷 Change'}
+                            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleImageUpload(venue.id, e)} className="hidden" disabled={uploadingImage === venue.id} />
+                          </label>
+                          <button onClick={() => handleRemoveImage(venue.id)} className="bg-red-600/70 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-all">✕ Remove</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center h-28 bg-white/5 border border-white/10 border-dashed rounded-xl cursor-pointer hover:bg-white/10 transition-all">
+                        <span className="text-2xl mb-1">📷</span>
+                        <span className="text-sm text-gray-400 font-semibold">{uploadingImage === venue.id ? 'Uploading...' : 'Add a cover photo'}</span>
+                        <span className="text-xs text-gray-600 mt-1">JPG or PNG recommended</span>
+                        <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleImageUpload(venue.id, e)} className="hidden" disabled={uploadingImage === venue.id} />
+                      </label>
+                    )}
+                  </div>
                 </div>
 
                 {filteredMatches.length === 0 ? (

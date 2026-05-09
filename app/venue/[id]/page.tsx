@@ -334,7 +334,7 @@ export default function VenuePage() {
     setUploadingImage(true);
     try {
       const ext = file.name.split('.').pop();
-      const path = `${venueId}/cover.${ext}`;
+      const path = `${venueId}/cover-${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('venue-images')
@@ -432,17 +432,29 @@ export default function VenuePage() {
                 className="w-full h-48 sm:h-64 object-cover"
               />
               {(isOwner || isSystemAdmin) && (
-                <label className="absolute bottom-3 right-3 bg-black/60 hover:bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-all">
-                  {uploadingImage ? 'Uploading...' : '📷 Change photo'}
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
-                </label>
+                <div className="absolute bottom-3 right-3 flex gap-2">
+                  <label className="bg-black/60 hover:bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-all">
+                    {uploadingImage ? 'Uploading...' : '📷 Change photo'}
+                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
+                  </label>
+                  <button
+                    onClick={async () => {
+                      await supabase.from('venues').update({ image_url: null }).eq('id', venueId);
+                      setImageUrl('');
+                    }}
+                    className="bg-red-600/70 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+                  >
+                    ✕ Remove
+                  </button>
+                </div>
               )}
             </div>
           ) : (isOwner || isSystemAdmin) ? (
             <label className="flex flex-col items-center justify-center h-32 bg-white/5 border-b border-white/10 cursor-pointer hover:bg-white/10 transition-all">
               <span className="text-2xl mb-1">📷</span>
               <span className="text-sm text-gray-400 font-semibold">{uploadingImage ? 'Uploading...' : 'Add a cover photo'}</span>
-              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
+              <span className="text-xs text-gray-600 mt-1">JPG or PNG recommended</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
             </label>
           ) : null}
           <div className="p-8">

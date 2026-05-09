@@ -624,7 +624,6 @@ function ResultsContent() {
                         <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate">
                           {venue.name}
                         </h3>
-                        {barTypeTag((venue as any).bar_type)}
                         {venue.is_showing && (
                           <span className="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
                             SHOWING

@@ -108,10 +108,10 @@ export default function RootLayout({
                 </Link>
                 <span className="text-gray-600">•</span>
                 <Link 
-                  href="/venues" 
+                  href="/list-your-bar" 
                   className="text-gray-400 hover:text-white transition-colors"
                 >
-                  Bar Owners: Claim Your Venue
+                  List your bar
                 </Link>
               </div>
             </div>
@@ -169,6 +169,11 @@ export default function RootLayout({
             <div className="text-center">
               <p className="text-xs text-gray-500">
                 Follow us on socials for updates
+              </p>
+              <p className="text-xs text-gray-600 mt-2">
+                <Link href="/list-your-bar" className="hover:text-gray-400 transition-colors">List your bar</Link>
+                {" · "}
+                <a href="mailto:awaydayz.app@gmail.com" className="hover:text-gray-400 transition-colors">awaydayz.app@gmail.com</a>
               </p>
             </div>
           </div>

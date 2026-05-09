@@ -84,6 +84,8 @@ export default function VenuePage() {
   const [bioInput, setBioInput] = useState("");
   const [savingBio, setSavingBio] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
 
   useEffect(() => {
@@ -114,6 +116,7 @@ export default function VenuePage() {
         setVenue(venueData);
         setMatch(matchData);
         if (venueData) setBio((venueData as any).bio || "");
+        if (venueData) setImageUrl((venueData as any).image_url || "");
 
         if (venueData && matchId) {
           await loadUpdates();
@@ -320,6 +323,39 @@ export default function VenuePage() {
     await loadUpdates();
   }
 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !venueId) return;
+
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${venueId}/cover.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('venue-images')
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('venue-images')
+        .getPublicUrl(path);
+
+      const { error: updateError } = await supabase
+        .from('venues')
+        .update({ image_url: publicUrl })
+        .eq('id', venueId);
+
+      if (updateError) throw updateError;
+
+      setImageUrl(publicUrl);
+    } catch (err) {
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
+  }
   async function handleSaveBio() {
     setSavingBio(true);
     const { error } = await supabase
@@ -382,7 +418,30 @@ export default function VenuePage() {
           Back
         </Link>
 
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 mb-6">
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl overflow-hidden mb-6">
+          {/* Cover Image */}
+          {imageUrl ? (
+            <div className="relative">
+              <img
+                src={imageUrl}
+                alt={venue.name}
+                className="w-full h-48 sm:h-64 object-cover"
+              />
+              {isOwner && (
+                <label className="absolute bottom-3 right-3 bg-black/60 hover:bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-all">
+                  {uploadingImage ? 'Uploading...' : '📷 Change photo'}
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
+                </label>
+              )}
+            </div>
+          ) : isOwner ? (
+            <label className="flex flex-col items-center justify-center h-32 bg-white/5 border-b border-white/10 cursor-pointer hover:bg-white/10 transition-all">
+              <span className="text-2xl mb-1">📷</span>
+              <span className="text-sm text-gray-400 font-semibold">{uploadingImage ? 'Uploading...' : 'Add a cover photo'}</span>
+              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
+            </label>
+          ) : null}
+          <div className="p-8">
           <div className="flex items-start justify-between mb-4">
             <h1 className="text-4xl font-black text-white">{venue.name}</h1>
             <button
@@ -565,6 +624,7 @@ export default function VenuePage() {
               )}
             </div>
           )}
+        </div>
         </div>
 
         {match && (

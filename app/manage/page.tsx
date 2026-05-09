@@ -98,6 +98,7 @@ export default function ManagePage() {
       });
       setVenueImages(imageMap);
       setVenueBios(bioMap);
+      setLoading(false);
     }
 
     loadData();

@@ -420,6 +420,16 @@ function ResultsContent() {
           </svg>
           Back to matches
         </Link>
+        {/* World Cup link if WC match */}
+        {match?.league === 'World Cup' && (
+          <Link
+            href="/worldcup-nyc"
+            className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2 mb-6 hover:bg-yellow-500/20 transition-all inline-flex"
+          >
+            <img src="https://crests.football-data.org/wm26.png" className="w-5 h-5 object-contain" alt="WC26" />
+            <span className="text-yellow-300 text-sm font-semibold">Full World Cup NYC guide →</span>
+          </Link>
+        )}
 
         {/* Match Card */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 sm:p-8 mb-8">

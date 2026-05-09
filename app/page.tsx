@@ -244,6 +244,17 @@ export default function HomePage() {
             </div>
           </div>
         )}
+        {/* World Cup Banner */}
+        <Link
+          href="/worldcup-nyc"
+          className="flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 mb-6 hover:bg-yellow-500/20 transition-all"
+        >
+          <img src="https://crests.football-data.org/wm26.png" className="w-10 h-10 object-contain flex-shrink-0" alt="WC26" />
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-yellow-300 text-sm">FIFA World Cup 2026 is coming to NYC</p>
+            <p className="text-gray-400 text-xs">Find bars & official fan zones showing every match →</p>
+          </div>
+        </Link>
         {/* Search Bar */}
         <div className="mb-6">
           <div className="relative">

@@ -39,6 +39,10 @@ export default function ManagePage() {
   const [venueDefaults, setVenueDefaults] = useState<{venue_id: string, league: string | null, team: string | null}[]>([]);
   const [venueImages, setVenueImages] = useState<Record<string, string>>({});
   const [uploadingImage, setUploadingImage] = useState<string | null>(null);
+  const [venueBios, setVenueBios] = useState<Record<string, string>>({});
+  const [editingBio, setEditingBio] = useState<string | null>(null);
+  const [bioInput, setBioInput] = useState("");
+  const [savingBio, setSavingBio] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,14 +82,16 @@ export default function ManagePage() {
       setVenueDefaults(defaultsData || []);
       const { data: imageData } = await supabase
         .from('venues')
-        .select('id, image_url')
+        .select('id, image_url, bio')
         .in('id', venueIds);
       const imageMap: Record<string, string> = {};
+      const bioMap: Record<string, string> = {};
       (imageData || []).forEach((v: any) => {
         if (v.image_url) imageMap[v.id] = v.image_url;
+        if (v.bio) bioMap[v.id] = v.bio;
       });
       setVenueImages(imageMap);
-      setLoading(false);
+      setVenueBios(bioMap);
     }
 
     loadData();
@@ -139,6 +145,16 @@ export default function ManagePage() {
     }
   }
 
+  async function handleSaveBio(venueId: string) {
+    setSavingBio(true);
+    const { error } = await supabase.from('venues').update({ bio: bioInput }).eq('id', venueId);
+    if (error) { alert('Failed to save bio.'); }
+    else {
+      setVenueBios(prev => ({ ...prev, [venueId]: bioInput }));
+      setEditingBio(null);
+    }
+    setSavingBio(false);
+  }
   async function handleImageUpload(venueId: string, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -309,6 +325,36 @@ export default function ManagePage() {
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold text-white mb-1">{venue.name}</h2>
                   <p className="text-gray-400 mb-4">{venue.neighborhood}</p>
+                  {/* Bio */}
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-2">Bar Description</p>
+                    {editingBio === venue.id ? (
+                      <div>
+                        <textarea
+                          value={bioInput}
+                          onChange={(e) => setBioInput(e.target.value.slice(0, 500))}
+                          placeholder="Tell fans about your bar..."
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                          rows={3}
+                          maxLength={500}
+                        />
+                        <p className="text-xs text-gray-500 text-right mb-2">{bioInput.length}/500</p>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleSaveBio(venue.id)} disabled={savingBio} className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all">
+                            {savingBio ? 'Saving...' : 'Save'}
+                          </button>
+                          <button onClick={() => setEditingBio(null)} className="bg-white/10 text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-white/20 transition-all">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <p className="text-sm text-gray-300 flex-1">{venueBios[venue.id] || <span className="text-gray-500 italic">No description yet</span>}</p>
+                        <button onClick={() => { setEditingBio(venue.id); setBioInput(venueBios[venue.id] || ''); }} className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0">
+                          {venueBios[venue.id] ? 'Edit' : 'Add description'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   {/* Cover Photo */}
                   <div className="mb-4">
                     <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-2">Cover Photo</p>

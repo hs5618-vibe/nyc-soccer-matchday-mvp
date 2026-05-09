@@ -38,6 +38,8 @@ function ManageVenueContent() {
   const [bioInput, setBioInput] = useState("");
   const [editingBio, setEditingBio] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -55,11 +57,12 @@ function ManageVenueContent() {
       // Load venue name
       const { data: venueData } = await supabase
         .from("venues")
-        .select("name, bio")
+        .select("name, bio, image_url")
         .eq("id", venueId)
         .single();
       setVenueName(venueData?.name || venueId);
       setBio(venueData?.bio || "");
+      setImageUrl((venueData as any)?.image_url || "");
 
       // Load matches
       const upcomingMatches = await fetchUpcomingMatches();
@@ -147,6 +150,34 @@ function ManageVenueContent() {
       if (data) setVenueDefaults(prev => [...prev, data]);
     }
   }
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !venueId) return;
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${venueId}/cover-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('venue-images')
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage
+        .from('venue-images')
+        .getPublicUrl(path);
+      await supabase.from('venues').update({ image_url: publicUrl }).eq('id', venueId);
+      setImageUrl(publicUrl);
+    } catch {
+      alert('Failed to upload image.');
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function handleRemoveImage() {
+    if (!venueId) return;
+    await supabase.from('venues').update({ image_url: null }).eq('id', venueId);
+    setImageUrl('');
+  }
   async function handleSaveBio() {
     if (!venueId) return;
     setSavingBio(true);
@@ -213,6 +244,29 @@ function ManageVenueContent() {
           <p className="text-gray-400">Managing matches on behalf of this bar</p>
         </div>
 
+        {/* Cover Photo */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Cover Photo</h3>
+          {imageUrl ? (
+            <div className="relative">
+              <img src={imageUrl} alt={venueName} className="w-full h-40 object-cover rounded-xl" />
+              <div className="absolute bottom-2 right-2 flex gap-2">
+                <label className="bg-black/60 hover:bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-all">
+                  {uploadingImage ? 'Uploading...' : '📷 Change'}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
+                </label>
+                <button onClick={handleRemoveImage} className="bg-red-600/70 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-all">✕ Remove</button>
+              </div>
+            </div>
+          ) : (
+            <label className="flex flex-col items-center justify-center h-28 bg-white/5 border border-white/10 border-dashed rounded-xl cursor-pointer hover:bg-white/10 transition-all">
+              <span className="text-2xl mb-1">📷</span>
+              <span className="text-sm text-gray-400 font-semibold">{uploadingImage ? 'Uploading...' : 'Add a cover photo'}</span>
+              <span className="text-xs text-gray-600 mt-1">JPG or PNG recommended</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
+            </label>
+          )}
+        </div>
         {/* Bio */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
           <div className="flex items-center justify-between mb-2">

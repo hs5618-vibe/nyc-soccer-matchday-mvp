@@ -68,7 +68,13 @@ export default function ManagePage() {
       const upcomingMatches = await fetchUpcomingMatches();
       setMatches(upcomingMatches as Match[]);
 
-      const venueIds = venues.map(v => v.venues.id);
+      const venueIds = venues.map(v => v.venues.id).filter(Boolean);
+      
+      if (venueIds.length === 0) {
+        setLoading(false);
+        return;
+      }
+
       const { data: vmData } = await supabase
         .from("venue_matches")
         .select("venue_id, match_id")

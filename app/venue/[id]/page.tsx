@@ -68,6 +68,7 @@ export default function VenuePage() {
   const [newUpdate, setNewUpdate] = useState("");
   const [user, setUser] = useState<any>(null);
   const [isOwner, setIsOwner] = useState(false);
+  const [isSystemAdmin, setIsSystemAdmin] = useState(false);
 
   const [going, setGoing] = useState(false);
   const [goingCount, setGoingCount] = useState(0);
@@ -161,6 +162,12 @@ export default function VenuePage() {
       if (user && venueId) {
         const ownerStatus = await isVenueAdmin(user.id, venueId);
         setIsOwner(ownerStatus);
+        const { data: adminData } = await supabase
+          .from('admins')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        setIsSystemAdmin(!!adminData);
 
         // Check claim status
         const status = await getVenueClaimStatus(user.id, venueId);
@@ -427,14 +434,14 @@ export default function VenuePage() {
                 alt={venue.name}
                 className="w-full h-48 sm:h-64 object-cover"
               />
-              {isOwner && (
-                <label className="absolute bottom-3 right-3 bg-black/60 hover:bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-all">
+              {(isOwner || isSystemAdmin) && (
+                <label className="absolute bottom-3 right-3
                   {uploadingImage ? 'Uploading...' : '📷 Change photo'}
                   <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
                 </label>
               )}
             </div>
-          ) : isOwner ? (
+          ) : (isOwner || isSystemAdmin) ? (
             <label className="flex flex-col items-center justify-center h-32 bg-white/5 border-b border-white/10 cursor-pointer hover:bg-white/10 transition-all">
               <span className="text-2xl mb-1">📷</span>
               <span className="text-sm text-gray-400 font-semibold">{uploadingImage ? 'Uploading...' : 'Add a cover photo'}</span>

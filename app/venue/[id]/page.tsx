@@ -724,14 +724,29 @@ export default function VenuePage() {
             </div>
           )}
 
-          {!user && match && <p className="text-gray-400 text-sm mb-4">Sign in to see live updates from this bar</p>}
+          {!match && (
+  <div className="text-center py-8">
+    <p className="text-gray-300 font-semibold mb-1">Matchday Updates</p>
+    <p className="text-gray-500 text-sm">Select an upcoming fixture above to see live updates for that match.</p>
+  </div>
+)}
 
-          {user && updates.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-gray-300 font-semibold mb-1">Matchday Updates</p>
-              <p className="text-gray-500 text-sm">This bar posts live updates on game days — check back closer to kick-off.</p>
-            </div>
-          )}
+{!user && match && (
+  <div className="text-center py-8">
+    <p className="text-gray-300 font-semibold mb-1">Matchday Updates</p>
+    <p className="text-gray-500 text-sm">Check back on matchday — this bar posts live updates closer to kick-off.</p>
+    <Link href="/login" className="inline-block mt-3 text-sm text-blue-400 hover:text-blue-300">
+      Sign in to follow along →
+    </Link>
+  </div>
+)}
+
+{user && match && updates.length === 0 && (
+  <div className="text-center py-8">
+    <p className="text-gray-300 font-semibold mb-1">Matchday Updates</p>
+    <p className="text-gray-500 text-sm">This bar posts live updates on game days — check back closer to kick-off.</p>
+  </div>
+)}
 
           {user && (
             <div className="space-y-3">

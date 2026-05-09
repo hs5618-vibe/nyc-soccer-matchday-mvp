@@ -42,8 +42,10 @@ export default function LoginPage() {
 
           <div className="bg-white border border-gray-200 rounded-xl p-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
-              <p className="text-gray-600">Sign in to mark yourself as going and post updates</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign in or sign up</h1>
+              <p className="text-gray-600">
+                New or returning — just enter your email. We'll send you a magic link and create your account automatically if you don't have one yet.
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -83,7 +85,7 @@ export default function LoginPage() {
 
             <div className="mt-6 pt-6 border-t border-gray-200 text-center">
               <p className="text-sm text-gray-500">
-                We'll email you a magic link for a password-free sign in
+                No password needed — works for both new and existing accounts
               </p>
             </div>
           </div>

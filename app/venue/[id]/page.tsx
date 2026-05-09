@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { fetchVenueById, type Venue } from "@/lib/venues";
 import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
 import { isVenueAdmin, getVenueClaimStatus } from "@/lib/venueAdmin";
+import { isAdmin } from "@/lib/admin";
 import ClaimVenueModal from "@/components/ClaimVenueModal";
 
 const TEAM_CRESTS: Record<string, string> = {
@@ -162,12 +163,8 @@ export default function VenuePage() {
       if (user && venueId) {
         const ownerStatus = await isVenueAdmin(user.id, venueId);
         setIsOwner(ownerStatus);
-        const { data: adminData } = await supabase
-          .from('admins')
-          .select('user_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        setIsSystemAdmin(!!adminData);
+        const adminCheck = await isAdmin(user.id);
+        setIsSystemAdmin(adminCheck);
 
         // Check claim status
         const status = await getVenueClaimStatus(user.id, venueId);

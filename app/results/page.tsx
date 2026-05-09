@@ -74,6 +74,25 @@ function formatMiles(m: number) {
   return `${Math.round(m)} mi`;
 }
 
+function barTypeTag(barType: string | null | undefined) {
+  if (!barType) return null;
+  const styles: Record<string, string> = {
+    'Irish Pub':  'bg-emerald-700/30 border border-emerald-500/30 text-emerald-300',
+    'Soccer Bar': 'bg-blue-700/30 border border-blue-500/30 text-blue-300',
+    'Sports Bar': 'bg-orange-700/30 border border-orange-500/30 text-orange-300',
+    'Rooftop':    'bg-purple-700/30 border border-purple-500/30 text-purple-300',
+    'Brewery':    'bg-amber-700/30 border border-amber-500/30 text-amber-300',
+    'Restaurant': 'bg-rose-700/30 border border-rose-500/30 text-rose-300',
+    'Bar':        'bg-slate-700/30 border border-slate-500/30 text-slate-300',
+    'Fan Zone':   'bg-yellow-700/30 border border-yellow-500/30 text-yellow-300',
+  };
+  const cls = styles[barType] ?? 'bg-white/10 border border-white/20 text-gray-300';
+  return (
+    <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${cls}`}>
+      {barType}
+    </span>
+  );
+}
 async function geocodeAddress(address: string): Promise<LatLng | null> {
   // Uses OpenStreetMap Nominatim (no key) — good for MVP.
   // IMPORTANT: add a simple user-agent header via fetch init (browser sets some headers).
@@ -605,6 +624,7 @@ function ResultsContent() {
                         <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate">
                           {venue.name}
                         </h3>
+                        {barTypeTag((venue as any).bar_type)}
                         {venue.is_showing && (
                           <span className="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
                             SHOWING

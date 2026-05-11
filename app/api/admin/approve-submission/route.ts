@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
   if (leagues.length > 0) {
     const defaults = leagues.map((league: string) => ({
       venue_id: venueId,
-      competition_name: league,
+      league: league,
     }));
     await supabaseAdmin.from("venue_defaults").insert(defaults);
   }

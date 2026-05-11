@@ -40,12 +40,11 @@ export async function POST(req: NextRequest) {
     .replace(/\s+/g, "-")
     .slice(0, 50) + "-" + Date.now().toString(36);
 
-  const { error: venueError } = await supabaseAdmin.from("venues").insert({
+    const { error: venueError } = await supabaseAdmin.from("venues").insert({
     id: venueId,
     name: sub.bar_name,
     address: sub.address,
     neighborhood: sub.neighborhood || "Other",
-    borough: sub.borough || null,
     bio: sub.bio || null,
     instagram: sub.instagram || null,
     bar_type: "bar",

@@ -16,11 +16,6 @@ const LEAGUES = [
   "Primeira Liga",
   "Brasileirao",
   "Championship",
-  "MLS",
-  "NFL",
-  "NBA",
-  "MLB",
-  "NHL",
   "Other",
 ];
 
@@ -61,12 +56,18 @@ export default function ListYourBarPage() {
   }
 
   function toggleLeague(league: string) {
-    setForm((prev) => ({
-      ...prev,
-      leagues: prev.leagues.includes(league)
+    setForm((prev) => {
+      const newLeagues = prev.leagues.includes(league)
         ? prev.leagues.filter((l) => l !== league)
-        : [...prev.leagues, league],
-    }));
+        : [...prev.leagues, league];
+      return {
+        ...prev,
+        leagues: newLeagues,
+        show_world_cup: league === "World Cup"
+          ? !prev.leagues.includes("World Cup")
+          : prev.show_world_cup,
+      };
+    });
   }
 
   async function handleSubmit() {
@@ -237,8 +238,17 @@ export default function ListYourBarPage() {
               <label className="flex items-center gap-3 cursor-pointer mb-3">
                 <input
                   type="checkbox"
-                  checked={form.show_world_cup}
-                  onChange={(e) => update("show_world_cup", e.target.checked)}
+                  checked={form.show_world_cup || form.leagues.includes("World Cup")}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setForm((prev) => ({
+                      ...prev,
+                      show_world_cup: checked,
+                      leagues: checked
+                        ? prev.leagues.includes("World Cup") ? prev.leagues : ["World Cup", ...prev.leagues]
+                        : prev.leagues.filter((l) => l !== "World Cup"),
+                    }));
+                  }}
                   className="h-4 w-4"
                 />
                 <span className="text-sm text-yellow-300 font-semibold">⚽ We'll be showing FIFA World Cup 2026</span>
@@ -382,8 +392,8 @@ export default function ListYourBarPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-12">
           {[
-            { value: "60+", label: "bars listed" },
-            { value: "72", label: "WC matches live" },
+            { value: "50+", label: "bars listed" },
+            { value: "ALL", label: "WC matches listed" },
             { value: "Free", label: "always" },
           ].map(({ value, label }) => (
             <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">

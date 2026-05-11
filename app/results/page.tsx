@@ -407,7 +407,7 @@ function ResultsContent() {
     );
   }
 
-  if (!match) {
+  if (!match && matchId) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
         <div className="text-center">
@@ -433,6 +433,14 @@ function ResultsContent() {
           </svg>
           Back to matches
         </Link>
+
+        {!matchId && (
+          <div className="mb-6">
+            <h1 className="text-3xl font-black text-white mb-1">All Venues</h1>
+            <p className="text-gray-400 text-sm">Every bar on awaydayz — click a match on the homepage to filter by game.</p>
+          </div>
+        )}
+
         {/* World Cup link if WC match */}
         {match?.league === 'World Cup' && (
           <Link
@@ -445,7 +453,7 @@ function ResultsContent() {
         )}
 
         {/* Match Card */}
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 sm:p-8 mb-8">
+        {match && <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 sm:p-8 mb-8">
           <div className="flex items-center gap-3 mb-6">
             {match.league_emblem && (
               <img
@@ -510,7 +518,7 @@ function ResultsContent() {
               </button>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Bars Section */}
         <div className="mb-6">

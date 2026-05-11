@@ -207,15 +207,31 @@ export default function AdminPage() {
   }
 
   async function handleSubmissionStatus(id: string, status: "approved" | "rejected") {
-    await supabase.from("bar_submissions").update({ status }).eq("id", id);
-    setSubmissions(prev => prev.filter(s => s.id !== id));
-    if (status === "approved") {
-      const sub = submissions.find(s => s.id === id);
-      if (sub) {
-        setActiveTab("onboard");
-        setOnboardEmail(sub.contact_email);
-        setOnboardMessage(`✅ Submission approved! ${sub.bar_name} is ready to onboard — select their venue below and hit Add as bar owner.`);
-      }
+    if (status === "rejected") {
+      await supabase.from("bar_submissions").update({ status: "rejected" }).eq("id", id);
+      setSubmissions(prev => prev.filter(s => s.id !== id));
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    const res = await fetch("/api/admin/approve-submission", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ submissionId: id }),
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      setSubmissions(prev => prev.filter(s => s.id !== id));
+      alert(`✅ ${result.message}`);
+    } else {
+      alert(`❌ Error: ${result.error}`);
     }
   }
 

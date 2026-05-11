@@ -349,10 +349,25 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Browse Venues Link */}
-        <div className="flex justify-end mb-4">
-          <Link href="/venues" className="text-sm text-blue-400 hover:text-blue-300 font-semibold transition-colors">
-            Browse all venues →
+        {/* Browse Venues + List Your Bar */}
+        <div className="flex gap-3 mb-4">
+          <Link
+            href="/results"
+            className="flex-1 flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-all"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+            </svg>
+            Browse all venues
+          </Link>
+          <Link
+            href="/list-your-bar"
+            className="flex-1 flex items-center justify-center gap-2 bg-blue-600/20 border border-blue-500/30 rounded-xl px-4 py-3 text-sm font-semibold text-blue-300 hover:bg-blue-600/30 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            List your bar
           </Link>
         </div>
         {/* League Filter Pills */}

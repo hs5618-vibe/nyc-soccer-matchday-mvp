@@ -33,6 +33,26 @@ type VenueAdmin = {
   } | null;
 };
 
+type Submission = {
+  id: string;
+  created_at: string;
+  bar_name: string;
+  address: string;
+  neighborhood: string;
+  borough: string;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
+  instagram: string;
+  website: string;
+  bio: string;
+  leagues: string[];
+  other_leagues: string;
+  show_world_cup: boolean;
+  notes: string;
+  status: string;
+};
+
 type Report = {
   id: string;
   update_id: string;
@@ -53,8 +73,9 @@ export default function AdminPage() {
   const [pendingClaims, setPendingClaims] = useState<Claim[]>([]);
   const [venueAdmins, setVenueAdmins] = useState<VenueAdmin[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"claims" | "admins" | "reports" | "onboard">("claims");
+  const [activeTab, setActiveTab] = useState<"claims" | "admins" | "reports" | "onboard" | "submissions">("claims");
   const [allVenues, setAllVenues] = useState<{id: string, name: string, neighborhood: string}[]>([]);
   const [onboardEmail, setOnboardEmail] = useState("");
   const [onboardVenueId, setOnboardVenueId] = useState("");
@@ -88,6 +109,7 @@ export default function AdminPage() {
         loadReports(),
         loadStats(),
         loadAllVenues(),
+        loadSubmissions(),
       ]);
 
       setLoading(false);
@@ -174,6 +196,19 @@ export default function AdminPage() {
     await loadClaims();
     await loadStats();
     await loadVenueAdmins();
+  }
+
+  async function loadSubmissions() {
+    const { data } = await supabase
+      .from("bar_submissions")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setSubmissions(data || []);
+  }
+
+  async function handleSubmissionStatus(id: string, status: "approved" | "rejected") {
+    await supabase.from("bar_submissions").update({ status }).eq("id", id);
+    await loadSubmissions();
   }
 
   async function loadAllVenues() {
@@ -330,6 +365,16 @@ export default function AdminPage() {
           >
             ⚡ Onboard Bar
           </button>
+          <button
+            onClick={() => setActiveTab("submissions")}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+              activeTab === "submissions"
+                ? "bg-yellow-600 text-white"
+                : "bg-white/5 text-gray-400 border border-white/10 hover:border-white/20"
+            }`}
+          >
+            📋 Submissions ({submissions.filter(s => s.status === "pending").length})
+          </button>
         </div>
 
         {/* Pending Claims */}
@@ -473,6 +518,59 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+        {/* Submissions */}
+        {activeTab === "submissions" && (
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6">
+            <h2 className="text-xl font-bold text-white mb-6">Bar Submissions</h2>
+            {submissions.length === 0 ? (
+              <p className="text-gray-400 text-center py-12">No submissions yet</p>
+            ) : (
+              <div className="space-y-4">
+                {submissions.map((sub) => (
+                  <div key={sub.id} className={`bg-white/5 border rounded-2xl p-5 ${sub.status === "pending" ? "border-yellow-500/30" : sub.status === "approved" ? "border-green-500/30" : "border-white/10"}`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="font-bold text-lg text-white">{sub.bar_name}</h3>
+                        <p className="text-sm text-gray-400">{sub.address} · {sub.neighborhood}, {sub.borough}</p>
+                      </div>
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${sub.status === "pending" ? "bg-yellow-500/20 text-yellow-300" : sub.status === "approved" ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}`}>
+                        {sub.status}
+                      </span>
+                    </div>
+                    <div className="space-y-1 text-sm mb-3">
+                      <p className="text-gray-300"><span className="text-gray-500">Contact:</span> {sub.contact_name} · {sub.contact_email} {sub.contact_phone && `· ${sub.contact_phone}`}</p>
+                      {sub.instagram && <p className="text-gray-300"><span className="text-gray-500">Instagram:</span> @{sub.instagram}</p>}
+                      {sub.website && <p className="text-gray-300"><span className="text-gray-500">Website:</span> {sub.website}</p>}
+                      {sub.bio && <p className="text-gray-300"><span className="text-gray-500">Bio:</span> {sub.bio}</p>}
+                      {sub.leagues?.length > 0 && <p className="text-gray-300"><span className="text-gray-500">Leagues:</span> {sub.leagues.join(", ")}</p>}
+                      {sub.other_leagues && <p className="text-gray-300"><span className="text-gray-500">Other:</span> {sub.other_leagues}</p>}
+                      {sub.show_world_cup && <p className="text-yellow-300 text-xs font-semibold">⚽ Showing FIFA World Cup 2026</p>}
+                      {sub.notes && <p className="text-gray-300"><span className="text-gray-500">Notes:</span> {sub.notes}</p>}
+                      <p className="text-gray-600 text-xs">{new Date(sub.created_at).toLocaleString()}</p>
+                    </div>
+                    {sub.status === "pending" && (
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleSubmissionStatus(sub.id, "approved")}
+                          className="flex-1 bg-green-600 text-white px-4 py-2.5 rounded-full text-sm font-bold hover:bg-green-700 transition-all"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleSubmissionStatus(sub.id, "rejected")}
+                          className="flex-1 bg-red-600 text-white px-4 py-2.5 rounded-full text-sm font-bold hover:bg-red-700 transition-all"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Reports */}
         {activeTab === "reports" && (
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6">

@@ -98,7 +98,7 @@ export default function ListYourBarPage() {
     setSubmitting(false);
 
     if (dbError) {
-      setError("Something went wrong. Please try again or email us at awaydayz.app@gmail.com");
+      setError(`Error: ${dbError.message} | Code: ${dbError.code} | Details: ${dbError.details}`);
       return;
     }
 

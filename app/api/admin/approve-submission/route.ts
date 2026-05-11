@@ -33,12 +33,21 @@ export async function POST(req: NextRequest) {
 
   if (subError || !sub) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
 
-  const venueId = sub.bar_name
+  const baseId = sub.bar_name
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-")
-    .slice(0, 50) + "-" + Date.now().toString(36);
+    .slice(0, 50);
+
+  // Check if ID already exists, append suffix only if needed
+  const { data: existing } = await supabaseAdmin
+    .from("venues")
+    .select("id")
+    .eq("id", baseId)
+    .maybeSingle();
+
+  const venueId = existing ? `${baseId}-${Date.now().toString(36)}` : baseId;
 
     const { error: venueError } = await supabaseAdmin.from("venues").insert({
     id: venueId,

@@ -151,7 +151,14 @@ function ResultsContent() {
     async function load() {
       if (!matchId) {
         setMatch(null);
-        setVenues([]);
+        const allVenues = await fetchAllVenues();
+        const merged: VenueWithMeta[] = (allVenues || []).map((v) => ({
+          ...v,
+          is_showing: true,
+          going_count: 0,
+          verified_by_owner: false,
+        }));
+        setVenues(merged);
         setLoading(false);
         return;
       }
@@ -395,19 +402,6 @@ function ResultsContent() {
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
           <p className="text-gray-400">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!matchId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-400 mb-4">No match selected</p>
-          <Link href="/" className="text-blue-400 hover:text-blue-300">
-            ← Back to matches
-          </Link>
         </div>
       </div>
     );

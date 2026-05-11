@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   const { data: adminRow } = await supabaseAdmin
     .from("admins")
-    .select("id")
+    .select("user_id")
     .eq("user_id", user.id)
     .maybeSingle();
   if (!adminRow) return NextResponse.json({ error: "Not an admin" }, { status: 403 });

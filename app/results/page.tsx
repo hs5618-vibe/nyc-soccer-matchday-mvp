@@ -137,6 +137,8 @@ function ResultsContent() {
   const [user, setUser] = useState<any>(null);
   const [verifiedDates, setVerifiedDates] = useState<Record<string, string>>({});
   const [engagementScores, setEngagementScores] = useState<Record<string, number>>({});
+  const [goingMap, setGoingMap] = useState<Record<string, number>>({});
+  const [userGoingSet, setUserGoingSet] = useState<Set<string>>(new Set());
 
   // Near-me controls
   const [nearMe, setNearMe] = useState(false);
@@ -193,6 +195,7 @@ function ResultsContent() {
         const vid = String(r.venue_id);
         counts[vid] = (counts[vid] || 0) + 1;
       });
+      setGoingMap(counts);
 
       const merged: VenueWithMeta[] = (allVenues || []).map((v) => ({
         ...v,
@@ -214,6 +217,16 @@ function ResultsContent() {
 
       if (user) {
         setIsInterested((interestedRows || []).some((r: any) => r.user_id === user.id));
+        const { data: userGoingRows } = await supabase
+          .from('going')
+          .select('venue_id')
+          .eq('match_id', matchId);
+        const myGoing = new Set(
+          (userGoingRows || [])
+            .filter((r: any) => r.user_id === user.id)
+            .map((r: any) => String(r.venue_id))
+        );
+        setUserGoingSet(myGoing);
       }
       setVenues(merged);
       const { data: engagementData } = await supabase.rpc('get_venue_engagement');
@@ -354,6 +367,39 @@ function ResultsContent() {
     return arr;
   }, [venuesWithDistance, nearMe, origin, verifiedDates, engagementScores, match]);
 
+  async function toggleGoing(venueId: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      alert("Please sign in to mark yourself as going");
+      return;
+    }
+    if (!matchId) return;
+    const isGoing = userGoingSet.has(venueId);
+    const next = !isGoing;
+
+    setUserGoingSet(prev => {
+      const s = new Set(prev);
+      next ? s.add(venueId) : s.delete(venueId);
+      return s;
+    });
+    setGoingMap(prev => ({
+      ...prev,
+      [venueId]: Math.max(0, (prev[venueId] || 0) + (next ? 1 : -1)),
+    }));
+
+    if (next) {
+      await supabase.from('going').upsert(
+        { match_id: matchId, venue_id: venueId, user_id: user.id },
+        { onConflict: 'match_id,venue_id,user_id' }
+      );
+    } else {
+      await supabase.from('going').delete()
+        .eq('match_id', matchId)
+        .eq('venue_id', venueId)
+        .eq('user_id', user.id);
+    }
+  }
   async function toggleInterested() {
     if (!user) {
       alert("Please sign in to mark yourself as interested");
@@ -682,19 +728,29 @@ function ResultsContent() {
 
                     {/* Right-side meta */}
                     <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="text-right">
-                        {/* Distance (only if nearMe is on) */}
-                        {nearMe && origin && (
-                          <div className="text-xs text-gray-300">
-                            {venue.distance_miles != null
-                              ? formatMiles(venue.distance_miles)
-                              : "—"}
-                          </div>
-                        )}
+                      {nearMe && origin && (
+                        <div className="text-xs text-gray-300 text-right">
+                          {venue.distance_miles != null
+                            ? formatMiles(venue.distance_miles)
+                            : "—"}
+                        </div>
+                      )}
 
-                        <div className="text-sm font-bold text-white">{venue.going_count}</div>
-                        <div className="text-xs text-gray-400">going</div>
-                      </div>
+                      {matchId && (
+                        <button
+                          onClick={(e) => toggleGoing(venue.id, e)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                            userGoingSet.has(venue.id)
+                              ? 'bg-green-600 text-white'
+                              : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                          }`}
+                        >
+                          🎟️ {userGoingSet.has(venue.id) ? 'Going' : 'Going?'}
+                          {(goingMap[venue.id] || 0) >= 5 && (
+                            <span className="opacity-80">· {goingMap[venue.id]}</span>
+                          )}
+                        </button>
+                      )}
 
                       <svg
                         className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors"

@@ -220,11 +220,10 @@ function ResultsContent() {
         const { data: userGoingRows } = await supabase
           .from('going')
           .select('venue_id')
-          .eq('match_id', matchId);
+          .eq('match_id', matchId)
+          .eq('user_id', user.id);
         const myGoing = new Set(
-          (userGoingRows || [])
-            .filter((r: any) => r.user_id === user.id)
-            .map((r: any) => String(r.venue_id))
+          (userGoingRows || []).map((r: any) => String(r.venue_id))
         );
         setUserGoingSet(myGoing);
       }
@@ -392,6 +391,10 @@ function ResultsContent() {
       await supabase.from('going').upsert(
         { match_id: matchId, venue_id: venueId, user_id: user.id },
         { onConflict: 'match_id,venue_id,user_id' }
+      );
+      await supabase.from('interested').upsert(
+        { match_id: matchId, user_id: user.id },
+        { onConflict: 'match_id,user_id' }
       );
     } else {
       await supabase.from('going').delete()

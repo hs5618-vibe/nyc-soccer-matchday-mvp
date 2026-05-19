@@ -126,7 +126,7 @@ export default async function WorldCupNYCPage() {
         {/* Sports Bars */}
         <div className="mb-12">
           <h2 className="text-2xl font-black text-white mb-2">⚽ NYC Sports Bars Showing the World Cup</h2>
-          <p className="text-gray-400 mb-6">{venues.length} verified bars across NYC showing World Cup 2026 matches.</p>
+          <p className="text-gray-400 mb-6">{venues.length} bars across NYC showing World Cup 2026 matches — updated daily.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {venues.map((venue: any) => (
               <Link

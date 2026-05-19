@@ -38,12 +38,14 @@ async function getWCData() {
     .gte('kickoff_time', new Date().toISOString())
     .order('kickoff_time', { ascending: true });
 
-  const { data: venueMatchRows } = await supabaseAdmin
-    .from('venue_matches')
+    const { data: venueDefaultRows } = await supabaseAdmin
+    .from('venue_defaults')
     .select('venue_id')
-    .not('venue_id', 'like', 'wc-fan-zone-%');
+    .eq('league', 'World Cup');
 
-  const venueIds = [...new Set((venueMatchRows || []).map((r: any) => r.venue_id))];
+  const venueIds = [...new Set((venueDefaultRows || []).map((r: any) => r.venue_id))].filter(
+    (id) => !id.startsWith('wc-fan-zone-')
+  );
 
   const { data: venues } = await supabaseAdmin
     .from('venues')
@@ -126,19 +128,19 @@ export default async function WorldCupNYCPage() {
         {/* Sports Bars */}
         <div className="mb-12">
           <h2 className="text-2xl font-black text-white mb-2">⚽ NYC Sports Bars Showing the World Cup</h2>
-          <p className="text-gray-400 mb-6">{venues.length} bars across NYC showing World Cup 2026 matches — updated daily.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {venues.map((venue: any) => (
-              <Link
-                key={venue.id}
-                href={`/venue/${venue.id}`}
-                className="block bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all"
-              >
-                <h3 className="font-bold text-white mb-1">{venue.name}</h3>
-                <p className="text-gray-400 text-sm">{venue.neighborhood}{venue.address ? ` • ${venue.address}` : ''}</p>
-              </Link>
-            ))}
-          </div>
+          <p className="text-gray-400 mb-4">{venues.length} bars across NYC confirmed to show World Cup 2026 matches — updated daily.</p>
+          <Link
+            href="/results"
+            className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all"
+          >
+            <div>
+              <p className="font-bold text-white text-lg">{venues.length} verified bars</p>
+              <p className="text-gray-400 text-sm">Browse the full list, filter by neighborhood, and find your match →</p>
+            </div>
+            <svg className="w-6 h-6 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
 
         {/* Group Stage Matches */}

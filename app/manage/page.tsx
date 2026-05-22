@@ -43,6 +43,8 @@ export default function ManagePage() {
   const [editingBio, setEditingBio] = useState<string | null>(null);
   const [bioInput, setBioInput] = useState("");
   const [savingBio, setSavingBio] = useState(false);
+  const [soundOnMap, setSoundOnMap] = useState<Record<string, boolean>>({});
+  const [supportedTeamsMap, setSupportedTeamsMap] = useState<Record<string, string[]>>({});
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,16 +90,22 @@ export default function ManagePage() {
       setVenueDefaults(defaultsData || []);
       const { data: imageData } = await supabase
         .from('venues')
-        .select('id, image_url, bio')
+        .select('id, image_url, bio, sound_on, supported_teams')
         .in('id', venueIds);
       const imageMap: Record<string, string> = {};
       const bioMap: Record<string, string> = {};
+      const soundMap: Record<string, boolean> = {};
+      const teamsMap: Record<string, string[]> = {};
       (imageData || []).forEach((v: any) => {
         if (v.image_url) imageMap[v.id] = v.image_url;
         if (v.bio) bioMap[v.id] = v.bio;
+        soundMap[v.id] = v.sound_on || false;
+        teamsMap[v.id] = v.supported_teams || [];
       });
       setVenueImages(imageMap);
       setVenueBios(bioMap);
+      setSoundOnMap(soundMap);
+      setSupportedTeamsMap(teamsMap);
       setLoading(false);
     }
 
@@ -152,6 +160,15 @@ export default function ManagePage() {
     }
   }
 
+  async function saveTeams(venueId: string, teams: string[]) {
+    setSupportedTeamsMap(prev => ({ ...prev, [venueId]: teams }));
+    await supabase.from('venues').update({ supported_teams: teams }).eq('id', venueId);
+  }
+  async function toggleSoundOn(venueId: string) {
+    const next = !soundOnMap[venueId];
+    setSoundOnMap(prev => ({ ...prev, [venueId]: next }));
+    await supabase.from('venues').update({ sound_on: next }).eq('id', venueId);
+  }
   async function handleSaveBio(venueId: string) {
     setSavingBio(true);
     const { error } = await supabase.from('venues').update({ bio: bioInput }).eq('id', venueId);
@@ -361,6 +378,53 @@ export default function ManagePage() {
                         </button>
                       </div>
                     )}
+                  </div>
+                  {/* Supported Teams */}
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-2">Club & Country Rep</p>
+                    <p className="text-xs text-gray-500 mb-3">Select any club or national team your bar is a home for. Fans searching for these teams will find you first.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        'Arsenal FC','Chelsea FC','Liverpool FC','Manchester City FC','Manchester United FC',
+                        'Tottenham Hotspur FC','Newcastle United FC','FC Barcelona','FC Bayern München',
+                        'Paris Saint-Germain FC','AS Roma','SS Lazio','SSC Napoli','Club Atlético de Madrid',
+                        'Argentina','Brazil','Colombia','England','France','Germany','Italy','Mexico',
+                        'Morocco','Portugal','Spain','Uruguay',
+                      ].map((team) => {
+                        const selected = (supportedTeamsMap[venue.id] || []).includes(team);
+                        return (
+                          <button
+                            key={team}
+                            type="button"
+                            onClick={() => {
+                              const current = supportedTeamsMap[venue.id] || [];
+                              const next = selected ? current.filter(t => t !== team) : [...current, team];
+                              saveTeams(venue.id, next);
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                              selected
+                                ? 'bg-blue-600 border-blue-500 text-white'
+                                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                            }`}
+                          >
+                            {team}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {/* Sound On */}
+                  <div className="mb-4 flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">🔊 Sound on during matches</p>
+                      <p className="text-xs text-gray-400">Fans want to know if the game audio will be on</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={soundOnMap[venue.id] || false}
+                      onChange={() => toggleSoundOn(venue.id)}
+                      className="h-5 w-5 cursor-pointer"
+                    />
                   </div>
                   {/* Cover Photo */}
                   <div className="mb-4">

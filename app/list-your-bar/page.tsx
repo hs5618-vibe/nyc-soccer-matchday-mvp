@@ -48,6 +48,8 @@ export default function ListYourBarPage() {
     leagues: [] as string[],
     other_leagues: "",
     show_world_cup: false,
+    sound_on: false,
+    supported_teams: [] as string[],
     notes: "",
   });
 
@@ -92,6 +94,8 @@ export default function ListYourBarPage() {
       leagues: form.leagues,
       other_leagues: form.other_leagues,
       show_world_cup: form.show_world_cup,
+      sound_on: form.sound_on,
+      supported_teams: form.supported_teams,
       notes: form.notes,
       status: "pending",
     });
@@ -254,6 +258,47 @@ export default function ListYourBarPage() {
                 <span className="text-sm text-yellow-300 font-semibold">⚽ We'll be showing FIFA World Cup 2026</span>
               </label>
 
+              {/* Supported Teams / Countries */}
+              <div className="mb-4">
+                <label className="block text-xs text-gray-400 mb-2">Are you a home bar for any club or national team?</label>
+                <p className="text-xs text-gray-600 mb-3">These badges will appear next to your bar name and fans searching for these teams will find you first.</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'Arsenal FC','Chelsea FC','Liverpool FC','Manchester City FC','Manchester United FC',
+                    'Tottenham Hotspur FC','Newcastle United FC','FC Barcelona','FC Bayern München',
+                    'Paris Saint-Germain FC','AS Roma','SS Lazio','SSC Napoli','Club Atlético de Madrid',
+                    'Argentina','Brazil','Colombia','England','France','Germany','Italy','Mexico',
+                    'Morocco','Portugal','Spain','Uruguay',
+                  ].map((team) => (
+                    <button
+                      key={team}
+                      type="button"
+                      onClick={() => setForm(prev => ({
+                        ...prev,
+                        supported_teams: prev.supported_teams.includes(team)
+                          ? prev.supported_teams.filter(t => t !== team)
+                          : [...prev.supported_teams, team]
+                      }))}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                        form.supported_teams.includes(team)
+                          ? 'bg-blue-600 border-blue-500 text-white'
+                          : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                      }`}
+                    >
+                      {team}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label className="flex items-center gap-3 cursor-pointer mb-3">
+                <input
+                  type="checkbox"
+                  checked={form.sound_on}
+                  onChange={(e) => update("sound_on", e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm text-white font-semibold">🔊 We always have sound on during matches</span>
+              </label>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Anything else? (teams, other sports)</label>
                 <input

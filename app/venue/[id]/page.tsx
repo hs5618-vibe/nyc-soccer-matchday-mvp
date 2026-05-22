@@ -574,6 +574,11 @@ export default function VenuePage() {
               ))}
             </div>
           )}
+          {(venue as any).sound_on && (
+            <div className="inline-flex items-center gap-2 bg-green-600/20 border border-green-500/30 text-green-300 px-3 py-1.5 rounded-full text-xs font-bold mb-4">
+              🔊 Sound on during matches
+            </div>
+          )}
           <div className="flex flex-wrap gap-4 text-gray-300 mb-6">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

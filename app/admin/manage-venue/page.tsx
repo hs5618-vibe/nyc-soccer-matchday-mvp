@@ -40,6 +40,8 @@ function ManageVenueContent() {
   const [savingBio, setSavingBio] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
+  const [supportedTeams, setSupportedTeams] = useState<string[]>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -57,12 +59,14 @@ function ManageVenueContent() {
       // Load venue name
       const { data: venueData } = await supabase
         .from("venues")
-        .select("name, bio, image_url")
+        .select("name, bio, image_url, sound_on")
         .eq("id", venueId)
         .single();
       setVenueName(venueData?.name || venueId);
       setBio(venueData?.bio || "");
       setImageUrl((venueData as any)?.image_url || "");
+      setSoundOn((venueData as any)?.sound_on || false);
+      setSupportedTeams((venueData as any)?.supported_teams || []);
 
       // Load matches
       const upcomingMatches = await fetchUpcomingMatches();
@@ -178,6 +182,17 @@ function ManageVenueContent() {
     await supabase.from('venues').update({ image_url: null }).eq('id', venueId);
     setImageUrl('');
   }
+  async function saveTeams(teams: string[]) {
+    if (!venueId) return;
+    setSupportedTeams(teams);
+    await supabase.from('venues').update({ supported_teams: teams }).eq('id', venueId);
+  }
+  async function toggleSoundOn() {
+    if (!venueId) return;
+    const next = !soundOn;
+    setSoundOn(next);
+    await supabase.from('venues').update({ sound_on: next }).eq('id', venueId);
+  }
   async function handleSaveBio() {
     if (!venueId) return;
     setSavingBio(true);
@@ -266,6 +281,52 @@ function ManageVenueContent() {
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
             </label>
           )}
+        </div>
+        {/* Supported Teams */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-2">Club & Country Rep</h3>
+          <p className="text-xs text-gray-500 mb-3">Select any club or national team this bar is a home for.</p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              'Arsenal FC','Chelsea FC','Liverpool FC','Manchester City FC','Manchester United FC',
+              'Tottenham Hotspur FC','Newcastle United FC','FC Barcelona','FC Bayern München',
+              'Paris Saint-Germain FC','AS Roma','SS Lazio','SSC Napoli','Club Atlético de Madrid',
+              'Argentina','Brazil','Colombia','England','France','Germany','Italy','Mexico',
+              'Morocco','Portugal','Spain','Uruguay',
+            ].map((team) => {
+              const selected = supportedTeams.includes(team);
+              return (
+                <button
+                  key={team}
+                  type="button"
+                  onClick={() => {
+                    const next = selected ? supportedTeams.filter(t => t !== team) : [...supportedTeams, team];
+                    saveTeams(next);
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                    selected
+                      ? 'bg-blue-600 border-blue-500 text-white'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                  }`}
+                >
+                  {team}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {/* Sound On */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-white">🔊 Sound on during matches</p>
+            <p className="text-xs text-gray-400">Fans want to know if the game audio will be on</p>
+          </div>
+          <input
+            type="checkbox"
+            checked={soundOn}
+            onChange={toggleSoundOn}
+            className="h-5 w-5 cursor-pointer"
+          />
         </div>
         {/* Bio */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">

@@ -387,13 +387,54 @@ export default function ManagePage() {
                   <div className="mb-4">
                     <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-2">Club & Country Rep</p>
                     <p className="text-xs text-gray-500 mb-3">Select any club or national team your bar is a home for. Fans searching for these teams will find you first.</p>
-                    <div className="flex flex-wrap gap-2">
+                    <p className="text-xs text-gray-500 font-semibold mb-2">🏟️ Clubs</p>
+                    <div className="flex flex-wrap gap-2 mb-4">
                       {[
                         'Arsenal FC','Chelsea FC','Liverpool FC','Manchester City FC','Manchester United FC',
-                        'Tottenham Hotspur FC','Newcastle United FC','FC Barcelona','FC Bayern München',
-                        'Paris Saint-Germain FC','AS Roma','SS Lazio','SSC Napoli','Club Atlético de Madrid',
-                        'Argentina','Brazil','Colombia','England','France','Germany','Italy','Mexico',
-                        'Morocco','Portugal','Spain','Uruguay',
+                        'Tottenham Hotspur FC','Newcastle United FC','Everton FC','Brentford FC',
+                        'Aston Villa FC','Brighton & Hove Albion FC','West Ham United FC',
+                        'Wolverhampton Wanderers FC','Fulham FC','Crystal Palace FC','Nottingham Forest FC',
+                        'AFC Bournemouth','Leicester City FC','Southampton FC',
+                        'FC Barcelona','Real Madrid CF','Club Atlético de Madrid','FC Bayern München',
+                        'Borussia Dortmund','Paris Saint-Germain FC','Olympique Lyonnais','Olympique de Marseille',
+                        'Inter Milan','Juventus FC','AC Milan','AS Roma','SSC Napoli','SS Lazio',
+                        'FC Porto','SL Benfica','Sporting CP','AFC Ajax','PSV Eindhoven',
+                        'Boca Juniors','River Plate',
+                      ].map((team) => {
+                        const selected = (supportedTeamsMap[venue.id] || []).includes(team);
+                        return (
+                          <button
+                            key={team}
+                            type="button"
+                            onClick={() => {
+                              const current = supportedTeamsMap[venue.id] || [];
+                              if (!selected && current.length >= 5) return;
+                              const next = selected ? current.filter(t => t !== team) : [...current, team];
+                              saveTeams(venue.id, next);
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                              selected
+                                ? 'bg-blue-600 border-blue-500 text-white'
+                                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                            }`}
+                          >
+                            {team}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-gray-500 font-semibold mb-2">🌍 National Teams</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        'Argentina','Brazil','Colombia','Mexico','Uruguay','Spain','England','France',
+                        'Germany','Portugal','Italy','Netherlands','Belgium','Denmark','Morocco',
+                        'Senegal','Ghana','Cameroon','Nigeria','South Africa','Egypt','Tunisia',
+                        'Algeria','Japan','South Korea','Australia','Iran','Saudi Arabia',
+                        'United States','Canada','Ecuador','Chile','Paraguay','Venezuela',
+                        'Bolivia','Peru','Panama','Costa Rica','Honduras','El Salvador',
+                        'Jamaica','Trinidad and Tobago','Cuba','Guatemala','New Zealand',
+                        'Serbia','Croatia','Poland','Switzerland','Austria','Ukraine','Turkey',
+                        'Scotland','Wales','Slovakia','Slovenia','Albania','Iraq','Indonesia',
                       ].map((team) => {
                         const selected = (supportedTeamsMap[venue.id] || []).includes(team);
                         return (

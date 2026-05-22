@@ -117,7 +117,7 @@ function ManageVenueContent() {
         setVenueMatches(prev => prev.filter(vm => vm.match_id !== matchId));
       } else {
         await supabase.from("venue_matches")
-          .insert({ venue_id: venueId, match_id: matchId, verified_by_owner: true });
+          .insert({ venue_id: venueId, match_id: matchId, verified_by_owner: false });
         setVenueMatches(prev => [...prev, { venue_id: venueId, match_id: matchId }]);
       }
     } catch (error) {
@@ -216,7 +216,7 @@ function ManageVenueContent() {
     if (!venueId) return;
     const toAdd = filteredMatches.filter(m => !venueMatchIds.includes(m.id));
     if (toAdd.length === 0) return;
-    const rows = toAdd.map(m => ({ venue_id: venueId, match_id: m.id, verified_by_owner: true }));
+    const rows = toAdd.map(m => ({ venue_id: venueId, match_id: m.id, verified_by_owner: false }));
     await supabase.from("venue_matches").upsert(rows, { onConflict: 'venue_id,match_id' });
     setVenueMatches(prev => [...prev, ...toAdd.map(m => ({ venue_id: venueId, match_id: m.id }))]);
   }
@@ -290,13 +290,19 @@ function ManageVenueContent() {
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-2">Club & Country Rep</h3>
           <p className="text-xs text-gray-500 mb-3">Select any club or national team this bar is a home for.</p>
-          <div className="flex flex-wrap gap-2">
+          <p className="text-xs text-gray-500 font-semibold mb-2">🏟️ Clubs</p>
+          <div className="flex flex-wrap gap-2 mb-4">
             {[
               'Arsenal FC','Chelsea FC','Liverpool FC','Manchester City FC','Manchester United FC',
-              'Tottenham Hotspur FC','Newcastle United FC','FC Barcelona','FC Bayern München',
-              'Paris Saint-Germain FC','AS Roma','SS Lazio','SSC Napoli','Club Atlético de Madrid',
-              'Argentina','Brazil','Colombia','England','France','Germany','Italy','Mexico',
-              'Morocco','Portugal','Spain','Uruguay',
+              'Tottenham Hotspur FC','Newcastle United FC','Everton FC','Brentford FC',
+              'Aston Villa FC','Brighton & Hove Albion FC','West Ham United FC',
+              'Wolverhampton Wanderers FC','Fulham FC','Crystal Palace FC','Nottingham Forest FC',
+              'AFC Bournemouth','Leicester City FC','Southampton FC',
+              'FC Barcelona','Real Madrid CF','Club Atlético de Madrid','FC Bayern München',
+              'Borussia Dortmund','Paris Saint-Germain FC','Olympique Lyonnais','Olympique de Marseille',
+              'Inter Milan','Juventus FC','AC Milan','AS Roma','SSC Napoli','SS Lazio',
+              'FC Porto','SL Benfica','Sporting CP','AFC Ajax','PSV Eindhoven',
+              'Boca Juniors','River Plate',
             ].map((team) => {
               const selected = supportedTeams.includes(team);
               return (
@@ -318,8 +324,42 @@ function ManageVenueContent() {
                 </button>
               );
             })}
-          <p className="text-xs text-gray-500 mt-2">{supportedTeams.length}/5 selected</p>
           </div>
+          <p className="text-xs text-gray-500 font-semibold mb-2">🌍 National Teams</p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              'Argentina','Brazil','Colombia','Mexico','Uruguay','Spain','England','France',
+              'Germany','Portugal','Italy','Netherlands','Belgium','Denmark','Morocco',
+              'Senegal','Ghana','Cameroon','Nigeria','South Africa','Egypt','Tunisia',
+              'Algeria','Japan','South Korea','Australia','Iran','Saudi Arabia',
+              'United States','Canada','Ecuador','Chile','Paraguay','Venezuela',
+              'Bolivia','Peru','Panama','Costa Rica','Honduras','El Salvador',
+              'Jamaica','Trinidad and Tobago','Cuba','Guatemala','New Zealand',
+              'Serbia','Croatia','Poland','Switzerland','Austria','Ukraine','Turkey',
+              'Scotland','Wales','Slovakia','Slovenia','Albania','Iraq','Indonesia',
+            ].map((team) => {
+              const selected = supportedTeams.includes(team);
+              return (
+                <button
+                  key={team}
+                  type="button"
+                  onClick={() => {
+                    if (!selected && supportedTeams.length >= 5) return;
+                    const next = selected ? supportedTeams.filter(t => t !== team) : [...supportedTeams, team];
+                    saveTeams(next);
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                    selected
+                      ? 'bg-blue-600 border-blue-500 text-white'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                  }`}
+                >
+                  {team}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">{supportedTeams.length}/5 selected</p>
         </div>
         {/* Bio */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">

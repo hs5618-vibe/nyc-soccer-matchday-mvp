@@ -262,13 +262,19 @@ export default function ListYourBarPage() {
               <div className="mb-4">
                 <label className="block text-xs text-gray-400 mb-2">Are you a home bar for any club or national team?</label>
                 <p className="text-xs text-gray-600 mb-3">These badges will appear next to your bar name and fans searching for these teams will find you first.</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-xs text-gray-500 font-semibold mb-2">🏟️ Clubs</p>
+                <div className="flex flex-wrap gap-2 mb-4">
                   {[
                     'Arsenal FC','Chelsea FC','Liverpool FC','Manchester City FC','Manchester United FC',
-                    'Tottenham Hotspur FC','Newcastle United FC','FC Barcelona','FC Bayern München',
-                    'Paris Saint-Germain FC','AS Roma','SS Lazio','SSC Napoli','Club Atlético de Madrid',
-                    'Argentina','Brazil','Colombia','England','France','Germany','Italy','Mexico',
-                    'Morocco','Portugal','Spain','Uruguay',
+                    'Tottenham Hotspur FC','Newcastle United FC','Everton FC','Brentford FC',
+                    'Aston Villa FC','Brighton & Hove Albion FC','West Ham United FC',
+                    'Wolverhampton Wanderers FC','Fulham FC','Crystal Palace FC','Nottingham Forest FC',
+                    'AFC Bournemouth','Leicester City FC','Southampton FC',
+                    'FC Barcelona','Real Madrid CF','Club Atlético de Madrid','FC Bayern München',
+                    'Borussia Dortmund','Paris Saint-Germain FC','Olympique Lyonnais','Olympique de Marseille',
+                    'Inter Milan','Juventus FC','AC Milan','AS Roma','SSC Napoli','SS Lazio',
+                    'FC Porto','SL Benfica','Sporting CP','AFC Ajax','PSV Eindhoven',
+                    'Boca Juniors','River Plate',
                   ].map((team) => (
                     <button
                       key={team}
@@ -291,8 +297,43 @@ export default function ListYourBarPage() {
                       {team}
                     </button>
                   ))}
-                <p className="text-xs text-gray-600 mt-2">{form.supported_teams.length}/5 selected</p>
                 </div>
+                <p className="text-xs text-gray-500 font-semibold mb-2">🌍 National Teams</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'Argentina','Brazil','Colombia','Mexico','Uruguay','Spain','England','France',
+                    'Germany','Portugal','Italy','Netherlands','Belgium','Denmark','Morocco',
+                    'Senegal','Ghana','Cameroon','Nigeria','South Africa','Egypt','Tunisia',
+                    'Algeria','Japan','South Korea','Australia','Iran','Saudi Arabia',
+                    'United States','Canada','Ecuador','Chile','Paraguay','Venezuela',
+                    'Bolivia','Peru','Panama','Costa Rica','Honduras','El Salvador',
+                    'Jamaica','Trinidad and Tobago','Cuba','Guatemala','New Zealand',
+                    'Serbia','Croatia','Poland','Switzerland','Austria','Ukraine','Turkey',
+                    'Scotland','Wales','Slovakia','Slovenia','Albania','Iraq','Indonesia',
+                  ].map((team) => (
+                    <button
+                      key={team}
+                      type="button"
+                      onClick={() => setForm(prev => {
+                        if (!prev.supported_teams.includes(team) && prev.supported_teams.length >= 5) return prev;
+                        return {
+                          ...prev,
+                          supported_teams: prev.supported_teams.includes(team)
+                            ? prev.supported_teams.filter(t => t !== team)
+                            : [...prev.supported_teams, team]
+                        };
+                      })}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                        form.supported_teams.includes(team)
+                          ? 'bg-blue-600 border-blue-500 text-white'
+                          : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                      }`}
+                    >
+                      {team}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-600 mt-2">{form.supported_teams.length}/5 selected</p>
               </div>
               <label className="flex items-center gap-3 cursor-pointer mb-3">
                 <input

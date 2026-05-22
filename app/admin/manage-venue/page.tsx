@@ -19,6 +19,7 @@ type Match = {
 type VenueMatch = {
   venue_id: string;
   match_id: string;
+  sound_on?: boolean;
 };
 
 function ManageVenueContent() {
@@ -40,7 +41,6 @@ function ManageVenueContent() {
   const [savingBio, setSavingBio] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [soundOn, setSoundOn] = useState(false);
   const [supportedTeams, setSupportedTeams] = useState<string[]>([]);
 
   useEffect(() => {
@@ -59,13 +59,12 @@ function ManageVenueContent() {
       // Load venue name
       const { data: venueData } = await supabase
         .from("venues")
-        .select("name, bio, image_url, sound_on")
+        .select("name, bio, image_url, supported_teams")
         .eq("id", venueId)
         .single();
       setVenueName(venueData?.name || venueId);
       setBio(venueData?.bio || "");
       setImageUrl((venueData as any)?.image_url || "");
-      setSoundOn((venueData as any)?.sound_on || false);
       setSupportedTeams((venueData as any)?.supported_teams || []);
 
       // Load matches
@@ -75,7 +74,7 @@ function ManageVenueContent() {
       // Load existing venue matches
       const { data: vmData } = await supabase
         .from("venue_matches")
-        .select("venue_id, match_id")
+        .select("venue_id, match_id, sound_on")
         .eq("venue_id", venueId);
       setVenueMatches(vmData || []);
       const { data: defaultsData } = await supabase
@@ -182,16 +181,21 @@ function ManageVenueContent() {
     await supabase.from('venues').update({ image_url: null }).eq('id', venueId);
     setImageUrl('');
   }
+  async function toggleMatchSound(matchId: string, currentSound: boolean) {
+    if (!venueId) return;
+    const next = !currentSound;
+    setVenueMatches(prev => prev.map(vm =>
+      vm.match_id === matchId ? { ...vm, sound_on: next } : vm
+    ));
+    await supabase.from('venue_matches')
+      .update({ sound_on: next })
+      .eq('venue_id', venueId)
+      .eq('match_id', matchId);
+  }
   async function saveTeams(teams: string[]) {
     if (!venueId) return;
     setSupportedTeams(teams);
     await supabase.from('venues').update({ supported_teams: teams }).eq('id', venueId);
-  }
-  async function toggleSoundOn() {
-    if (!venueId) return;
-    const next = !soundOn;
-    setSoundOn(next);
-    await supabase.from('venues').update({ sound_on: next }).eq('id', venueId);
   }
   async function handleSaveBio() {
     if (!venueId) return;
@@ -300,6 +304,7 @@ function ManageVenueContent() {
                   key={team}
                   type="button"
                   onClick={() => {
+                    if (!selected && supportedTeams.length >= 5) return;
                     const next = selected ? supportedTeams.filter(t => t !== team) : [...supportedTeams, team];
                     saveTeams(next);
                   }}
@@ -313,20 +318,8 @@ function ManageVenueContent() {
                 </button>
               );
             })}
+          <p className="text-xs text-gray-500 mt-2">{supportedTeams.length}/5 selected</p>
           </div>
-        </div>
-        {/* Sound On */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-white">🔊 Sound on during matches</p>
-            <p className="text-xs text-gray-400">Fans want to know if the game audio will be on</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={soundOn}
-            onChange={toggleSoundOn}
-            className="h-5 w-5 cursor-pointer"
-          />
         </div>
         {/* Bio */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
@@ -455,18 +448,31 @@ function ManageVenueContent() {
                           })}
                         </p>
                       </div>
-                      <label className="flex items-center gap-3 cursor-pointer flex-shrink-0">
-                        <span className="text-sm font-semibold text-gray-300 hidden sm:inline">
-                          {isSaving ? "Saving..." : "Showing"}
-                        </span>
-                        <input
-                          type="checkbox"
-                          checked={isShowing}
-                          disabled={isSaving}
-                          onChange={() => toggleMatch(match.id, isShowing)}
-                          className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:opacity-50"
-                        />
-                      </label>
+                      <div className="flex items-center gap-4 flex-shrink-0">
+                        {isShowing && (
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <span className="text-xs text-gray-400 hidden sm:inline">🔊 Sound on</span>
+                            <input
+                              type="checkbox"
+                              checked={venueMatches.find(vm => vm.match_id === match.id)?.sound_on || false}
+                              onChange={() => toggleMatchSound(match.id, venueMatches.find(vm => vm.match_id === match.id)?.sound_on || false)}
+                              className="w-4 h-4 cursor-pointer"
+                            />
+                          </label>
+                        )}
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <span className="text-sm font-semibold text-gray-300 hidden sm:inline">
+                            {isSaving ? "Saving..." : "Showing"}
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={isShowing}
+                            disabled={isSaving}
+                            onChange={() => toggleMatch(match.id, isShowing)}
+                            className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:opacity-50"
+                          />
+                        </label>
+                      </div>
                     </div>
                   </div>
                 );

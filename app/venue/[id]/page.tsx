@@ -12,6 +12,7 @@ import { isAdmin } from "@/lib/admin";
 import ClaimVenueModal from "@/components/ClaimVenueModal";
 
 const TEAM_CRESTS: Record<string, string> = {
+  // Premier League
   'Arsenal FC': 'https://crests.football-data.org/57.png',
   'Liverpool FC': 'https://crests.football-data.org/64.png',
   'Manchester City FC': 'https://crests.football-data.org/65.png',
@@ -21,19 +22,105 @@ const TEAM_CRESTS: Record<string, string> = {
   'Everton FC': 'https://crests.football-data.org/62.png',
   'Brentford FC': 'https://crests.football-data.org/402.png',
   'Chelsea FC': 'https://crests.football-data.org/61.png',
+  'Aston Villa FC': 'https://crests.football-data.org/58.png',
+  'Brighton & Hove Albion FC': 'https://crests.football-data.org/397.png',
+  'West Ham United FC': 'https://crests.football-data.org/563.png',
+  'Wolverhampton Wanderers FC': 'https://crests.football-data.org/76.png',
+  'Fulham FC': 'https://crests.football-data.org/63.png',
+  'Crystal Palace FC': 'https://crests.football-data.org/354.png',
+  'Nottingham Forest FC': 'https://crests.football-data.org/351.png',
+  'AFC Bournemouth': 'https://crests.football-data.org/1044.png',
+  'Leicester City FC': 'https://crests.football-data.org/338.png',
+  'Ipswich Town FC': 'https://crests.football-data.org/57.png',
+  'Southampton FC': 'https://crests.football-data.org/340.png',
+  // European clubs
   'FC Barcelona': 'https://crests.football-data.org/81.png',
-  'FC Bayern München': 'https://crests.football-data.org/5.png',
-  'Paris Saint-Germain FC': 'https://crests.football-data.org/524.png',
-  'AS Roma': 'https://crests.football-data.org/100.png',
-  'SS Lazio': 'https://crests.football-data.org/110.png',
-  'SSC Napoli': 'https://crests.football-data.org/113.png',
+  'Real Madrid CF': 'https://crests.football-data.org/86.png',
   'Club Atlético de Madrid': 'https://crests.football-data.org/78.png',
-  'Spain': 'https://crests.football-data.org/760.svg',
-  'Colombia': 'https://crests.football-data.org/818.svg',
+  'FC Bayern München': 'https://crests.football-data.org/5.png',
+  'Borussia Dortmund': 'https://crests.football-data.org/4.png',
+  'Paris Saint-Germain FC': 'https://crests.football-data.org/524.png',
+  'Olympique Lyonnais': 'https://crests.football-data.org/523.png',
+  'Olympique de Marseille': 'https://crests.football-data.org/516.png',
+  'Inter Milan': 'https://crests.football-data.org/108.png',
+  'Juventus FC': 'https://crests.football-data.org/109.png',
+  'AC Milan': 'https://crests.football-data.org/98.png',
+  'AS Roma': 'https://crests.football-data.org/100.png',
+  'SSC Napoli': 'https://crests.football-data.org/113.png',
+  'SS Lazio': 'https://crests.football-data.org/110.png',
+  'FC Porto': 'https://crests.football-data.org/503.png',
+  'SL Benfica': 'https://crests.football-data.org/498.png',
+  'Sporting CP': 'https://crests.football-data.org/498.png',
+  'AFC Ajax': 'https://crests.football-data.org/678.png',
+  'PSV Eindhoven': 'https://crests.football-data.org/674.png',
+  'Boca Juniors': 'https://crests.football-data.org/null.png',
+  'River Plate': 'https://crests.football-data.org/null.png',
+  // World Cup nations
   'Argentina': 'https://crests.football-data.org/762.png',
   'Brazil': 'https://crests.football-data.org/764.svg',
+  'Colombia': 'https://crests.football-data.org/818.svg',
   'Mexico': 'https://crests.football-data.org/769.svg',
   'Uruguay': 'https://crests.football-data.org/758.svg',
+  'Spain': 'https://crests.football-data.org/760.svg',
+  'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'France': '🇫🇷',
+  'Germany': '🇩🇪',
+  'Portugal': '🇵🇹',
+  'Italy': '🇮🇹',
+  'Netherlands': '🇳🇱',
+  'Belgium': '🇧🇪',
+  'Denmark': '🇩🇰',
+  'Morocco': '🇲🇦',
+  'Senegal': '🇸🇳',
+  'Ghana': '🇬🇭',
+  'Cameroon': '🇨🇲',
+  'Nigeria': '🇳🇬',
+  'Côte d\'Ivoire': '🇨🇮',
+  'South Africa': '🇿🇦',
+  'Egypt': '🇪🇬',
+  'Tunisia': '🇹🇳',
+  'Algeria': '🇩🇿',
+  'Mali': '🇲🇱',
+  'Tanzania': '🇹🇿',
+  'Comoros': '🇰🇲',
+  'Benin': '🇧🇯',
+  'Botswana': '🇧🇼',
+  'Japan': '🇯🇵',
+  'South Korea': '🇰🇷',
+  'Australia': '🇦🇺',
+  'Iran': '🇮🇷',
+  'Saudi Arabia': '🇸🇦',
+  'United States': '🇺🇸',
+  'Canada': '🇨🇦',
+  'Ecuador': '🇪🇨',
+  'Chile': '🇨🇱',
+  'Paraguay': '🇵🇾',
+  'Venezuela': '🇻🇪',
+  'Bolivia': '🇧🇴',
+  'Peru': '🇵🇪',
+  'Panama': '🇵🇦',
+  'Costa Rica': '🇨🇷',
+  'Honduras': '🇭🇳',
+  'El Salvador': '🇸🇻',
+  'Jamaica': '🇯🇲',
+  'Trinidad and Tobago': '🇹🇹',
+  'Cuba': '🇨🇺',
+  'Guatemala': '🇬🇹',
+  'New Zealand': '🇳🇿',
+  'Serbia': '🇷🇸',
+  'Croatia': '🇭🇷',
+  'Poland': '🇵🇱',
+  'Switzerland': '🇨🇭',
+  'Austria': '🇦🇹',
+  'Ukraine': '🇺🇦',
+  'Turkey': '🇹🇷',
+  'Scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  'Wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  'Slovakia': '🇸🇰',
+  'Slovenia': '🇸🇮',
+  'Albania': '🇦🇱',
+  'Iraq': '🇮🇶',
+  'Indonesia': '🇮🇩',
 };
 
 type Update = {
@@ -89,6 +176,7 @@ export default function VenuePage() {
   const [imageUrl, setImageUrl] = useState<string>("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
+  const [matchSoundOn, setMatchSoundOn] = useState(false);
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
@@ -246,6 +334,16 @@ export default function VenuePage() {
     }
 
     setGoing(!!data);
+
+    if (matchId && venueId) {
+      const { data: vmData } = await supabase
+        .from('venue_matches')
+        .select('sound_on')
+        .eq('venue_id', venueId)
+        .eq('match_id', matchId)
+        .maybeSingle();
+      setMatchSoundOn(vmData?.sound_on || false);
+    }
   }
 
   async function handleGoing() {
@@ -555,28 +653,28 @@ export default function VenuePage() {
           {/* Supported Teams */}
           {(venue as any).supported_teams?.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {(venue as any).supported_teams.map((team: string) => (
-                TEAM_CRESTS[team] ? (
+              {(venue as any).supported_teams.map((team: string) => {
+                const crest = TEAM_CRESTS[team];
+                if (crest?.startsWith('http')) {
+                  return (
+                    <div key={team} className="flex items-center gap-1.5 bg-white/10 border border-white/20 px-3 py-1 rounded-full">
+                      <img
+                        src={crest}
+                        alt={team}
+                        className="w-5 h-5 object-contain"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                      <span className="text-white text-xs font-bold">{team}</span>
+                    </div>
+                  );
+                }
+                return (
                   <div key={team} className="flex items-center gap-1.5 bg-white/10 border border-white/20 px-3 py-1 rounded-full">
-                    <img
-                      src={TEAM_CRESTS[team]}
-                      alt={team}
-                      className="w-5 h-5 object-contain"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
+                    <span className="text-lg">{crest || '🏳️'}</span>
                     <span className="text-white text-xs font-bold">{team}</span>
                   </div>
-                ) : (
-                  <span key={team} className="bg-white/10 border border-white/20 text-white text-xs font-bold px-3 py-1 rounded-full">
-                    {team}
-                  </span>
-                )
-              ))}
-            </div>
-          )}
-          {(venue as any).sound_on && (
-            <div className="inline-flex items-center gap-2 bg-green-600/20 border border-green-500/30 text-green-300 px-3 py-1.5 rounded-full text-xs font-bold mb-4">
-              🔊 Sound on during matches
+                );
+              })}
             </div>
           )}
           <div className="flex flex-wrap gap-4 text-gray-300 mb-6">
@@ -626,6 +724,11 @@ export default function VenuePage() {
 
           {match && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              {matchSoundOn && (
+                <span className="inline-flex items-center gap-1.5 bg-green-600/20 border border-green-500/30 text-green-300 px-3 py-1.5 rounded-full text-xs font-bold">
+                  🔊 Sound on for this game
+                </span>
+              )}
               <button
                 onClick={handleGoing}
                 disabled={goingLoading}

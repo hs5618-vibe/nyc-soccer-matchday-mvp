@@ -27,6 +27,7 @@ type Match = {
 type VenueMatch = {
   venue_id: string;
   match_id: string;
+  sound_on?: boolean;
 };
 
 export default function ManagePage() {
@@ -43,7 +44,6 @@ export default function ManagePage() {
   const [editingBio, setEditingBio] = useState<string | null>(null);
   const [bioInput, setBioInput] = useState("");
   const [savingBio, setSavingBio] = useState(false);
-  const [soundOnMap, setSoundOnMap] = useState<Record<string, boolean>>({});
   const [supportedTeamsMap, setSupportedTeamsMap] = useState<Record<string, string[]>>({});
 
   // Filters
@@ -79,7 +79,7 @@ export default function ManagePage() {
 
       const { data: vmData } = await supabase
         .from("venue_matches")
-        .select("venue_id, match_id")
+        .select("venue_id, match_id, sound_on")
         .in("venue_id", venueIds);
 
       setVenueMatches(vmData || []);
@@ -90,21 +90,18 @@ export default function ManagePage() {
       setVenueDefaults(defaultsData || []);
       const { data: imageData } = await supabase
         .from('venues')
-        .select('id, image_url, bio, sound_on, supported_teams')
+        .select('id, image_url, bio, supported_teams')
         .in('id', venueIds);
       const imageMap: Record<string, string> = {};
       const bioMap: Record<string, string> = {};
-      const soundMap: Record<string, boolean> = {};
       const teamsMap: Record<string, string[]> = {};
       (imageData || []).forEach((v: any) => {
         if (v.image_url) imageMap[v.id] = v.image_url;
         if (v.bio) bioMap[v.id] = v.bio;
-        soundMap[v.id] = v.sound_on || false;
         teamsMap[v.id] = v.supported_teams || [];
       });
       setVenueImages(imageMap);
       setVenueBios(bioMap);
-      setSoundOnMap(soundMap);
       setSupportedTeamsMap(teamsMap);
       setLoading(false);
     }
@@ -160,14 +157,21 @@ export default function ManagePage() {
     }
   }
 
+  async function toggleMatchSound(venueId: string, matchId: string, currentSound: boolean) {
+    const next = !currentSound;
+    setVenueMatches(prev => prev.map(vm =>
+      vm.venue_id === venueId && vm.match_id === matchId
+        ? { ...vm, sound_on: next }
+        : vm
+    ));
+    await supabase.from('venue_matches')
+      .update({ sound_on: next })
+      .eq('venue_id', venueId)
+      .eq('match_id', matchId);
+  }
   async function saveTeams(venueId: string, teams: string[]) {
     setSupportedTeamsMap(prev => ({ ...prev, [venueId]: teams }));
     await supabase.from('venues').update({ supported_teams: teams }).eq('id', venueId);
-  }
-  async function toggleSoundOn(venueId: string) {
-    const next = !soundOnMap[venueId];
-    setSoundOnMap(prev => ({ ...prev, [venueId]: next }));
-    await supabase.from('venues').update({ sound_on: next }).eq('id', venueId);
   }
   async function handleSaveBio(venueId: string) {
     setSavingBio(true);
@@ -398,6 +402,7 @@ export default function ManagePage() {
                             type="button"
                             onClick={() => {
                               const current = supportedTeamsMap[venue.id] || [];
+                              if (!selected && current.length >= 5) return;
                               const next = selected ? current.filter(t => t !== team) : [...current, team];
                               saveTeams(venue.id, next);
                             }}
@@ -412,19 +417,7 @@ export default function ManagePage() {
                         );
                       })}
                     </div>
-                  </div>
-                  {/* Sound On */}
-                  <div className="mb-4 flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-                    <div>
-                      <p className="text-sm font-semibold text-white">🔊 Sound on during matches</p>
-                      <p className="text-xs text-gray-400">Fans want to know if the game audio will be on</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={soundOnMap[venue.id] || false}
-                      onChange={() => toggleSoundOn(venue.id)}
-                      className="h-5 w-5 cursor-pointer"
-                    />
+                    <p className="text-xs text-gray-500 mt-2">{(supportedTeamsMap[venue.id] || []).length}/5 selected</p>
                   </div>
                   {/* Cover Photo */}
                   <div className="mb-4">
@@ -501,7 +494,8 @@ export default function ManagePage() {
                       const isShowing = venueMatchIds.includes(match.id);
                       const isSaving = saving === `${venue.id}-${match.id}`;
                       
-                      return (
+                      const soundOn = venueMatches.find(vm => vm.venue_id === venue.id && vm.match_id === match.id)?.sound_on || false;
+                        return (
                         <div key={match.id} className="bg-white/5 border border-white/10 rounded-2xl p-4">
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex-1 min-w-0">
@@ -518,18 +512,31 @@ export default function ManagePage() {
                                 })}
                               </p>
                             </div>
-                            <label className="flex items-center gap-3 cursor-pointer flex-shrink-0">
-                              <span className="text-sm font-semibold text-gray-300 hidden sm:inline">
-                                {isSaving ? "Saving..." : "We're showing this"}
-                              </span>
-                              <input
-                                type="checkbox"
-                                checked={isShowing}
-                                disabled={isSaving}
-                                onChange={() => toggleMatch(venue.id, match.id, isShowing)}
-                                className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                              />
-                            </label>
+                            <div className="flex items-center gap-4 flex-shrink-0">
+                              {isShowing && (
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <span className="text-xs text-gray-400 hidden sm:inline">🔊 Sound on</span>
+                                  <input
+                                    type="checkbox"
+                                    checked={soundOn}
+                                    onChange={() => toggleMatchSound(venue.id, match.id, soundOn)}
+                                    className="w-4 h-4 cursor-pointer"
+                                  />
+                                </label>
+                              )}
+                              <label className="flex items-center gap-3 cursor-pointer">
+                                <span className="text-sm font-semibold text-gray-300 hidden sm:inline">
+                                  {isSaving ? "Saving..." : "We're showing this"}
+                                </span>
+                                <input
+                                  type="checkbox"
+                                  checked={isShowing}
+                                  disabled={isSaving}
+                                  onChange={() => toggleMatch(venue.id, match.id, isShowing)}
+                                  className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                />
+                              </label>
+                            </div>
                           </div>
                         </div>
                       );

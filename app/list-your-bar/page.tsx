@@ -273,12 +273,15 @@ export default function ListYourBarPage() {
                     <button
                       key={team}
                       type="button"
-                      onClick={() => setForm(prev => ({
-                        ...prev,
-                        supported_teams: prev.supported_teams.includes(team)
-                          ? prev.supported_teams.filter(t => t !== team)
-                          : [...prev.supported_teams, team]
-                      }))}
+                      onClick={() => setForm(prev => {
+                        if (!prev.supported_teams.includes(team) && prev.supported_teams.length >= 5) return prev;
+                        return {
+                          ...prev,
+                          supported_teams: prev.supported_teams.includes(team)
+                            ? prev.supported_teams.filter(t => t !== team)
+                            : [...prev.supported_teams, team]
+                        };
+                      })}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                         form.supported_teams.includes(team)
                           ? 'bg-blue-600 border-blue-500 text-white'
@@ -288,6 +291,7 @@ export default function ListYourBarPage() {
                       {team}
                     </button>
                   ))}
+                <p className="text-xs text-gray-600 mt-2">{form.supported_teams.length}/5 selected</p>
                 </div>
               </div>
               <label className="flex items-center gap-3 cursor-pointer mb-3">

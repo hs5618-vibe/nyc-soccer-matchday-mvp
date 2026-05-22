@@ -11,6 +11,7 @@ import {
   type Venue as BaseVenue,
 } from "@/lib/venues";
 const TEAM_CRESTS: Record<string, string> = {
+  // Premier League
   'Arsenal FC': 'https://crests.football-data.org/57.png',
   'Liverpool FC': 'https://crests.football-data.org/64.png',
   'Manchester City FC': 'https://crests.football-data.org/65.png',
@@ -20,20 +21,105 @@ const TEAM_CRESTS: Record<string, string> = {
   'Everton FC': 'https://crests.football-data.org/62.png',
   'Brentford FC': 'https://crests.football-data.org/402.png',
   'Chelsea FC': 'https://crests.football-data.org/61.png',
+  'Aston Villa FC': 'https://crests.football-data.org/58.png',
+  'Brighton & Hove Albion FC': 'https://crests.football-data.org/397.png',
+  'West Ham United FC': 'https://crests.football-data.org/563.png',
+  'Wolverhampton Wanderers FC': 'https://crests.football-data.org/76.png',
+  'Fulham FC': 'https://crests.football-data.org/63.png',
+  'Crystal Palace FC': 'https://crests.football-data.org/354.png',
+  'Nottingham Forest FC': 'https://crests.football-data.org/351.png',
+  'AFC Bournemouth': 'https://crests.football-data.org/1044.png',
+  'Leicester City FC': 'https://crests.football-data.org/338.png',
+  'Ipswich Town FC': 'https://crests.football-data.org/57.png',
+  'Southampton FC': 'https://crests.football-data.org/340.png',
+  // European clubs
   'FC Barcelona': 'https://crests.football-data.org/81.png',
-  'FC Bayern München': 'https://crests.football-data.org/5.png',
-  'Paris Saint-Germain FC': 'https://crests.football-data.org/524.png',
-  'AS Roma': 'https://crests.football-data.org/100.png',
-  'SS Lazio': 'https://crests.football-data.org/110.png',
-  'SSC Napoli': 'https://crests.football-data.org/113.png',
+  'Real Madrid CF': 'https://crests.football-data.org/86.png',
   'Club Atlético de Madrid': 'https://crests.football-data.org/78.png',
-  'Spain': 'https://crests.football-data.org/760.svg',
-  'Colombia': 'https://crests.football-data.org/818.svg',
+  'FC Bayern München': 'https://crests.football-data.org/5.png',
+  'Borussia Dortmund': 'https://crests.football-data.org/4.png',
+  'Paris Saint-Germain FC': 'https://crests.football-data.org/524.png',
+  'Olympique Lyonnais': 'https://crests.football-data.org/523.png',
+  'Olympique de Marseille': 'https://crests.football-data.org/516.png',
+  'Inter Milan': 'https://crests.football-data.org/108.png',
+  'Juventus FC': 'https://crests.football-data.org/109.png',
+  'AC Milan': 'https://crests.football-data.org/98.png',
+  'AS Roma': 'https://crests.football-data.org/100.png',
+  'SSC Napoli': 'https://crests.football-data.org/113.png',
+  'SS Lazio': 'https://crests.football-data.org/110.png',
+  'FC Porto': 'https://crests.football-data.org/503.png',
+  'SL Benfica': 'https://crests.football-data.org/498.png',
+  'Sporting CP': 'https://crests.football-data.org/498.png',
+  'AFC Ajax': 'https://crests.football-data.org/678.png',
+  'PSV Eindhoven': 'https://crests.football-data.org/674.png',
+  'Boca Juniors': 'https://crests.football-data.org/null.png',
+  'River Plate': 'https://crests.football-data.org/null.png',
+  // World Cup nations
   'Argentina': 'https://crests.football-data.org/762.png',
   'Brazil': 'https://crests.football-data.org/764.svg',
+  'Colombia': 'https://crests.football-data.org/818.svg',
   'Mexico': 'https://crests.football-data.org/769.svg',
   'Uruguay': 'https://crests.football-data.org/758.svg',
-  'Boca Juniors': 'https://crests.football-data.org/null.png',
+  'Spain': 'https://crests.football-data.org/760.svg',
+  'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'France': '🇫🇷',
+  'Germany': '🇩🇪',
+  'Portugal': '🇵🇹',
+  'Italy': '🇮🇹',
+  'Netherlands': '🇳🇱',
+  'Belgium': '🇧🇪',
+  'Denmark': '🇩🇰',
+  'Morocco': '🇲🇦',
+  'Senegal': '🇸🇳',
+  'Ghana': '🇬🇭',
+  'Cameroon': '🇨🇲',
+  'Nigeria': '🇳🇬',
+  'Côte d\'Ivoire': '🇨🇮',
+  'South Africa': '🇿🇦',
+  'Egypt': '🇪🇬',
+  'Tunisia': '🇹🇳',
+  'Algeria': '🇩🇿',
+  'Mali': '🇲🇱',
+  'Tanzania': '🇹🇿',
+  'Comoros': '🇰🇲',
+  'Benin': '🇧🇯',
+  'Botswana': '🇧🇼',
+  'Japan': '🇯🇵',
+  'South Korea': '🇰🇷',
+  'Australia': '🇦🇺',
+  'Iran': '🇮🇷',
+  'Saudi Arabia': '🇸🇦',
+  'United States': '🇺🇸',
+  'Canada': '🇨🇦',
+  'Ecuador': '🇪🇨',
+  'Chile': '🇨🇱',
+  'Paraguay': '🇵🇾',
+  'Venezuela': '🇻🇪',
+  'Bolivia': '🇧🇴',
+  'Peru': '🇵🇪',
+  'Panama': '🇵🇦',
+  'Costa Rica': '🇨🇷',
+  'Honduras': '🇭🇳',
+  'El Salvador': '🇸🇻',
+  'Jamaica': '🇯🇲',
+  'Trinidad and Tobago': '🇹🇹',
+  'Cuba': '🇨🇺',
+  'Guatemala': '🇬🇹',
+  'New Zealand': '🇳🇿',
+  'Serbia': '🇷🇸',
+  'Croatia': '🇭🇷',
+  'Poland': '🇵🇱',
+  'Switzerland': '🇨🇭',
+  'Austria': '🇦🇹',
+  'Ukraine': '🇺🇦',
+  'Turkey': '🇹🇷',
+  'Scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  'Wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  'Slovakia': '🇸🇰',
+  'Slovenia': '🇸🇮',
+  'Albania': '🇦🇱',
+  'Iraq': '🇮🇶',
+  'Indonesia': '🇮🇩',
 };
 
 type VenueWithMeta = BaseVenue & {
@@ -139,6 +225,7 @@ function ResultsContent() {
   const [engagementScores, setEngagementScores] = useState<Record<string, number>>({});
   const [goingMap, setGoingMap] = useState<Record<string, number>>({});
   const [userGoingSet, setUserGoingSet] = useState<Set<string>>(new Set());
+  const [soundMap, setSoundMap] = useState<Record<string, boolean>>({});
 
   // Near-me controls
   const [nearMe, setNearMe] = useState(false);
@@ -167,12 +254,13 @@ function ResultsContent() {
 
       setLoading(true);
 
-      const [matchData, showingVenues, allVenues, goingRows] = await Promise.all(
+      const [matchData, showingVenues, allVenues, goingRows, soundRows] = await Promise.all(
         [
           fetchMatchById(matchId),
           fetchVenuesByMatch(matchId),
           fetchAllVenues(),
           supabase.from("going").select("venue_id").eq("match_id", matchId),
+          supabase.from("venue_matches").select("venue_id, sound_on").eq("match_id", matchId),
         ]
       );
 
@@ -197,12 +285,20 @@ function ResultsContent() {
       });
       setGoingMap(counts);
 
-      const merged: VenueWithMeta[] = (allVenues || []).map((v) => ({
-        ...v,
-        is_showing: showingIds.has(v.id),
-        going_count: counts[v.id] || 0,
-        verified_by_owner: verifiedIds.has(v.id),
-      }));
+      const sMap: Record<string, boolean> = {};
+      (soundRows.data || []).forEach((r: any) => {
+        sMap[String(r.venue_id)] = r.sound_on || false;
+      });
+      setSoundMap(sMap);
+
+      const merged: VenueWithMeta[] = (allVenues || [])
+        .filter((v) => showingIds.has(v.id))
+        .map((v) => ({
+          ...v,
+          is_showing: true,
+          going_count: counts[v.id] || 0,
+          verified_by_owner: verifiedIds.has(v.id),
+        }));
 
       // Load interested count and user status
       const { data: { user } } = await supabase.auth.getUser();
@@ -351,7 +447,6 @@ function ResultsContent() {
       const aAffinity = isAffinityBar(a) ? 1 : 0;
       const bAffinity = isAffinityBar(b) ? 1 : 0;
       if (aAffinity !== bAffinity) return bAffinity - aAffinity;
-      if (a.is_showing !== b.is_showing) return a.is_showing ? -1 : 1;
       if (a.going_count !== b.going_count) return b.going_count - a.going_count;
       if (a.verified_by_owner !== b.verified_by_owner) return a.verified_by_owner ? -1 : 1;
       const aScore = engagementScores[a.id] || 0;
@@ -574,7 +669,7 @@ function ResultsContent() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-white uppercase tracking-wide">Sports Bars</h2>
             <span className="text-sm text-gray-400">
-              {stats.showing} showing • {stats.notConfirmed} not confirmed
+              {stats.showing} {stats.showing === 1 ? 'bar' : 'bars'} showing this game
             </span>
           </div>
 
@@ -665,9 +760,7 @@ function ResultsContent() {
                 <Link
                   key={venue.id}
                   href={`/venue/${venue.id}?match=${matchId}`}
-                  className={`block bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 hover:bg-white/10 hover:border-white/20 transition-all group ${
-                    venue.is_showing ? "" : "opacity-60"
-                  }`}
+                  className="block bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 hover:bg-white/10 hover:border-white/20 transition-all group"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -675,14 +768,14 @@ function ResultsContent() {
                         <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate">
                           {venue.name}
                         </h3>
-                        {venue.is_showing && (
-                          <span className="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                            SHOWING
-                          </span>
-                        )}
                         {venue.verified_by_owner && (
                           <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1">
                             ✓ Verified
+                          </span>
+                        )}
+                        {soundMap[venue.id] && (
+                          <span className="bg-white/10 border border-white/20 text-gray-300 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                            🔊
                           </span>
                         )}
                         {(venue as any).is_featured && (
@@ -691,22 +784,34 @@ function ResultsContent() {
                             Official Fan Zone
                           </span>
                         )}
-                        {(venue as any).supported_teams?.slice(0, 3).map((team: string) => (
-                          TEAM_CRESTS[team] ? (
-                            <img
-                              key={team}
-                              src={TEAM_CRESTS[team]}
-                              alt={team}
-                              title={team}
-                              className="w-5 h-5 object-contain flex-shrink-0"
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            />
-                          ) : (
-                            <span key={team} className="bg-white/10 border border-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                              {team}
-                            </span>
-                          )
-                        ))}
+                        {(venue as any).supported_teams
+                          ?.filter((t: string) => {
+                            const matchTeams = [match?.home_team, match?.away_team].filter(Boolean);
+                            return matchTeams.some(mt => mt && (
+                              mt.includes(t.replace(' FC','').replace(' CF','')) ||
+                              t.includes(mt.replace(' FC','').replace(' CF',''))
+                            ));
+                          })
+                          .slice(0, 3)
+                          .map((team: string) => {
+                            const crest = TEAM_CRESTS[team];
+                            if (!crest) return null;
+                            if (crest.startsWith('http')) {
+                              return (
+                                <img
+                                  key={team}
+                                  src={crest}
+                                  alt={team}
+                                  title={team}
+                                  className="w-5 h-5 object-contain flex-shrink-0"
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                              );
+                            }
+                            return (
+                              <span key={team} title={team} className="text-lg flex-shrink-0">{crest}</span>
+                            );
+                          })}
                       </div>
 
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">

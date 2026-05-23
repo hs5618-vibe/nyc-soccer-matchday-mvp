@@ -49,17 +49,18 @@ export async function POST(req: NextRequest) {
 
   const venueId = existing ? `${baseId}-${Date.now().toString(36)}` : baseId;
 
-    const { error: venueError } = await supabaseAdmin.from("venues").insert({
+  const { error: venueError } = await supabaseAdmin.from("venues").insert({
     id: venueId,
     name: sub.bar_name,
     address: sub.address,
     neighborhood: sub.neighborhood || "Other",
     bio: sub.bio || null,
     instagram: sub.instagram || null,
+    supported_teams: sub.supported_teams || [],
     bar_type: "bar",
     claimed: true,
     verified: false,
-  });
+  });  
 
   if (venueError) {
     return NextResponse.json({ error: `Failed to create venue: ${venueError.message}` }, { status: 500 });
@@ -94,6 +95,25 @@ export async function POST(req: NextRequest) {
       league: league,
     }));
     await supabaseAdmin.from("venue_defaults").insert(defaults);
+
+    // Auto-populate all upcoming matches for these leagues
+    const { data: upcomingMatches } = await supabaseAdmin
+      .from("matches")
+      .select("id")
+      .in("league", leagues)
+      .eq("status", "upcoming")
+      .gte("kickoff_time", new Date().toISOString());
+
+    if (upcomingMatches && upcomingMatches.length > 0) {
+      const venueMatchRows = upcomingMatches.map((m: any) => ({
+        venue_id: venueId,
+        match_id: m.id,
+        verified_by_owner: false,
+      }));
+      await supabaseAdmin
+        .from("venue_matches")
+        .upsert(venueMatchRows, { onConflict: "venue_id,match_id" });
+    }
   }
 
   const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(

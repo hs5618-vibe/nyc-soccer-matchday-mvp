@@ -20,13 +20,75 @@ const LEAGUES = [
 ];
 
 const NEIGHBORHOODS = [
-  "East Village", "West Village", "Chelsea", "Hell's Kitchen", "Midtown",
-  "Upper East Side", "Upper West Side", "Harlem", "Lower East Side",
-  "SoHo", "Tribeca", "Financial District", "Flatiron", "Gramercy",
-  "Murray Hill", "Astoria", "Long Island City", "Williamsburg",
-  "Bushwick", "Park Slope", "Crown Heights", "Flatbush", "Greenpoint",
-  "DUMBO", "Cobble Hill", "Carroll Gardens", "Bay Ridge", "Sunset Park",
-  "Bronx", "Staten Island", "Other",
+  "Astoria",
+  "Astoria Park",
+  "Bay Ridge",
+  "Bed-Stuy",
+  "Bowery",
+  "Bronx",
+  "Bushwick",
+  "Carroll Gardens",
+  "Chelsea",
+  "Cobble Hill",
+  "Crown Heights",
+  "DUMBO",
+  "East Village",
+  "Elmhurst",
+  "Financial District",
+  "Flatbush",
+  "Flatiron",
+  "Fort Greene",
+  "Gramercy",
+  "Greenpoint",
+  "Greenwich Village",
+  "Harlem",
+  "Hell's Kitchen",
+  "Industry City",
+  "Jackson Heights",
+  "Long Island City",
+  "Lower East Side",
+  "Meatpacking District",
+  "Midtown",
+  "Midtown West",
+  "Murray Hill",
+  "Park Slope",
+  "Prospect Heights",
+  "SoHo",
+  "Staten Island",
+  "Sunnyside",
+  "Sunset Park",
+  "Tribeca",
+  "Upper East Side",
+  "Upper West Side",
+  "West Village",
+  "Williamsburg",
+  "Other",
+];
+
+const CLUBS = [
+  'Arsenal FC','Chelsea FC','Liverpool FC','Manchester City FC','Manchester United FC',
+  'Tottenham Hotspur FC','Newcastle United FC','Everton FC','Brentford FC',
+  'Aston Villa FC','Brighton & Hove Albion FC','West Ham United FC',
+  'Wolverhampton Wanderers FC','Fulham FC','Crystal Palace FC','Nottingham Forest FC',
+  'AFC Bournemouth','Leicester City FC','Southampton FC',
+  'FC Barcelona','Real Madrid CF','Club Atlético de Madrid','FC Bayern München',
+  'Borussia Dortmund','Paris Saint-Germain FC','Olympique Lyonnais','Olympique de Marseille',
+  'Inter Milan','Juventus FC','AC Milan','AS Roma','SSC Napoli','SS Lazio',
+  'FC Porto','SL Benfica','Sporting CP','AFC Ajax','PSV Eindhoven',
+  'Boca Juniors','River Plate',
+];
+
+// All 48 WC 2026 qualified nations + Italy + Denmark
+const NATIONAL_TEAMS = [
+  'Argentina','Australia','Bolivia','Brazil','Canada','Chile','Colombia',
+  'Costa Rica','Cuba','Ecuador','El Salvador','Ghana','Guatemala','Honduras',
+  'Indonesia','Iran','Iraq','Jamaica','Japan','Mexico','Morocco','New Zealand',
+  'Nigeria','Panama','Paraguay','Peru','Portugal','Saudi Arabia','Senegal',
+  'Serbia','Slovenia','South Korea','Trinidad and Tobago','United States',
+  'Uruguay','Venezuela','Albania','Algeria','Austria','Belgium','Cameroon',
+  'Cape Verde','Croatia','Denmark','Egypt','England','France','Germany',
+  'Italy','Netherlands','Poland','Scotland','Slovakia','South Africa',
+  'Spain','Switzerland','Tunisia','Turkey','Ukraine','Wales',
 ];
 
 export default function ListYourBarPage() {
@@ -72,9 +134,21 @@ export default function ListYourBarPage() {
     });
   }
 
+  function toggleTeam(team: string) {
+    setForm((prev) => {
+      if (!prev.supported_teams.includes(team) && prev.supported_teams.length >= 5) return prev;
+      return {
+        ...prev,
+        supported_teams: prev.supported_teams.includes(team)
+          ? prev.supported_teams.filter(t => t !== team)
+          : [...prev.supported_teams, team]
+      };
+    });
+  }
+
   async function handleSubmit() {
-    if (!form.bar_name || !form.address || !form.contact_email) {
-      setError("Please fill in bar name, address, and contact email.");
+    if (!form.bar_name || !form.address || !form.contact_email || !form.contact_phone) {
+      setError("Please fill in bar name, address, phone number, and contact email.");
       return;
     }
     setError(null);
@@ -164,7 +238,7 @@ export default function ListYourBarPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Address *</label>
+                  <label className="block text-xs text-gray-400 mb-1">Address * <span className="text-gray-600">(include street, NYC)</span></label>
                   <input
                     type="text"
                     value={form.address}
@@ -261,33 +335,14 @@ export default function ListYourBarPage() {
               {/* Supported Teams / Countries */}
               <div className="mb-4">
                 <label className="block text-xs text-gray-400 mb-2">Are you a home bar for any club or national team?</label>
-                <p className="text-xs text-gray-600 mb-3">These badges will appear next to your bar name and fans searching for these teams will find you first.</p>
+                <p className="text-xs text-gray-600 mb-3">These badges will appear next to your bar name and fans searching for these teams will find you first. Max 5.</p>
                 <p className="text-xs text-gray-500 font-semibold mb-2">🏟️ Clubs</p>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {[
-                    'Arsenal FC','Chelsea FC','Liverpool FC','Manchester City FC','Manchester United FC',
-                    'Tottenham Hotspur FC','Newcastle United FC','Everton FC','Brentford FC',
-                    'Aston Villa FC','Brighton & Hove Albion FC','West Ham United FC',
-                    'Wolverhampton Wanderers FC','Fulham FC','Crystal Palace FC','Nottingham Forest FC',
-                    'AFC Bournemouth','Leicester City FC','Southampton FC',
-                    'FC Barcelona','Real Madrid CF','Club Atlético de Madrid','FC Bayern München',
-                    'Borussia Dortmund','Paris Saint-Germain FC','Olympique Lyonnais','Olympique de Marseille',
-                    'Inter Milan','Juventus FC','AC Milan','AS Roma','SSC Napoli','SS Lazio',
-                    'FC Porto','SL Benfica','Sporting CP','AFC Ajax','PSV Eindhoven',
-                    'Boca Juniors','River Plate',
-                  ].map((team) => (
+                  {CLUBS.map((team) => (
                     <button
                       key={team}
                       type="button"
-                      onClick={() => setForm(prev => {
-                        if (!prev.supported_teams.includes(team) && prev.supported_teams.length >= 5) return prev;
-                        return {
-                          ...prev,
-                          supported_teams: prev.supported_teams.includes(team)
-                            ? prev.supported_teams.filter(t => t !== team)
-                            : [...prev.supported_teams, team]
-                        };
-                      })}
+                      onClick={() => toggleTeam(team)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                         form.supported_teams.includes(team)
                           ? 'bg-blue-600 border-blue-500 text-white'
@@ -300,29 +355,11 @@ export default function ListYourBarPage() {
                 </div>
                 <p className="text-xs text-gray-500 font-semibold mb-2">🌍 National Teams</p>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    'Argentina','Brazil','Colombia','Mexico','Uruguay','Spain','England','France',
-                    'Germany','Portugal','Italy','Netherlands','Belgium','Denmark','Morocco',
-                    'Senegal','Ghana','Cameroon','Nigeria','South Africa','Egypt','Tunisia',
-                    'Algeria','Japan','South Korea','Australia','Iran','Saudi Arabia',
-                    'United States','Canada','Ecuador','Chile','Paraguay','Venezuela',
-                    'Bolivia','Peru','Panama','Costa Rica','Honduras','El Salvador',
-                    'Jamaica','Trinidad and Tobago','Cuba','Guatemala','New Zealand',
-                    'Serbia','Croatia','Poland','Switzerland','Austria','Ukraine','Turkey',
-                    'Scotland','Wales','Slovakia','Slovenia','Albania','Iraq','Indonesia',
-                  ].map((team) => (
+                  {NATIONAL_TEAMS.map((team) => (
                     <button
                       key={team}
                       type="button"
-                      onClick={() => setForm(prev => {
-                        if (!prev.supported_teams.includes(team) && prev.supported_teams.length >= 5) return prev;
-                        return {
-                          ...prev,
-                          supported_teams: prev.supported_teams.includes(team)
-                            ? prev.supported_teams.filter(t => t !== team)
-                            : [...prev.supported_teams, team]
-                        };
-                      })}
+                      onClick={() => toggleTeam(team)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                         form.supported_teams.includes(team)
                           ? 'bg-blue-600 border-blue-500 text-white'
@@ -335,6 +372,7 @@ export default function ListYourBarPage() {
                 </div>
                 <p className="text-xs text-gray-600 mt-2">{form.supported_teams.length}/5 selected</p>
               </div>
+
               <label className="flex items-center gap-3 cursor-pointer mb-3">
                 <input
                   type="checkbox"
@@ -384,7 +422,7 @@ export default function ListYourBarPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-400 mb-1">Phone (optional)</label>
+                    <label className="block text-xs text-gray-400 mb-1">Phone * <span className="text-gray-600">(we'll use this to confirm your listing)</span></label>
                     <input
                       type="tel"
                       value={form.contact_phone}
@@ -482,7 +520,7 @@ export default function ListYourBarPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-12">
           {[
-            { value: "50+", label: "bars listed" },
+            { value: "67+", label: "bars listed" },
             { value: "ALL", label: "WC matches listed" },
             { value: "Free", label: "always" },
           ].map(({ value, label }) => (

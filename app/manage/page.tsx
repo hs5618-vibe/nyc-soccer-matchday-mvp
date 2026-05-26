@@ -30,6 +30,34 @@ type VenueMatch = {
   sound_on?: boolean;
 };
 
+const CLUBS = [
+  'Arsenal FC','Chelsea FC','Liverpool FC','Manchester City FC','Manchester United FC',
+  'Tottenham Hotspur FC','Newcastle United FC','Everton FC','Brentford FC',
+  'Aston Villa FC','Brighton & Hove Albion FC','West Ham United FC',
+  'Wolverhampton Wanderers FC','Fulham FC','Crystal Palace FC','Nottingham Forest FC',
+  'AFC Bournemouth','Leicester City FC','Southampton FC',
+  'FC Barcelona','Real Madrid CF','Club Atlético de Madrid','FC Bayern München',
+  'Borussia Dortmund','Paris Saint-Germain FC','Olympique Lyonnais','Olympique de Marseille',
+  'Inter Milan','Juventus FC','AC Milan','AS Roma','SSC Napoli','SS Lazio',
+  'FC Porto','SL Benfica','Sporting CP','AFC Ajax','PSV Eindhoven',
+  'Boca Juniors','River Plate',
+];
+
+const NATIONAL_TEAMS = [
+  'Albania','Algeria','Argentina','Australia','Austria','Belgium',
+  'Bolivia','Bosnia and Herzegovina','Brazil','Cabo Verde','Cameroon',
+  'Canada','Cape Verde','Chile','Colombia','Congo DR','Costa Rica',"Cote d'Ivoire",
+  'Croatia','Cuba','Curacao','Czechia','Denmark','Ecuador','Egypt',
+  'El Salvador','England','France','Germany','Ghana','Guatemala','Haiti',
+  'Honduras','Indonesia','Iran','Iraq','Italy','Jamaica','Japan','Jordan',
+  'Mexico','Morocco','Netherlands','New Zealand','Nigeria','Norway',
+  'Panama','Paraguay','Peru','Poland','Portugal','Qatar','Saudi Arabia',
+  'Scotland','Senegal','Serbia','Slovakia','Slovenia','South Africa',
+  'South Korea','Spain','Sweden','Switzerland','Trinidad and Tobago',
+  'Tunisia','Turkey','Ukraine','United States','Uruguay','Uzbekistan',
+  'Venezuela','Wales',
+];
+
 export default function ManagePage() {
   const router = useRouter();
   const [userVenues, setUserVenues] = useState<UserVenue[]>([]);
@@ -46,7 +74,6 @@ export default function ManagePage() {
   const [savingBio, setSavingBio] = useState(false);
   const [supportedTeamsMap, setSupportedTeamsMap] = useState<Record<string, string[]>>({});
 
-  // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLeague, setSelectedLeague] = useState("all");
 
@@ -169,10 +196,12 @@ export default function ManagePage() {
       .eq('venue_id', venueId)
       .eq('match_id', matchId);
   }
+
   async function saveTeams(venueId: string, teams: string[]) {
     setSupportedTeamsMap(prev => ({ ...prev, [venueId]: teams }));
     await supabase.from('venues').update({ supported_teams: teams }).eq('id', venueId);
   }
+
   async function handleSaveBio(venueId: string) {
     setSavingBio(true);
     const { error } = await supabase.from('venues').update({ bio: bioInput }).eq('id', venueId);
@@ -183,6 +212,7 @@ export default function ManagePage() {
     }
     setSavingBio(false);
   }
+
   async function handleImageUpload(venueId: string, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -210,42 +240,37 @@ export default function ManagePage() {
     await supabase.from('venues').update({ image_url: null }).eq('id', venueId);
     setVenueImages(prev => { const n = { ...prev }; delete n[venueId]; return n; });
   }
+
   async function tickAll(venueId: string, venueMatchIds: string[]) {
     const toAdd = filteredMatches.filter(m => !venueMatchIds.includes(m.id));
     if (toAdd.length === 0) return;
-
     const rows = toAdd.map(m => ({
       venue_id: venueId,
       match_id: m.id,
       verified_by_owner: true,
     }));
-
     const { error } = await supabase
       .from("venue_matches")
       .upsert(rows, { onConflict: 'venue_id,match_id' });
-
     if (error) {
       alert("Failed to tick all. Please try again.");
       return;
     }
-
     setVenueMatches(prev => [
       ...prev,
       ...toAdd.map(m => ({ venue_id: venueId, match_id: m.id }))
     ]);
   }
+
   async function toggleDefault(venueId: string) {
     if (selectedLeague === 'all' && !searchQuery.trim()) return;
-
     const league = selectedLeague !== 'all' ? selectedLeague : null;
     const team = searchQuery.trim() || null;
-
     const existing = venueDefaults.find(d =>
       d.venue_id === venueId &&
       d.league === league &&
       d.team === team
     );
-
     if (existing) {
       await supabase.from("venue_defaults").delete()
         .eq("venue_id", venueId)
@@ -261,23 +286,20 @@ export default function ManagePage() {
       if (data) setVenueDefaults(prev => [...prev, data]);
     }
   }
+
   async function untickAll(venueId: string, venueMatchIds: string[]) {
     const toRemove = filteredMatches.filter(m => venueMatchIds.includes(m.id));
     if (toRemove.length === 0) return;
-
     const toRemoveIds = toRemove.map(m => m.id);
-
     const { error } = await supabase
       .from("venue_matches")
       .delete()
       .eq("venue_id", venueId)
       .in("match_id", toRemoveIds);
-
     if (error) {
       alert("Failed to untick all. Please try again.");
       return;
     }
-
     setVenueMatches(prev => prev.filter(
       vm => !(vm.venue_id === venueId && toRemoveIds.includes(vm.match_id))
     ));
@@ -312,7 +334,6 @@ export default function ManagePage() {
           <p className="text-gray-400">Update which matches you're showing</p>
         </div>
 
-        {/* Search + League Filter */}
         <div className="mb-6 space-y-3">
           <input
             type="text"
@@ -338,14 +359,12 @@ export default function ManagePage() {
           </div>
         </div>
 
-        {/* Venues */}
         <div className="space-y-6">
           {userVenues.map((userVenue) => {
             const venue = userVenue.venues;
             const venueMatchIds = venueMatches
               .filter(vm => vm.venue_id === venue.id)
               .map(vm => vm.match_id);
-
             const allFilteredTicked = filteredMatches.every(m => venueMatchIds.includes(m.id));
 
             return (
@@ -389,18 +408,7 @@ export default function ManagePage() {
                     <p className="text-xs text-gray-500 mb-3">Select any club or national team your bar is a home for. Fans searching for these teams will find you first.</p>
                     <p className="text-xs text-gray-500 font-semibold mb-2">🏟️ Clubs</p>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {[
-                        'Arsenal FC','Chelsea FC','Liverpool FC','Manchester City FC','Manchester United FC',
-                        'Tottenham Hotspur FC','Newcastle United FC','Everton FC','Brentford FC',
-                        'Aston Villa FC','Brighton & Hove Albion FC','West Ham United FC',
-                        'Wolverhampton Wanderers FC','Fulham FC','Crystal Palace FC','Nottingham Forest FC',
-                        'AFC Bournemouth','Leicester City FC','Southampton FC',
-                        'FC Barcelona','Real Madrid CF','Club Atlético de Madrid','FC Bayern München',
-                        'Borussia Dortmund','Paris Saint-Germain FC','Olympique Lyonnais','Olympique de Marseille',
-                        'Inter Milan','Juventus FC','AC Milan','AS Roma','SSC Napoli','SS Lazio',
-                        'FC Porto','SL Benfica','Sporting CP','AFC Ajax','PSV Eindhoven',
-                        'Boca Juniors','River Plate',
-                      ].map((team) => {
+                      {CLUBS.map((team) => {
                         const selected = (supportedTeamsMap[venue.id] || []).includes(team);
                         return (
                           <button
@@ -425,17 +433,7 @@ export default function ManagePage() {
                     </div>
                     <p className="text-xs text-gray-500 font-semibold mb-2">🌍 National Teams</p>
                     <div className="flex flex-wrap gap-2">
-                      {[
-                        'Argentina','Brazil','Colombia','Mexico','Uruguay','Spain','England','France',
-                        'Germany','Portugal','Italy','Netherlands','Belgium','Denmark','Morocco',
-                        'Senegal','Ghana','Cameroon','Nigeria','South Africa','Egypt','Tunisia',
-                        'Algeria','Japan','South Korea','Australia','Iran','Saudi Arabia',
-                        'United States','Canada','Ecuador','Chile','Paraguay','Venezuela',
-                        'Bolivia','Peru','Panama','Costa Rica','Honduras','El Salvador',
-                        'Jamaica','Trinidad and Tobago','Cuba','Guatemala','New Zealand',
-                        'Serbia','Croatia','Poland','Switzerland','Austria','Ukraine','Turkey',
-                        'Scotland','Wales','Slovakia','Slovenia','Albania','Iraq','Indonesia',
-                      ].map((team) => {
+                      {NATIONAL_TEAMS.map((team) => {
                         const selected = (supportedTeamsMap[venue.id] || []).includes(team);
                         return (
                           <button
@@ -534,9 +532,8 @@ export default function ManagePage() {
                     {filteredMatches.map((match) => {
                       const isShowing = venueMatchIds.includes(match.id);
                       const isSaving = saving === `${venue.id}-${match.id}`;
-                      
                       const soundOn = venueMatches.find(vm => vm.venue_id === venue.id && vm.match_id === match.id)?.sound_on || false;
-                        return (
+                      return (
                         <div key={match.id} className="bg-white/5 border border-white/10 rounded-2xl p-4">
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex-1 min-w-0">

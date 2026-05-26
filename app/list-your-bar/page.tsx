@@ -78,17 +78,19 @@ const CLUBS = [
   'Boca Juniors','River Plate',
 ];
 
-// All 48 WC 2026 qualified nations + Italy + Denmark
 const NATIONAL_TEAMS = [
-  'Argentina','Australia','Bolivia','Brazil','Canada','Chile','Colombia',
-  'Costa Rica','Cuba','Ecuador','El Salvador','Ghana','Guatemala','Honduras',
-  'Indonesia','Iran','Iraq','Jamaica','Japan','Mexico','Morocco','New Zealand',
-  'Nigeria','Panama','Paraguay','Peru','Portugal','Saudi Arabia','Senegal',
-  'Serbia','Slovenia','South Korea','Trinidad and Tobago','United States',
-  'Uruguay','Venezuela','Albania','Algeria','Austria','Belgium','Cameroon',
-  'Cape Verde','Croatia','Denmark','Egypt','England','France','Germany',
-  'Italy','Netherlands','Poland','Scotland','Slovakia','South Africa',
-  'Spain','Switzerland','Tunisia','Turkey','Ukraine','Wales',
+  'Albania','Algeria','Argentina','Australia','Austria','Belgium',
+  'Bolivia','Bosnia and Herzegovina','Brazil','Cabo Verde','Cameroon',
+  'Canada','Chile','Colombia','Congo DR','Costa Rica','Cote d\'Ivoire',
+  'Croatia','Cuba','Curacao','Czechia','Denmark','Ecuador','Egypt',
+  'El Salvador','England','France','Germany','Ghana','Guatemala','Haiti',
+  'Honduras','Indonesia','Iran','Iraq','Italy','Jamaica','Japan','Jordan',
+  'Mexico','Morocco','Netherlands','New Zealand','Nigeria','Norway',
+  'Panama','Paraguay','Peru','Poland','Portugal','Qatar','Saudi Arabia',
+  'Scotland','Senegal','Serbia','Slovakia','Slovenia','South Africa',
+  'South Korea','Spain','Sweden','Switzerland','Trinidad and Tobago',
+  'Tunisia','Turkey','Ukraine','United States','Uruguay','Uzbekistan',
+  'Venezuela','Wales',
 ];
 
 export default function ListYourBarPage() {
@@ -332,7 +334,6 @@ export default function ListYourBarPage() {
                 <span className="text-sm text-yellow-300 font-semibold">⚽ We'll be showing FIFA World Cup 2026</span>
               </label>
 
-              {/* Supported Teams / Countries */}
               <div className="mb-4">
                 <label className="block text-xs text-gray-400 mb-2">Are you a home bar for any club or national team?</label>
                 <p className="text-xs text-gray-600 mb-3">These badges will appear next to your bar name and fans searching for these teams will find you first. Max 5.</p>
@@ -488,7 +489,6 @@ export default function ListYourBarPage() {
     );
   }
 
-  // Landing
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
@@ -502,7 +502,6 @@ export default function ListYourBarPage() {
           Back to awaydayz
         </Link>
 
-        {/* Hero */}
         <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-xs font-bold px-4 py-2 rounded-full mb-6">
             <img src="https://crests.football-data.org/wm26.png" className="w-4 h-4 object-contain" alt="WC26" />
@@ -517,7 +516,6 @@ export default function ListYourBarPage() {
           </p>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-12">
           {[
             { value: "67+", label: "bars listed" },
@@ -531,7 +529,6 @@ export default function ListYourBarPage() {
           ))}
         </div>
 
-        {/* Why list */}
         <div className="grid sm:grid-cols-3 gap-4 mb-12">
           {[
             {
@@ -558,7 +555,6 @@ export default function ListYourBarPage() {
           ))}
         </div>
 
-        {/* How it works */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-10">
           <h2 className="text-white font-bold mb-5 text-sm uppercase tracking-wide">How it works</h2>
           <div className="space-y-4">

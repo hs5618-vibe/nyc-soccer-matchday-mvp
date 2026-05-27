@@ -750,7 +750,7 @@ export default function VenuePage() {
                 </span>
               )}
               {isCrawler && (
-                
+                <a
                   href="https://www.joincrawler.com/"
                   target="_blank"
                   rel="noopener noreferrer"

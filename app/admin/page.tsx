@@ -188,7 +188,7 @@ export default function AdminPage() {
   async function loadSubmissions() {
     const { data } = await supabase.from("bar_submissions")
       .select("*")
-      .in("status", ["pending", "approved"])
+      .eq("status", "pending")
       .order("created_at", { ascending: false });
     setSubmissions(data || []);
   }

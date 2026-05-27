@@ -826,7 +826,7 @@ function ResultsContent() {
                           </span>
                         )}
                         {crawlerMap[venue.id] && (
-                          
+                          <a
                             href="https://www.joincrawler.com/"
                             target="_blank"
                             rel="noopener noreferrer"

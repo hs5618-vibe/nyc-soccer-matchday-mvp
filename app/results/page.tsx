@@ -226,6 +226,8 @@ function ResultsContent() {
   const [goingMap, setGoingMap] = useState<Record<string, number>>({});
   const [userGoingSet, setUserGoingSet] = useState<Set<string>>(new Set());
   const [soundMap, setSoundMap] = useState<Record<string, boolean>>({});
+  const [outdoorTvFilter, setOutdoorTvFilter] = useState(false);
+  const [outdoorTvMap, setOutdoorTvMap] = useState<Record<string, boolean>>({});
 
   // Near-me controls
   const [nearMe, setNearMe] = useState(false);
@@ -290,6 +292,11 @@ function ResultsContent() {
         sMap[String(r.venue_id)] = r.sound_on || false;
       });
       setSoundMap(sMap);
+
+      const { data: tvData } = await supabase.from('venues').select('id, outdoor_tv');
+      const tvMap: Record<string, boolean> = {};
+      (tvData || []).forEach((v: any) => { tvMap[String(v.id)] = v.outdoor_tv || false; });
+      setOutdoorTvMap(tvMap);
 
       const merged: VenueWithMeta[] = (allVenues || [])
         .filter((v) => showingIds.has(v.id))
@@ -408,6 +415,7 @@ function ResultsContent() {
   const sortedVenues = useMemo(() => {
     const arr = [...venuesWithDistance].filter((v: any) => {
       if (v.is_featured && match?.league !== 'World Cup') return false;
+      if (outdoorTvFilter && !outdoorTvMap[v.id]) return false;
       return true;
     });
 
@@ -459,7 +467,7 @@ function ResultsContent() {
     });
 
     return arr;
-  }, [venuesWithDistance, nearMe, origin, verifiedDates, engagementScores, match]);
+  }, [venuesWithDistance, nearMe, origin, verifiedDates, engagementScores, match, outdoorTvFilter, outdoorTvMap]);
 
   async function toggleGoing(venueId: string, e: React.MouseEvent) {
     e.preventDefault();
@@ -673,9 +681,10 @@ function ResultsContent() {
             </span>
           </div>
 
-          {/* Near me controls */}
+          {/* Filters */}
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-4">
               <label className="flex items-center gap-3 text-white">
                 <input
                   type="checkbox"
@@ -696,6 +705,12 @@ function ResultsContent() {
                   (sorts by closest)
                 </span>
               </label>
+              <label className="flex items-center gap-2 text-white cursor-pointer">
+                <input type="checkbox" checked={outdoorTvFilter}
+                  onChange={(e) => setOutdoorTvFilter(e.target.checked)} className="h-4 w-4" />
+                <span className="font-semibold text-sm">📺 Outdoor TV</span>
+              </label>
+              </div>
 
               {nearMe && (
                 <div className="text-xs text-gray-400">
@@ -776,6 +791,11 @@ function ResultsContent() {
                         {soundMap[venue.id] && (
                           <span className="bg-white/10 border border-white/20 text-gray-300 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
                             🔊
+                          </span>
+                        )}
+                        {outdoorTvMap[venue.id] && (
+                          <span className="bg-white/10 border border-white/20 text-gray-300 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                            📺
                           </span>
                         )}
                         {(venue as any).is_featured && (

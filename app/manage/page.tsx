@@ -73,6 +73,7 @@ export default function ManagePage() {
   const [bioInput, setBioInput] = useState("");
   const [savingBio, setSavingBio] = useState(false);
   const [supportedTeamsMap, setSupportedTeamsMap] = useState<Record<string, string[]>>({});
+  const [outdoorTvMap, setOutdoorTvMap] = useState<Record<string, boolean>>({});
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLeague, setSelectedLeague] = useState("all");
@@ -117,19 +118,22 @@ export default function ManagePage() {
       setVenueDefaults(defaultsData || []);
       const { data: imageData } = await supabase
         .from('venues')
-        .select('id, image_url, bio, supported_teams')
+        .select('id, image_url, bio, supported_teams, outdoor_tv')
         .in('id', venueIds);
       const imageMap: Record<string, string> = {};
       const bioMap: Record<string, string> = {};
       const teamsMap: Record<string, string[]> = {};
+      const tvMap: Record<string, boolean> = {};
       (imageData || []).forEach((v: any) => {
         if (v.image_url) imageMap[v.id] = v.image_url;
         if (v.bio) bioMap[v.id] = v.bio;
         teamsMap[v.id] = v.supported_teams || [];
+        tvMap[v.id] = v.outdoor_tv || false;
       });
       setVenueImages(imageMap);
       setVenueBios(bioMap);
       setSupportedTeamsMap(teamsMap);
+      setOutdoorTvMap(tvMap);
       setLoading(false);
     }
 
@@ -197,6 +201,11 @@ export default function ManagePage() {
       .eq('match_id', matchId);
   }
 
+  async function toggleOutdoorTv(venueId: string) {
+    const next = !outdoorTvMap[venueId];
+    setOutdoorTvMap(prev => ({ ...prev, [venueId]: next }));
+    await supabase.from('venues').update({ outdoor_tv: next }).eq('id', venueId);
+  }
   async function saveTeams(venueId: string, teams: string[]) {
     setSupportedTeamsMap(prev => ({ ...prev, [venueId]: teams }));
     await supabase.from('venues').update({ supported_teams: teams }).eq('id', venueId);
@@ -457,6 +466,15 @@ export default function ManagePage() {
                       })}
                     </div>
                     <p className="text-xs text-gray-500 mt-2">{(supportedTeamsMap[venue.id] || []).length}/5 selected</p>
+                  </div>
+                  {/* Venue Features */}
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-2">Venue Features</p>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={outdoorTvMap[venue.id] || false}
+                        onChange={() => toggleOutdoorTv(venue.id)} className="w-4 h-4 cursor-pointer" />
+                      <span className="text-sm text-white font-semibold">📺 We have an outdoor TV or screen</span>
+                    </label>
                   </div>
                   {/* Cover Photo */}
                   <div className="mb-4">

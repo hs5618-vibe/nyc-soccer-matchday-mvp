@@ -49,6 +49,8 @@ type Submission = {
   leagues: string[];
   other_leagues: string;
   show_world_cup: boolean;
+  sound_on: boolean;
+  outdoor_tv: boolean;
   notes: string;
   status: string;
 };
@@ -489,6 +491,8 @@ export default function AdminPage() {
                       {sub.leagues?.length > 0 && <p className="text-gray-300"><span className="text-gray-500">Leagues:</span> {sub.leagues.join(", ")}</p>}
                       {sub.other_leagues && <p className="text-gray-300"><span className="text-gray-500">Other:</span> {sub.other_leagues}</p>}
                       {sub.show_world_cup && <p className="text-yellow-300 text-xs font-semibold">⚽ Showing FIFA World Cup 2026</p>}
+{sub.sound_on && <p className="text-green-300 text-xs font-semibold">🔊 Sound on</p>}
+{sub.outdoor_tv && <p className="text-blue-300 text-xs font-semibold">📺 Outdoor TV</p>}
                       {sub.notes && <p className="text-gray-300"><span className="text-gray-500">Notes:</span> {sub.notes}</p>}
                       <p className="text-gray-600 text-xs">{new Date(sub.created_at).toLocaleString()}</p>
                     </div>

@@ -40,7 +40,6 @@ export async function POST(req: NextRequest) {
     .replace(/\s+/g, "-")
     .slice(0, 50);
 
-  // Check if ID already exists, append suffix only if needed
   const { data: existing } = await supabaseAdmin
     .from("venues")
     .select("id")
@@ -54,13 +53,18 @@ export async function POST(req: NextRequest) {
     name: sub.bar_name,
     address: sub.address,
     neighborhood: sub.neighborhood || "Other",
+    borough: sub.borough || null,
     bio: sub.bio || null,
     instagram: sub.instagram || null,
+    phone: sub.contact_phone || null,
+    website: sub.website || null,
+    sound_on: sub.sound_on || false,
+    outdoor_tv: sub.outdoor_tv || false,
     supported_teams: sub.supported_teams || [],
     bar_type: "bar",
     claimed: true,
     verified: false,
-  });  
+  });
 
   if (venueError) {
     return NextResponse.json({ error: `Failed to create venue: ${venueError.message}` }, { status: 500 });
@@ -96,7 +100,6 @@ export async function POST(req: NextRequest) {
     }));
     await supabaseAdmin.from("venue_defaults").insert(defaults);
 
-    // Auto-populate all upcoming matches for these leagues
     const { data: upcomingMatches } = await supabaseAdmin
       .from("matches")
       .select("id")
@@ -116,7 +119,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+  const { data: inviteData } = await supabaseAdmin.auth.admin.inviteUserByEmail(
     sub.contact_email,
     {
       data: {

@@ -177,6 +177,7 @@ export default function VenuePage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
   const [matchSoundOn, setMatchSoundOn] = useState(false);
+  const [outdoorTv, setOutdoorTv] = useState(false);
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
@@ -207,6 +208,7 @@ export default function VenuePage() {
         setMatch(matchData);
         if (venueData) setBio((venueData as any).bio || "");
         if (venueData) setImageUrl((venueData as any).image_url || "");
+        if (venueData) setOutdoorTv((venueData as any).outdoor_tv || false);
 
         if (venueData && matchId) {
           await loadUpdates();
@@ -727,6 +729,11 @@ export default function VenuePage() {
               {matchSoundOn && (
                 <span className="inline-flex items-center gap-1.5 bg-green-600/20 border border-green-500/30 text-green-300 px-3 py-1.5 rounded-full text-xs font-bold">
                   🔊 Sound on for this game
+                </span>
+              )}
+              {outdoorTv && (
+                <span className="inline-flex items-center gap-1.5 bg-blue-600/20 border border-blue-500/30 text-blue-300 px-3 py-1.5 rounded-full text-xs font-bold">
+                  📺 Outdoor TV
                 </span>
               )}
               <button

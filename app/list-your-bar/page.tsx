@@ -20,49 +20,15 @@ const LEAGUES = [
 ];
 
 const NEIGHBORHOODS = [
-  "Astoria",
-  "Astoria Park",
-  "Bay Ridge",
-  "Bed-Stuy",
-  "Bowery",
-  "Bronx",
-  "Bushwick",
-  "Carroll Gardens",
-  "Chelsea",
-  "Cobble Hill",
-  "Crown Heights",
-  "DUMBO",
-  "East Village",
-  "Elmhurst",
-  "Financial District",
-  "Flatbush",
-  "Flatiron",
-  "Fort Greene",
-  "Gramercy",
-  "Greenpoint",
-  "Greenwich Village",
-  "Harlem",
-  "Hell's Kitchen",
-  "Industry City",
-  "Jackson Heights",
-  "Long Island City",
-  "Lower East Side",
-  "Meatpacking District",
-  "Midtown",
-  "Midtown West",
-  "Murray Hill",
-  "Park Slope",
-  "Prospect Heights",
-  "SoHo",
-  "Staten Island",
-  "Sunnyside",
-  "Sunset Park",
-  "Tribeca",
-  "Upper East Side",
-  "Upper West Side",
-  "West Village",
-  "Williamsburg",
-  "Other",
+  "Astoria","Astoria Park","Bay Ridge","Bed-Stuy","Bowery","Bronx",
+  "Bushwick","Carroll Gardens","Chelsea","Cobble Hill","Crown Heights",
+  "DUMBO","East Village","Elmhurst","Financial District","Flatbush",
+  "Flatiron","Fort Greene","Gramercy","Greenpoint","Greenwich Village",
+  "Harlem","Hell's Kitchen","Industry City","Jackson Heights",
+  "Long Island City","Lower East Side","Meatpacking District","Midtown",
+  "Midtown West","Murray Hill","Park Slope","Prospect Heights","SoHo",
+  "Staten Island","Sunnyside","Sunset Park","Tribeca","Upper East Side",
+  "Upper West Side","West Village","Williamsburg","Other",
 ];
 
 const CLUBS = [
@@ -81,7 +47,7 @@ const CLUBS = [
 const NATIONAL_TEAMS = [
   'Albania','Algeria','Argentina','Australia','Austria','Belgium',
   'Bolivia','Bosnia and Herzegovina','Brazil','Cabo Verde','Cameroon',
-  'Canada','Chile','Colombia','Congo DR','Costa Rica','Cote d\'Ivoire',
+  'Canada','Cape Verde','Chile','Colombia','Congo DR','Costa Rica',"Cote d'Ivoire",
   'Croatia','Cuba','Curacao','Czechia','Denmark','Ecuador','Egypt',
   'El Salvador','England','France','Germany','Ghana','Guatemala','Haiti',
   'Honduras','Indonesia','Iran','Iraq','Italy','Jamaica','Japan','Jordan',
@@ -113,6 +79,7 @@ export default function ListYourBarPage() {
     other_leagues: "",
     show_world_cup: false,
     sound_on: false,
+    outdoor_tv: false,
     supported_teams: [] as string[],
     notes: "",
   });
@@ -171,6 +138,7 @@ export default function ListYourBarPage() {
       other_leagues: form.other_leagues,
       show_world_cup: form.show_world_cup,
       sound_on: form.sound_on,
+      outdoor_tv: form.outdoor_tv,
       supported_teams: form.supported_teams,
       notes: form.notes,
       status: "pending",
@@ -195,10 +163,7 @@ export default function ListYourBarPage() {
           <p className="text-gray-400 mb-6">
             Thanks for submitting <span className="text-white font-semibold">{form.bar_name}</span>. We'll review your details and get your bar live within 48 hours. We'll reach out to <span className="text-white font-semibold">{form.contact_email}</span> once you're set up.
           </p>
-          <Link
-            href="/"
-            className="inline-block bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition-all"
-          >
+          <Link href="/" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition-all">
             Back to awaydayz
           </Link>
         </div>
@@ -383,6 +348,17 @@ export default function ListYourBarPage() {
                 />
                 <span className="text-sm text-white font-semibold">🔊 We always have sound on during matches</span>
               </label>
+
+              <label className="flex items-center gap-3 cursor-pointer mb-3">
+                <input
+                  type="checkbox"
+                  checked={form.outdoor_tv}
+                  onChange={(e) => update("outdoor_tv", e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm text-white font-semibold">📺 We have an outdoor TV or screen</span>
+              </label>
+
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Anything else? (teams, other sports)</label>
                 <input

@@ -833,7 +833,7 @@ function ResultsContent() {
                             onClick={(e) => e.stopPropagation()}
                             className="flex items-center gap-1 bg-white/10 border border-white/20 text-gray-300 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 hover:bg-white/20 transition-all"
                           >
-                            <img src="https://www.joincrawler.com/favicon.ico" className="w-3 h-3 rounded-full" alt="Crawler" />
+                            <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-3 h-3 rounded-full" alt="Crawler" />
                             Crawler
                           </a>
                         )}

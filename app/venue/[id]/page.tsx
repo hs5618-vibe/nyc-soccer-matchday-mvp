@@ -756,7 +756,7 @@ export default function VenuePage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 bg-purple-600/20 border border-purple-500/30 text-purple-300 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-purple-600/30 transition-all"
                 >
-                  <img src="https://www.joincrawler.com/favicon.ico" className="w-4 h-4 rounded-full" alt="Crawler" />
+                  <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-4 h-4 rounded-full" alt="Crawler" />
                   Crawler partner
                 </a>
               )}

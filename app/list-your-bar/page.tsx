@@ -369,7 +369,7 @@ export default function ListYourBarPage() {
                   className="h-4 w-4"
                 />
                 <span className="text-sm text-white font-semibold flex items-center gap-2">
-                  <img src="https://www.joincrawler.com/favicon.ico" className="w-4 h-4 rounded-full" alt="Crawler" />
+                  <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-4 h-4 rounded-full" alt="Crawler" />
                   We are a Crawler partner bar
                 </span>
               </label>

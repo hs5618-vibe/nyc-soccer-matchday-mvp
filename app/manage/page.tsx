@@ -489,7 +489,7 @@ export default function ManagePage() {
                         <input type="checkbox" checked={crawlerMap[venue.id] || false}
                           onChange={() => toggleCrawler(venue.id)} className="w-4 h-4 cursor-pointer" />
                         <span className="text-sm text-white font-semibold flex items-center gap-2">
-                          <img src="https://www.joincrawler.com/favicon.ico" className="w-4 h-4 rounded-full" alt="Crawler" />
+                          <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-4 h-4 rounded-full" alt="Crawler" />
                           Crawler partner bar
                         </span>
                       </label>

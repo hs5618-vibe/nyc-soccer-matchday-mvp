@@ -195,7 +195,11 @@ export default function AdminPage() {
 
   async function handleSubmissionStatus(id: string, status: "approved" | "rejected") {
     if (status === "rejected") {
-      await supabase.from("bar_submissions").update({ status: "rejected" }).eq("id", id);
+      const { error } = await supabase.from("bar_submissions").update({ status: "rejected" }).eq("id", id);
+      if (error) {
+        alert(`❌ Failed to reject: ${error.message}`);
+        return;
+      }
       setSubmissions(prev => prev.filter(s => s.id !== id));
       return;
     }
@@ -497,7 +501,7 @@ export default function AdminPage() {
                       {sub.show_world_cup && <p className="text-yellow-300 text-xs font-semibold">⚽ Showing FIFA World Cup 2026</p>}
 {sub.sound_on && <p className="text-green-300 text-xs font-semibold">🔊 Sound on</p>}
 {sub.outdoor_tv && <p className="text-blue-300 text-xs font-semibold">📺 Outdoor TV</p>}
-{sub.is_crawler && <p className="text-purple-300 text-xs font-semibold flex items-center gap-1"><img src="https://www.joincrawler.com/favicon.ico" className="w-3 h-3 rounded-full" alt="Crawler" /> Crawler partner</p>}
+{sub.is_crawler && <p className="text-purple-300 text-xs font-semibold flex items-center gap-1"><img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-3 h-3 rounded-full" alt="Crawler" /> Crawler partner</p>}
                       {sub.notes && <p className="text-gray-300"><span className="text-gray-500">Notes:</span> {sub.notes}</p>}
                       <p className="text-gray-600 text-xs">{new Date(sub.created_at).toLocaleString()}</p>
                     </div>

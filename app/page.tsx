@@ -370,6 +370,15 @@ export default function HomePage() {
             List your bar
           </Link>
         </div>
+        {/* Partners */}
+        <div className="flex items-center justify-center gap-2 mb-6 text-gray-600 text-xs">
+          <span>In partnership with</span>
+          <a href="https://www.joincrawler.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+            <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-5 h-5 rounded-full" alt="Crawler" />
+            <span className="text-gray-500 font-semibold">Crawler</span>
+          </a>
+        </div>
+
         {/* League Filter Pills */}
         <div className="mb-8">
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">

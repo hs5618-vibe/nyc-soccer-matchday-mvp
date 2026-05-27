@@ -46,7 +46,7 @@ const CLUBS = [
 
 const NATIONAL_TEAMS = [
   'Albania','Algeria','Argentina','Australia','Austria','Belgium',
-  'Bolivia','Bosnia and Herzegovina','Brazil','Cabo Verde','Cameroon',
+  'Bolivia','Bosnia and Herzegovina','Brazil','Cameroon',
   'Canada','Cape Verde','Chile','Colombia','Congo DR','Costa Rica',"Cote d'Ivoire",
   'Croatia','Cuba','Curacao','Czechia','Denmark','Ecuador','Egypt',
   'El Salvador','England','France','Germany','Ghana','Guatemala','Haiti',

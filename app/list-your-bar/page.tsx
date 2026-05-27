@@ -80,6 +80,7 @@ export default function ListYourBarPage() {
     show_world_cup: false,
     sound_on: false,
     outdoor_tv: false,
+    is_crawler: false,
     supported_teams: [] as string[],
     notes: "",
   });
@@ -139,6 +140,7 @@ export default function ListYourBarPage() {
       show_world_cup: form.show_world_cup,
       sound_on: form.sound_on,
       outdoor_tv: form.outdoor_tv,
+      is_crawler: form.is_crawler,
       supported_teams: form.supported_teams,
       notes: form.notes,
       status: "pending",
@@ -357,6 +359,19 @@ export default function ListYourBarPage() {
                   className="h-4 w-4"
                 />
                 <span className="text-sm text-white font-semibold">📺 We have an outdoor TV or screen</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer mb-3">
+                <input
+                  type="checkbox"
+                  checked={form.is_crawler}
+                  onChange={(e) => update("is_crawler", e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm text-white font-semibold flex items-center gap-2">
+                  <img src="https://www.joincrawler.com/favicon.ico" className="w-4 h-4 rounded-full" alt="Crawler" />
+                  We are a Crawler partner bar
+                </span>
               </label>
 
               <div>

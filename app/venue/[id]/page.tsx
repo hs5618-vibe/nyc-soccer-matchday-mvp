@@ -189,6 +189,7 @@ export default function VenuePage() {
   const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
   const [matchSoundOn, setMatchSoundOn] = useState(false);
   const [outdoorTv, setOutdoorTv] = useState(false);
+  const [isCrawler, setIsCrawler] = useState(false);
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
@@ -220,6 +221,7 @@ export default function VenuePage() {
         if (venueData) setBio((venueData as any).bio || "");
         if (venueData) setImageUrl((venueData as any).image_url || "");
         if (venueData) setOutdoorTv((venueData as any).outdoor_tv || false);
+        if (venueData) setIsCrawler((venueData as any).is_crawler || false);
 
         if (venueData && matchId) {
           await loadUpdates();
@@ -746,6 +748,17 @@ export default function VenuePage() {
                 <span className="inline-flex items-center gap-1.5 bg-blue-600/20 border border-blue-500/30 text-blue-300 px-3 py-1.5 rounded-full text-xs font-bold">
                   📺 Outdoor TV
                 </span>
+              )}
+              {isCrawler && (
+                
+                  href="https://www.joincrawler.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 bg-purple-600/20 border border-purple-500/30 text-purple-300 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-purple-600/30 transition-all"
+                >
+                  <img src="https://www.joincrawler.com/favicon.ico" className="w-4 h-4 rounded-full" alt="Crawler" />
+                  Crawler partner
+                </a>
               )}
               <button
                 onClick={handleGoing}

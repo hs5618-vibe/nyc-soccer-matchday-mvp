@@ -51,6 +51,7 @@ type Submission = {
   show_world_cup: boolean;
   sound_on: boolean;
   outdoor_tv: boolean;
+  is_crawler: boolean;
   notes: string;
   status: string;
 };
@@ -251,6 +252,9 @@ export default function AdminPage() {
     await loadStats();
   }
 
+  async function toggleCrawlerAdmin(venueId: string, current: boolean) {
+    await supabase.from('venues').update({ is_crawler: !current }).eq('id', venueId);
+  }
   async function saveTeams(venueId: string, teams: string[]) {
     setSupportedTeamsMap(prev => ({ ...prev, [venueId]: teams }));
     await supabase.from('venues').update({ supported_teams: teams }).eq('id', venueId);
@@ -493,6 +497,7 @@ export default function AdminPage() {
                       {sub.show_world_cup && <p className="text-yellow-300 text-xs font-semibold">⚽ Showing FIFA World Cup 2026</p>}
 {sub.sound_on && <p className="text-green-300 text-xs font-semibold">🔊 Sound on</p>}
 {sub.outdoor_tv && <p className="text-blue-300 text-xs font-semibold">📺 Outdoor TV</p>}
+{sub.is_crawler && <p className="text-purple-300 text-xs font-semibold flex items-center gap-1"><img src="https://www.joincrawler.com/favicon.ico" className="w-3 h-3 rounded-full" alt="Crawler" /> Crawler partner</p>}
                       {sub.notes && <p className="text-gray-300"><span className="text-gray-500">Notes:</span> {sub.notes}</p>}
                       <p className="text-gray-600 text-xs">{new Date(sub.created_at).toLocaleString()}</p>
                     </div>

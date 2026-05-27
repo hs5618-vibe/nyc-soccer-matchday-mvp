@@ -74,6 +74,7 @@ export default function ManagePage() {
   const [savingBio, setSavingBio] = useState(false);
   const [supportedTeamsMap, setSupportedTeamsMap] = useState<Record<string, string[]>>({});
   const [outdoorTvMap, setOutdoorTvMap] = useState<Record<string, boolean>>({});
+  const [crawlerMap, setCrawlerMap] = useState<Record<string, boolean>>({});
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLeague, setSelectedLeague] = useState("all");
@@ -118,7 +119,7 @@ export default function ManagePage() {
       setVenueDefaults(defaultsData || []);
       const { data: imageData } = await supabase
         .from('venues')
-        .select('id, image_url, bio, supported_teams, outdoor_tv')
+        .select('id, image_url, bio, supported_teams, outdoor_tv, is_crawler')
         .in('id', venueIds);
       const imageMap: Record<string, string> = {};
       const bioMap: Record<string, string> = {};
@@ -129,11 +130,13 @@ export default function ManagePage() {
         if (v.bio) bioMap[v.id] = v.bio;
         teamsMap[v.id] = v.supported_teams || [];
         tvMap[v.id] = v.outdoor_tv || false;
+        crawlerMap[v.id] = v.is_crawler || false;
       });
       setVenueImages(imageMap);
       setVenueBios(bioMap);
       setSupportedTeamsMap(teamsMap);
       setOutdoorTvMap(tvMap);
+      setCrawlerMap(crawlerMap);
       setLoading(false);
     }
 
@@ -205,6 +208,12 @@ export default function ManagePage() {
     const next = !outdoorTvMap[venueId];
     setOutdoorTvMap(prev => ({ ...prev, [venueId]: next }));
     await supabase.from('venues').update({ outdoor_tv: next }).eq('id', venueId);
+  }
+
+  async function toggleCrawler(venueId: string) {
+    const next = !crawlerMap[venueId];
+    setCrawlerMap(prev => ({ ...prev, [venueId]: next }));
+    await supabase.from('venues').update({ is_crawler: next }).eq('id', venueId);
   }
   async function saveTeams(venueId: string, teams: string[]) {
     setSupportedTeamsMap(prev => ({ ...prev, [venueId]: teams }));
@@ -470,11 +479,21 @@ export default function ManagePage() {
                   {/* Venue Features */}
                   <div className="mb-4">
                     <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-2">Venue Features</p>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={outdoorTvMap[venue.id] || false}
-                        onChange={() => toggleOutdoorTv(venue.id)} className="w-4 h-4 cursor-pointer" />
-                      <span className="text-sm text-white font-semibold">📺 We have an outdoor TV or screen</span>
-                    </label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={outdoorTvMap[venue.id] || false}
+                          onChange={() => toggleOutdoorTv(venue.id)} className="w-4 h-4 cursor-pointer" />
+                        <span className="text-sm text-white font-semibold">📺 We have an outdoor TV or screen</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={crawlerMap[venue.id] || false}
+                          onChange={() => toggleCrawler(venue.id)} className="w-4 h-4 cursor-pointer" />
+                        <span className="text-sm text-white font-semibold flex items-center gap-2">
+                          <img src="https://www.joincrawler.com/favicon.ico" className="w-4 h-4 rounded-full" alt="Crawler" />
+                          Crawler partner bar
+                        </span>
+                      </label>
+                    </div>
                   </div>
                   {/* Cover Photo */}
                   <div className="mb-4">

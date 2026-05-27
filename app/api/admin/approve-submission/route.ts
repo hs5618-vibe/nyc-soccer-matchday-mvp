@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
     website: sub.website || null,
     sound_on: sub.sound_on || false,
     outdoor_tv: sub.outdoor_tv || false,
+    is_crawler: sub.is_crawler || false,
     supported_teams: sub.supported_teams || [],
     bar_type: "bar",
     claimed: true,

@@ -239,6 +239,8 @@ function ResultsContent() {
   const [soundMap, setSoundMap] = useState<Record<string, boolean>>({});
   const [outdoorTvFilter, setOutdoorTvFilter] = useState(false);
   const [outdoorTvMap, setOutdoorTvMap] = useState<Record<string, boolean>>({});
+  const [crawlerFilter, setCrawlerFilter] = useState(false);
+  const [crawlerMap, setCrawlerMap] = useState<Record<string, boolean>>({});
 
   // Near-me controls
   const [nearMe, setNearMe] = useState(false);
@@ -304,10 +306,15 @@ function ResultsContent() {
       });
       setSoundMap(sMap);
 
-      const { data: tvData } = await supabase.from('venues').select('id, outdoor_tv');
+      const { data: tvData } = await supabase.from('venues').select('id, outdoor_tv, is_crawler');
       const tvMap: Record<string, boolean> = {};
-      (tvData || []).forEach((v: any) => { tvMap[String(v.id)] = v.outdoor_tv || false; });
+      const cMap: Record<string, boolean> = {};
+      (tvData || []).forEach((v: any) => {
+        tvMap[String(v.id)] = v.outdoor_tv || false;
+        cMap[String(v.id)] = v.is_crawler || false;
+      });
       setOutdoorTvMap(tvMap);
+      setCrawlerMap(cMap);
 
       const merged: VenueWithMeta[] = (allVenues || [])
         .filter((v) => showingIds.has(v.id))
@@ -427,6 +434,7 @@ function ResultsContent() {
     const arr = [...venuesWithDistance].filter((v: any) => {
       if (v.is_featured && match?.league !== 'World Cup') return false;
       if (outdoorTvFilter && !outdoorTvMap[v.id]) return false;
+      if (crawlerFilter && !crawlerMap[v.id]) return false;
       return true;
     });
 
@@ -478,7 +486,7 @@ function ResultsContent() {
     });
 
     return arr;
-  }, [venuesWithDistance, nearMe, origin, verifiedDates, engagementScores, match, outdoorTvFilter, outdoorTvMap]);
+  }, [venuesWithDistance, nearMe, origin, verifiedDates, engagementScores, match, outdoorTvFilter, outdoorTvMap, crawlerFilter, crawlerMap]);
 
   async function toggleGoing(venueId: string, e: React.MouseEvent) {
     e.preventDefault();
@@ -721,6 +729,14 @@ function ResultsContent() {
                   onChange={(e) => setOutdoorTvFilter(e.target.checked)} className="h-4 w-4" />
                 <span className="font-semibold text-sm">📺 Outdoor TV</span>
               </label>
+              <label className="flex items-center gap-2 text-white cursor-pointer">
+                <input type="checkbox" checked={crawlerFilter}
+                  onChange={(e) => setCrawlerFilter(e.target.checked)} className="h-4 w-4" />
+                <span className="font-semibold text-sm flex items-center gap-1">
+                  <img src="https://www.joincrawler.com/favicon.ico" className="w-4 h-4 rounded-full" alt="Crawler" />
+                  Crawler bars
+                </span>
+              </label>
               </div>
 
               {nearMe && (
@@ -808,6 +824,18 @@ function ResultsContent() {
                           <span className="bg-white/10 border border-white/20 text-gray-300 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
                             📺
                           </span>
+                        )}
+                        {crawlerMap[venue.id] && (
+                          
+                            href="https://www.joincrawler.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1 bg-white/10 border border-white/20 text-gray-300 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 hover:bg-white/20 transition-all"
+                          >
+                            <img src="https://www.joincrawler.com/favicon.ico" className="w-3 h-3 rounded-full" alt="Crawler" />
+                            Crawler
+                          </a>
                         )}
                         {(venue as any).is_featured && (
                           <span className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">

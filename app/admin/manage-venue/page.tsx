@@ -42,6 +42,8 @@ function ManageVenueContent() {
   const [imageUrl, setImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [supportedTeams, setSupportedTeams] = useState<string[]>([]);
+  const [outdoorTv, setOutdoorTv] = useState(false);
+  const [isCrawler, setIsCrawler] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -59,13 +61,15 @@ function ManageVenueContent() {
       // Load venue name
       const { data: venueData } = await supabase
         .from("venues")
-        .select("name, bio, image_url, supported_teams")
+        .select("name, bio, image_url, supported_teams, outdoor_tv, is_crawler")
         .eq("id", venueId)
         .single();
       setVenueName(venueData?.name || venueId);
       setBio(venueData?.bio || "");
       setImageUrl((venueData as any)?.image_url || "");
       setSupportedTeams((venueData as any)?.supported_teams || []);
+      setOutdoorTv((venueData as any)?.outdoor_tv || false);
+      setIsCrawler((venueData as any)?.is_crawler || false);
 
       // Load matches
       const upcomingMatches = await fetchUpcomingMatches();
@@ -192,6 +196,19 @@ function ManageVenueContent() {
       .eq('venue_id', venueId)
       .eq('match_id', matchId);
   }
+  async function toggleOutdoorTv() {
+    if (!venueId) return;
+    const next = !outdoorTv;
+    setOutdoorTv(next);
+    await supabase.from('venues').update({ outdoor_tv: next }).eq('id', venueId);
+  }
+
+  async function toggleCrawler() {
+    if (!venueId) return;
+    const next = !isCrawler;
+    setIsCrawler(next);
+    await supabase.from('venues').update({ is_crawler: next }).eq('id', venueId);
+  }
   async function saveTeams(teams: string[]) {
     if (!venueId) return;
     setSupportedTeams(teams);
@@ -285,6 +302,23 @@ function ManageVenueContent() {
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
             </label>
           )}
+        </div>
+        {/* Venue Features */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Venue Features</h3>
+          <div className="space-y-2">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={outdoorTv} onChange={toggleOutdoorTv} className="w-4 h-4 cursor-pointer" />
+              <span className="text-sm text-white font-semibold">📺 Outdoor TV or screen</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={isCrawler} onChange={toggleCrawler} className="w-4 h-4 cursor-pointer" />
+              <span className="text-sm text-white font-semibold flex items-center gap-2">
+                <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-4 h-4 rounded-full" alt="Crawler" />
+                Crawler partner bar
+              </span>
+            </label>
+          </div>
         </div>
         {/* Supported Teams */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">

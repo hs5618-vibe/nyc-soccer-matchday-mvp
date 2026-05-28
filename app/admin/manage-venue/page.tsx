@@ -361,16 +361,19 @@ function ManageVenueContent() {
           </div>
           <p className="text-xs text-gray-500 font-semibold mb-2">🌍 National Teams</p>
           <div className="flex flex-wrap gap-2">
-            {[
-              'Argentina','Brazil','Colombia','Mexico','Uruguay','Spain','England','France',
-              'Germany','Portugal','Italy','Netherlands','Belgium','Denmark','Morocco',
-              'Senegal','Ghana','Cameroon','Nigeria','South Africa','Egypt','Tunisia',
-              'Algeria','Japan','South Korea','Australia','Iran','Saudi Arabia',
-              'United States','Canada','Ecuador','Chile','Paraguay','Venezuela',
-              'Bolivia','Peru','Panama','Costa Rica','Honduras','El Salvador',
-              'Jamaica','Trinidad and Tobago','Cuba','Guatemala','New Zealand',
-              'Serbia','Croatia','Poland','Switzerland','Austria','Ukraine','Turkey',
-              'Scotland','Wales','Slovakia','Slovenia','Albania','Iraq','Indonesia',
+            [
+              'Albania','Algeria','Argentina','Australia','Austria','Belgium',
+              'Bolivia','Bosnia and Herzegovina','Brazil','Cameroon',
+              'Canada','Cape Verde','Chile','Colombia','Congo DR','Costa Rica',"Cote d'Ivoire",
+              'Croatia','Cuba','Curacao','Czechia','Denmark','Ecuador','Egypt',
+              'El Salvador','England','France','Germany','Ghana','Guatemala','Haiti',
+              'Honduras','Indonesia','Iran','Iraq','Italy','Jamaica','Japan','Jordan',
+              'Mexico','Morocco','Netherlands','New Zealand','Nigeria','Norway',
+              'Panama','Paraguay','Peru','Poland','Portugal','Qatar','Saudi Arabia',
+              'Scotland','Senegal','Serbia','Slovakia','Slovenia','South Africa',
+              'South Korea','Spain','Sweden','Switzerland','Trinidad and Tobago',
+              'Tunisia','Turkey','Ukraine','United States','Uruguay','Uzbekistan',
+              'Venezuela','Wales',
             ].map((team) => {
               const selected = supportedTeams.includes(team);
               return (

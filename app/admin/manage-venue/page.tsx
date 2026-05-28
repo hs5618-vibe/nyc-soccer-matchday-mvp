@@ -361,7 +361,7 @@ function ManageVenueContent() {
           </div>
           <p className="text-xs text-gray-500 font-semibold mb-2">🌍 National Teams</p>
           <div className="flex flex-wrap gap-2">
-            [
+            {[
               'Albania','Algeria','Argentina','Australia','Austria','Belgium',
               'Bolivia','Bosnia and Herzegovina','Brazil','Cameroon',
               'Canada','Cape Verde','Chile','Colombia','Congo DR','Costa Rica',"Cote d'Ivoire",

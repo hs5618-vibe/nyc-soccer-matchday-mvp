@@ -751,7 +751,7 @@ export default function VenuePage() {
               )}
               {isCrawler && (
                 <a
-                  href="https://www.joincrawler.com/"
+                href="https://onelink.to/crawler"  
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 bg-purple-600/20 border border-purple-500/30 text-purple-300 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-purple-600/30 transition-all"

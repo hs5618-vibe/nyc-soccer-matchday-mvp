@@ -4,6 +4,128 @@ import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { fetchAllVenues, type Venue } from "@/lib/venues";
 
+const TEAM_CRESTS: Record<string, string> = {
+  // Premier League
+  'Arsenal FC': 'https://crests.football-data.org/57.png',
+  'Liverpool FC': 'https://crests.football-data.org/64.png',
+  'Manchester City FC': 'https://crests.football-data.org/65.png',
+  'Manchester United FC': 'https://crests.football-data.org/66.png',
+  'Tottenham Hotspur FC': 'https://crests.football-data.org/73.png',
+  'Newcastle United FC': 'https://crests.football-data.org/67.png',
+  'Everton FC': 'https://crests.football-data.org/62.png',
+  'Brentford FC': 'https://crests.football-data.org/402.png',
+  'Chelsea FC': 'https://crests.football-data.org/61.png',
+  'Aston Villa FC': 'https://crests.football-data.org/58.png',
+  'Brighton & Hove Albion FC': 'https://crests.football-data.org/397.png',
+  'West Ham United FC': 'https://crests.football-data.org/563.png',
+  'Wolverhampton Wanderers FC': 'https://crests.football-data.org/76.png',
+  'Fulham FC': 'https://crests.football-data.org/63.png',
+  'Crystal Palace FC': 'https://crests.football-data.org/354.png',
+  'Nottingham Forest FC': 'https://crests.football-data.org/351.png',
+  'AFC Bournemouth': 'https://crests.football-data.org/1044.png',
+  'Leicester City FC': 'https://crests.football-data.org/338.png',
+  'Ipswich Town FC': 'https://crests.football-data.org/57.png',
+  'Southampton FC': 'https://crests.football-data.org/340.png',
+  // European clubs
+  'FC Barcelona': 'https://crests.football-data.org/81.png',
+  'Real Madrid CF': 'https://crests.football-data.org/86.png',
+  'Club Atlético de Madrid': 'https://crests.football-data.org/78.png',
+  'FC Bayern München': 'https://crests.football-data.org/5.png',
+  'Borussia Dortmund': 'https://crests.football-data.org/4.png',
+  'Paris Saint-Germain FC': 'https://crests.football-data.org/524.png',
+  'Olympique Lyonnais': 'https://crests.football-data.org/523.png',
+  'Olympique de Marseille': 'https://crests.football-data.org/516.png',
+  'Inter Milan': 'https://crests.football-data.org/108.png',
+  'Juventus FC': 'https://crests.football-data.org/109.png',
+  'AC Milan': 'https://crests.football-data.org/98.png',
+  'AS Roma': 'https://crests.football-data.org/100.png',
+  'SSC Napoli': 'https://crests.football-data.org/113.png',
+  'SS Lazio': 'https://crests.football-data.org/110.png',
+  'FC Porto': 'https://crests.football-data.org/503.png',
+  'SL Benfica': 'https://crests.football-data.org/498.png',
+  'Sporting CP': 'https://crests.football-data.org/498.png',
+  'AFC Ajax': 'https://crests.football-data.org/678.png',
+  'PSV Eindhoven': 'https://crests.football-data.org/674.png',
+  'Boca Juniors': 'https://crests.football-data.org/null.png',
+  'River Plate': 'https://crests.football-data.org/null.png',
+  // World Cup nations
+  'Argentina': 'https://crests.football-data.org/762.png',
+  'Brazil': 'https://crests.football-data.org/764.svg',
+  'Colombia': 'https://crests.football-data.org/818.svg',
+  'Mexico': 'https://crests.football-data.org/769.svg',
+  'Uruguay': 'https://crests.football-data.org/758.svg',
+  'Spain': 'https://crests.football-data.org/760.svg',
+  'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'France': '🇫🇷',
+  'Germany': '🇩🇪',
+  'Portugal': '🇵🇹',
+  'Italy': '🇮🇹',
+  'Netherlands': '🇳🇱',
+  'Belgium': '🇧🇪',
+  'Denmark': '🇩🇰',
+  'Morocco': '🇲🇦',
+  'Senegal': '🇸🇳',
+  'Ghana': '🇬🇭',
+  'Cameroon': '🇨🇲',
+  'Nigeria': '🇳🇬',
+  "Cote d'Ivoire": '🇨🇮',
+  'Cape Verde': '🇨🇻',
+  'Congo DR': '🇨🇩',
+  'Curacao': '🇨🇼',
+  'Czechia': '🇨🇿',
+  'Haiti': '🇭🇹',
+  'Jordan': '🇯🇴',
+  'Norway': '🇳🇴',
+  'Qatar': '🇶🇦',
+  'Sweden': '🇸🇪',
+  'Uzbekistan': '🇺🇿',
+  'Bosnia and Herzegovina': '🇧🇦',
+  'South Africa': '🇿🇦',
+  'Egypt': '🇪🇬',
+  'Tunisia': '🇹🇳',
+  'Algeria': '🇩🇿',
+  'Mali': '🇲🇱',
+  'Tanzania': '🇹🇿',
+  'Comoros': '🇰🇲',
+  'Benin': '🇧🇯',
+  'Botswana': '🇧🇼',
+  'Japan': '🇯🇵',
+  'South Korea': '🇰🇷',
+  'Australia': '🇦🇺',
+  'Iran': '🇮🇷',
+  'Saudi Arabia': '🇸🇦',
+  'United States': '🇺🇸',
+  'Canada': '🇨🇦',
+  'Ecuador': '🇪🇨',
+  'Chile': '🇨🇱',
+  'Paraguay': '🇵🇾',
+  'Venezuela': '🇻🇪',
+  'Bolivia': '🇧🇴',
+  'Peru': '🇵🇪',
+  'Panama': '🇵🇦',
+  'Costa Rica': '🇨🇷',
+  'Honduras': '🇭🇳',
+  'El Salvador': '🇸🇻',
+  'Jamaica': '🇯🇲',
+  'Trinidad and Tobago': '🇹🇹',
+  'Cuba': '🇨🇺',
+  'Guatemala': '🇬🇹',
+  'New Zealand': '🇳🇿',
+  'Serbia': '🇷🇸',
+  'Croatia': '🇭🇷',
+  'Poland': '🇵🇱',
+  'Switzerland': '🇨🇭',
+  'Austria': '🇦🇹',
+  'Ukraine': '🇺🇦',
+  'Turkey': '🇹🇷',
+  'Scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  'Wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  'Slovakia': '🇸🇰',
+  'Slovenia': '🇸🇮',
+  'Albania': '🇦🇱',
+  'Iraq': '🇮🇶',
+  'Indonesia': '🇮🇩',
+};
 export default function VenuesPage() {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,10 +271,19 @@ export default function VenuesPage() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors mb-2 truncate">
-                      {venue.name}
-                    </h3>
-
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate">
+                        {venue.name}
+                      </h3>
+                      {(venue as any).supported_teams?.slice(0, 3).map((team: string) => {
+                        const crest = TEAM_CRESTS[team];
+                        if (!crest) return null;
+                        if (crest.startsWith('http')) {
+                          return <img key={team} src={crest} alt={team} title={team} className="w-5 h-5 object-contain flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }} />;
+                        }
+                        return <span key={team} title={team} className="text-base flex-shrink-0">{crest}</span>;
+                      })}
+                    </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">
                       <span className="flex items-center gap-1">
                         <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">

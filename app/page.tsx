@@ -175,7 +175,7 @@ export default function HomePage() {
             Find Your Sports Bar
           </p>
           <p className="text-base text-gray-400">
-            Discover where to watch your team's match in NYC
+            Find where to watch the World Cup in NYC
           </p>
         </div>
 

@@ -352,7 +352,7 @@ export default function HomePage() {
         {/* Browse Venues + List Your Bar */}
         <div className="flex gap-3 mb-4">
           <Link
-            href="/results"
+            href="/venues"
             className="flex-1 flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-all"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

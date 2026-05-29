@@ -275,7 +275,7 @@ export default function VenuesPage() {
                       <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate">
                         {venue.name}
                       </h3>
-                      {(venue as any).supported_teams?.slice(0, 3).map((team: string) => {
+                      {(venue as any).supported_teams?.slice(0, 5).map((team: string) => {
                         const crest = TEAM_CRESTS[team];
                         if (!crest) return null;
                         if (crest.startsWith('http')) {

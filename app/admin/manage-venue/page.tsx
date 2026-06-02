@@ -121,7 +121,7 @@ function ManageVenueContent() {
         setVenueMatches(prev => prev.filter(vm => vm.match_id !== matchId));
       } else {
         await supabase.from("venue_matches")
-          .insert({ venue_id: venueId, match_id: matchId, verified_by_owner: false });
+          .insert({ venue_id: venueId, match_id: matchId, verified_by_owner: true });
         setVenueMatches(prev => [...prev, { venue_id: venueId, match_id: matchId }]);
       }
     } catch (error) {
@@ -229,11 +229,28 @@ function ManageVenueContent() {
     }
     setSavingBio(false);
   }
+  async function soundOnAll() {
+    if (!venueId) return;
+    const wcMatchIds = filteredMatches
+      .filter(m => m.league === 'World Cup')
+      .filter(m => venueMatchIds.includes(m.id))
+      .map(m => m.id);
+    if (wcMatchIds.length === 0) return;
+    for (const matchId of wcMatchIds) {
+      await supabase.from('venue_matches')
+        .update({ sound_on: true })
+        .eq('venue_id', venueId)
+        .eq('match_id', matchId);
+    }
+    setVenueMatches(prev => prev.map(vm =>
+      wcMatchIds.includes(vm.match_id) ? { ...vm, sound_on: true } : vm
+    ));
+  }
   async function tickAll() {
     if (!venueId) return;
     const toAdd = filteredMatches.filter(m => !venueMatchIds.includes(m.id));
     if (toAdd.length === 0) return;
-    const rows = toAdd.map(m => ({ venue_id: venueId, match_id: m.id, verified_by_owner: false }));
+    const rows = toAdd.map(m => ({ venue_id: venueId, match_id: m.id, verified_by_owner: true }));
     await supabase.from("venue_matches").upsert(rows, { onConflict: 'venue_id,match_id' });
     setVenueMatches(prev => [...prev, ...toAdd.map(m => ({ venue_id: venueId, match_id: m.id }))]);
   }
@@ -504,6 +521,14 @@ function ManageVenueContent() {
                   {venueMatchIds.some(id => filteredMatches.map(m => m.id).includes(id)) && (
                     <button onClick={untickAll} className="text-sm font-semibold text-red-400 hover:text-red-300">
                       ✗ Untick all
+                    </button>
+                  )}
+                  {(selectedLeague === 'World Cup' || selectedLeague === 'all') && venueMatchIds.some(id => filteredMatches.filter(m => m.league === 'World Cup').map(m => m.id).includes(id)) && (
+                    <button
+                      onClick={() => soundOnAll()}
+                      className="text-sm font-semibold text-yellow-400 hover:text-yellow-300"
+                    >
+                      🔊 Sound on all WC
                     </button>
                   )}
                 </div>

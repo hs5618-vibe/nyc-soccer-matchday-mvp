@@ -259,6 +259,24 @@ export default function ManagePage() {
     setVenueImages(prev => { const n = { ...prev }; delete n[venueId]; return n; });
   }
 
+  async function soundOnAll(venueId: string, venueMatchIds: string[]) {
+  const wcMatchIds = filteredMatches
+    .filter(m => m.league === 'World Cup')
+    .filter(m => venueMatchIds.includes(m.id))
+    .map(m => m.id);
+  if (wcMatchIds.length === 0) return;
+  for (const matchId of wcMatchIds) {
+    await supabase.from('venue_matches')
+      .update({ sound_on: true })
+      .eq('venue_id', venueId)
+      .eq('match_id', matchId);
+  }
+  setVenueMatches(prev => prev.map(vm =>
+    vm.venue_id === venueId && wcMatchIds.includes(vm.match_id)
+      ? { ...vm, sound_on: true }
+      : vm
+  ));
+}
   async function tickAll(venueId: string, venueMatchIds: string[]) {
     const toAdd = filteredMatches.filter(m => !venueMatchIds.includes(m.id));
     if (toAdd.length === 0) return;
@@ -562,6 +580,14 @@ export default function ManagePage() {
                             className="text-sm font-semibold text-red-400 hover:text-red-300 transition-colors"
                           >
                             ✗ Untick all
+                          </button>
+                        )}
+                        {(selectedLeague === 'World Cup' || selectedLeague === 'all') && venueMatchIds.some(id => filteredMatches.filter(m => m.league === 'World Cup').map(m => m.id).includes(id)) && (
+                          <button
+                            onClick={() => soundOnAll(venue.id, venueMatchIds)}
+                            className="text-sm font-semibold text-yellow-400 hover:text-yellow-300 transition-colors"
+                          >
+                            🔊 Sound on all WC
                           </button>
                         )}
                       </div>

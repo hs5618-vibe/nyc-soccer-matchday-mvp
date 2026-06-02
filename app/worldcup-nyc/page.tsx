@@ -40,7 +40,8 @@ async function getWCData() {
 
     const { data: venueMatchRows } = await supabaseAdmin
     .from('venue_matches')
-    .select('venue_id, match_id');
+    .select('venue_id, match_id')
+    .limit(100000);
 
   const { data: wcMatches } = await supabaseAdmin
     .from('matches')

@@ -806,9 +806,10 @@ function ResultsContent() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col gap-1 mb-2 min-w-0">
-                        <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors break-words w-full"></h3>
+                        <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors break-words w-full">
                           {venue.name}
                         </h3>
+                        <div className="flex flex-wrap items-center gap-1.5">
                         {venue.verified_by_owner && (
                           <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1">
                             ✓ Verified
@@ -870,9 +871,9 @@ function ResultsContent() {
                             );
                           })}
                       </div>
+                      </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">
-                        <span className="flex items-center gap-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">                        <span className="flex items-center gap-1">
                           <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path
                               fillRule="evenodd"

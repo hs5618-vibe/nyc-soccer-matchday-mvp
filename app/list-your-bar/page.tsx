@@ -509,7 +509,7 @@ export default function ListYourBarPage() {
 
         <div className="grid grid-cols-3 gap-4 mb-12">
           {[
-            { value: "67+", label: "bars listed" },
+            { value: "100+", label: "bars listed" },
             { value: "ALL", label: "WC matches listed" },
             { value: "Free", label: "always" },
           ].map(({ value, label }) => (

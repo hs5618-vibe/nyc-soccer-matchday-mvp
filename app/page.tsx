@@ -38,15 +38,13 @@ export default function HomePage() {
       const data = await fetchUpcomingMatches();
       setMatches(data);
 
-      // Get interested counts for all matches
+      // Get interested counts grouped by match
       const { data: counts } = await supabase
-        .from('interested')
-        .select('match_id')
-        .limit(10000);
+        .rpc('get_interested_counts');
 
       const countMap: Record<string, number> = {};
       (counts || []).forEach((r: any) => {
-        countMap[r.match_id] = (countMap[r.match_id] || 0) + 1;
+        countMap[r.match_id] = Number(r.count);
       });
       setInterestedCounts(countMap);
 

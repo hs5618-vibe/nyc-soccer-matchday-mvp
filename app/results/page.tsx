@@ -805,8 +805,8 @@ function ResultsContent() {
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2 min-w-0">
-                        <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate">
+                      <div className="flex flex-col gap-1 mb-2 min-w-0">
+                        <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors break-words w-full"></h3>
                           {venue.name}
                         </h3>
                         {venue.verified_by_owner && (

@@ -38,12 +38,12 @@ async function getWCData() {
     .gte('kickoff_time', new Date().toISOString())
     .order('kickoff_time', { ascending: true });
 
-    const { data: venueDefaultRows } = await supabaseAdmin
-    .from('venue_defaults')
-    .select('venue_id')
-    .eq('league', 'World Cup');
+    const { data: venueMatchRows } = await supabaseAdmin
+    .from('venue_matches')
+    .select('venue_id, matches!inner(league)')
+    .eq('matches.league', 'World Cup');
 
-  const venueIds = [...new Set((venueDefaultRows || []).map((r: any) => r.venue_id))].filter(
+  const venueIds = [...new Set((venueMatchRows || []).map((r: any) => r.venue_id))].filter(
     (id) => !id.startsWith('wc-fan-zone-')
   );
 
@@ -51,6 +51,7 @@ async function getWCData() {
     .from('venues')
     .select('id, name, neighborhood, address')
     .in('id', venueIds)
+    .neq('bar_type', 'fan_zone')
     .order('name', { ascending: true });
 
   return { matches: matches || [], venues: venues || [] };

@@ -41,7 +41,8 @@ export default function HomePage() {
       // Get interested counts for all matches
       const { data: counts } = await supabase
         .from('interested')
-        .select('match_id');
+        .select('match_id')
+        .limit(10000);
 
       const countMap: Record<string, number> = {};
       (counts || []).forEach((r: any) => {

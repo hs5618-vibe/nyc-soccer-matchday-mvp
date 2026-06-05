@@ -45,13 +45,22 @@ async function getWCData() {
     .order('name', { ascending: true })
     .limit(100000);
 
+  const { data: wcMatchIds } = await supabaseAdmin
+    .from('matches')
+    .select('id')
+    .eq('league', 'World Cup');
+
+  const wcMatchIdSet = new Set((wcMatchIds || []).map((m: any) => m.id));
+
   const { data: venueMatchRows } = await supabaseAdmin
     .from('venue_matches')
-    .select('venue_id')
+    .select('venue_id, match_id')
     .limit(100000);
 
   const wcVenueIds = new Set(
-    (venueMatchRows || []).map((r: any) => r.venue_id).filter((id: string) => !id.startsWith('wc-fan-zone-'))
+    (venueMatchRows || [])
+      .filter((r: any) => wcMatchIdSet.has(r.match_id) && !r.venue_id.startsWith('wc-fan-zone-'))
+      .map((r: any) => r.venue_id)
   );
 
   const wcVenues = (venues || []).filter((v: any) => wcVenueIds.has(v.id));

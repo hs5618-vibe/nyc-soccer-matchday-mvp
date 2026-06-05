@@ -38,38 +38,14 @@ async function getWCData() {
     .gte('kickoff_time', new Date().toISOString())
     .order('kickoff_time', { ascending: true });
 
-  const { data: venues } = await supabaseAdmin
-    .from('venues')
-    .select('id, name, neighborhood, address, bar_type')
-    .neq('bar_type', 'fan_zone')
-    .order('name', { ascending: true })
-    .limit(100000);
+  const { data: countData } = await supabaseAdmin
+    .rpc('get_wc_venue_count');
 
-  const { data: wcMatchIds } = await supabaseAdmin
-    .from('matches')
-    .select('id')
-    .eq('league', 'World Cup');
-
-  const wcMatchIdList = (wcMatchIds || []).map((m: any) => m.id);
-
-  const { data: venueMatchRows } = await supabaseAdmin
-    .from('venue_matches')
-    .select('venue_id')
-    .in('match_id', wcMatchIdList)
-    .limit(100000);
-
-  const wcVenueIds = new Set(
-    (venueMatchRows || [])
-      .map((r: any) => r.venue_id)
-      .filter((id: string) => !id.startsWith('wc-fan-zone-'))
-  );
-
-  const wcVenues = (venues || []).filter((v: any) => wcVenueIds.has(v.id));
-  return { matches: matches || [], venues: wcVenues };
+  return { matches: matches || [], venueCount: countData || 0 };
 }
 
 export default async function WorldCupNYCPage() {
-  const { matches, venues } = await getWCData();
+  const { matches, venueCount } = await getWCData();
 
   const groupStage = matches.filter(m => {
     const d = new Date(m.kickoff_time);
@@ -140,13 +116,13 @@ export default async function WorldCupNYCPage() {
         {/* Sports Bars */}
         <div className="mb-12">
           <h2 className="text-2xl font-black text-white mb-2">⚽ NYC Sports Bars Showing the World Cup</h2>
-          <p className="text-gray-400 mb-4">{venues.length + 5} bars and fan zones across NYC confirmed to show World Cup 2026 matches — updated daily.</p>
+          <p className="text-gray-400 mb-4">{venueCount + 5} bars and fan zones across NYC confirmed to show World Cup 2026 matches — updated daily.</p>
           <Link
             href="/results"
             className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all"
           >
             <div>
-              <p className="font-bold text-white text-lg">{venues.length + 5} verified venues</p>
+              <p className="font-bold text-white text-lg">{venueCount + 5} verified venues</p>
               <p className="text-gray-400 text-sm">Browse the full list, filter by neighborhood, and find your match →</p>
             </div>
             <svg className="w-6 h-6 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

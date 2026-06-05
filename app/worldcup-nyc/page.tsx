@@ -131,6 +131,7 @@ export default async function WorldCupNYCPage() {
         <div className="mb-12">
           <h2 className="text-2xl font-black text-white mb-2">⚽ NYC Sports Bars Showing the World Cup</h2>
           <p className="text-gray-400 mb-4">{venues.length + 5} bars and fan zones across NYC confirmed to show World Cup 2026 matches — updated daily.</p>
+          <Link
             href="/results"
             className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all"
           >

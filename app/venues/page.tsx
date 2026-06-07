@@ -131,6 +131,7 @@ export default function VenuesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>("all");
+  const [selectedBorough, setSelectedBorough] = useState<string>("all");
 
   useEffect(() => {
     async function loadVenues() {
@@ -149,6 +150,10 @@ export default function VenuesPage() {
   const filteredVenues = useMemo(() => {
     let filtered = venues;
 
+    if (selectedBorough !== 'all') {
+      filtered = filtered.filter(venue => (venue as any).borough === selectedBorough);
+    }
+
     if (selectedNeighborhood !== 'all') {
       filtered = filtered.filter(venue => venue.neighborhood === selectedNeighborhood);
     }
@@ -163,7 +168,7 @@ export default function VenuesPage() {
     }
 
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
-  }, [venues, searchQuery, selectedNeighborhood]);
+  }, [venues, searchQuery, selectedNeighborhood, selectedBorough]);
 
   if (loading) {
     return (
@@ -209,6 +214,23 @@ export default function VenuesPage() {
               className="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-5 py-4 text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
+        </div>
+
+        {/* Borough Filter */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide mb-4">
+          {['all', 'Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'].map(borough => (
+            <button
+              key={borough}
+              onClick={() => { setSelectedBorough(borough); setSelectedNeighborhood('all'); }}
+              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
+                selectedBorough === borough
+                  ? 'bg-white/10 text-white border border-white/20'
+                  : 'bg-transparent text-gray-400 border border-white/10 hover:border-white/20'
+              }`}
+            >
+              {borough === 'all' ? 'All Boroughs' : borough}
+            </button>
+          ))}
         </div>
 
         {/* Neighborhood Filter */}

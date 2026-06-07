@@ -20,6 +20,7 @@ export default function HomePage() {
   const [userInterested, setUserInterested] = useState<Record<string, boolean>>({});
   const [user, setUser] = useState<any>(null);
   const [savedBars, setSavedBars] = useState<{id: string, name: string}[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<string>('');
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
@@ -106,6 +107,12 @@ export default function HomePage() {
       filtered = filtered.filter(match => match.league === selectedLeague);
     }
 
+    if (selectedTeam) {
+      filtered = filtered.filter(match =>
+        match.home_team === selectedTeam || match.away_team === selectedTeam
+      );
+    }
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(match => 
@@ -125,7 +132,7 @@ export default function HomePage() {
     }
 
     return filtered;
-  }, [matches, searchQuery, selectedLeague, dateFrom, dateTo]);
+  }, [matches, searchQuery, selectedLeague, dateFrom, dateTo, selectedTeam]);
 
   async function toggleInterested(matchId: string) {
     if (!user) {
@@ -377,6 +384,64 @@ export default function HomePage() {
             <span className="text-gray-500 font-semibold">Crawler</span>
           </a>
         </div>
+
+        {/* WC Team Flag Filter */}
+        {(selectedLeague === 'all' || selectedLeague === 'World Cup') && (
+          <div className="mb-6">
+            <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-3">🌍 I'm watching...</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {[
+                'Algeria','Argentina','Australia','Austria','Belgium','Bosnia and Herzegovina',
+                'Brazil','Canada','Cape Verde','Colombia','Congo DR','Croatia','Curaçao',
+                'Czechia','Ecuador','Egypt','England','France','Germany','Ghana','Haiti',
+                'Indonesia','Iran','Iraq','Japan','Jordan','Mexico','Morocco','Netherlands',
+                'New Zealand','Norway','Panama','Paraguay','Portugal','Qatar','Saudi Arabia',
+                'Scotland','Senegal','South Africa','South Korea','Spain','Sweden','Switzerland',
+                'Tunisia','Turkey','United States','Uruguay','Uzbekistan'
+              ].map(team => {
+                const flags: Record<string, string> = {
+                  'Algeria':'🇩🇿','Argentina':'🇦🇷','Australia':'🇦🇺','Austria':'🇦🇹',
+                  'Belgium':'🇧🇪','Bosnia and Herzegovina':'🇧🇦','Brazil':'🇧🇷','Canada':'🇨🇦',
+                  'Cape Verde':'🇨🇻','Colombia':'🇨🇴','Congo DR':'🇨🇩','Croatia':'🇭🇷',
+                  'Curaçao':'🇨🇼','Czechia':'🇨🇿','Ecuador':'🇪🇨','Egypt':'🇪🇬',
+                  'England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','France':'🇫🇷','Germany':'🇩🇪','Ghana':'🇬🇭',
+                  'Haiti':'🇭🇹','Indonesia':'🇮🇩','Iran':'🇮🇷','Iraq':'🇮🇶',
+                  'Japan':'🇯🇵','Jordan':'🇯🇴','Mexico':'🇲🇽','Morocco':'🇲🇦',
+                  'Netherlands':'🇳🇱','New Zealand':'🇳🇿','Norway':'🇳🇴','Panama':'🇵🇦',
+                  'Paraguay':'🇵🇾','Portugal':'🇵🇹','Qatar':'🇶🇦','Saudi Arabia':'🇸🇦',
+                  'Scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','Senegal':'🇸🇳','South Africa':'🇿🇦','South Korea':'🇰🇷',
+                  'Spain':'🇪🇸','Sweden':'🇸🇪','Switzerland':'🇨🇭','Tunisia':'🇹🇳',
+                  'Turkey':'🇹🇷','United States':'🇺🇸','Uruguay':'🇺🇾','Uzbekistan':'🇺🇿',
+                };
+                return (
+                  <button
+                    key={team}
+                    onClick={() => {
+                      setSelectedTeam(prev => prev === team ? '' : team);
+                      setSelectedLeague('World Cup');
+                    }}
+                    title={team}
+                    className={`flex-shrink-0 text-2xl px-2 py-1 rounded-xl transition-all ${
+                      selectedTeam === team
+                        ? 'bg-white/20 ring-2 ring-white/40'
+                        : 'hover:bg-white/10'
+                    }`}
+                  >
+                    {flags[team] || '🏳️'}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedTeam && (
+              <button
+                onClick={() => setSelectedTeam('')}
+                className="mt-2 text-xs text-red-400 hover:text-red-300"
+              >
+                ✕ Clear team filter
+              </button>
+            )}
+          </div>
+        )}
 
         {/* League Filter Pills */}
         <div className="mb-8">

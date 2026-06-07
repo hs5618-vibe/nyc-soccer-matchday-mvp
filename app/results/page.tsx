@@ -241,6 +241,7 @@ function ResultsContent() {
   const [outdoorTvMap, setOutdoorTvMap] = useState<Record<string, boolean>>({});
   const [crawlerFilter, setCrawlerFilter] = useState(false);
   const [crawlerMap, setCrawlerMap] = useState<Record<string, boolean>>({});
+  const [selectedBorough, setSelectedBorough] = useState<string>('all');
 
   // Near-me controls
   const [nearMe, setNearMe] = useState(false);
@@ -435,6 +436,7 @@ function ResultsContent() {
       if (v.is_featured && match?.league !== 'World Cup') return false;
       if (outdoorTvFilter && !outdoorTvMap[v.id]) return false;
       if (crawlerFilter && !crawlerMap[v.id]) return false;
+      if (selectedBorough !== 'all' && v.borough !== selectedBorough) return false;
       return true;
     });
 
@@ -486,7 +488,7 @@ function ResultsContent() {
     });
 
     return arr;
-  }, [venuesWithDistance, nearMe, origin, verifiedDates, engagementScores, match, outdoorTvFilter, outdoorTvMap, crawlerFilter, crawlerMap]);
+  }, [venuesWithDistance, nearMe, origin, verifiedDates, engagementScores, match, outdoorTvFilter, outdoorTvMap, crawlerFilter, crawlerMap, selectedBorough]);
 
   async function toggleGoing(venueId: string, e: React.MouseEvent) {
     e.preventDefault();
@@ -698,6 +700,23 @@ function ResultsContent() {
             <span className="text-sm text-gray-400">
               {stats.showing} {stats.showing === 1 ? 'bar' : 'bars'} showing this game
             </span>
+          </div>
+
+          {/* Borough Filter */}
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide mb-4">
+            {['all', 'Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'].map(borough => (
+              <button
+                key={borough}
+                onClick={() => setSelectedBorough(borough)}
+                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
+                  selectedBorough === borough
+                    ? 'bg-white/10 text-white border border-white/20'
+                    : 'bg-transparent text-gray-400 border border-white/10 hover:border-white/20'
+                }`}
+              >
+                {borough === 'all' ? 'All Boroughs' : borough}
+              </button>
+            ))}
           </div>
 
           {/* Filters */}

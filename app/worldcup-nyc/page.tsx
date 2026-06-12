@@ -119,13 +119,26 @@ export default async function WorldCupNYCPage() {
           <p className="text-gray-400 mb-4">{venueCount + 5} bars and fan zones across NYC confirmed to show World Cup 2026 matches — updated daily.</p>
           <Link
             href="/results"
-            className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all"
+            className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all mb-3"
           >
             <div>
               <p className="font-bold text-white text-lg">{venueCount + 5} verified venues</p>
               <p className="text-gray-400 text-sm">Browse the full list, filter by neighborhood, and find your match →</p>
             </div>
             <svg className="w-6 h-6 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+          <Link
+            href="/crawler"
+            className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all"
+          >
+            <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-10 h-10 rounded-xl flex-shrink-0" alt="Crawler" />
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-white text-sm">Awaydayz × Crawler — Team USA Watch Party Series</p>
+              <p className="text-gray-400 text-xs">Official watch parties for all 3 USA group stage games →</p>
+            </div>
+            <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>

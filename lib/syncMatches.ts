@@ -152,9 +152,13 @@ export async function syncMatchesFromAPI() {
     // Auto-generate venue_matches from venue_defaults and supported_teams
     console.log("Auto-generating venue_matches from defaults...");
 
-    const newMatchIds = upsertedMatches?.map(m => m.id) || [];
+    // Fetch ALL upcoming matches from DB directly
+    const { data: newMatches } = await supabaseAdmin
+      .from('matches')
+      .select('id, league, home_team, away_team')
+      .eq('status', 'upcoming');
 
-    if (newMatchIds.length > 0) {
+    if ((newMatches?.length || 0) > 0) {
       const { data: defaults } = await supabaseAdmin
         .from('venue_defaults')
         .select('venue_id, league, team');
@@ -162,11 +166,6 @@ export async function syncMatchesFromAPI() {
       const { data: venues } = await supabaseAdmin
         .from('venues')
         .select('id, supported_teams');
-
-      const { data: newMatches } = await supabaseAdmin
-        .from('matches')
-        .select('id, league, home_team, away_team')
-        .in('id', newMatchIds);
 
       const venueMatchesToInsert: any[] = [];
 

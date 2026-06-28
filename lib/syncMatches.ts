@@ -149,6 +149,70 @@ export async function syncMatchesFromAPI() {
       console.warn("Error updating old matches:", updateError);
     }
 
+    // Auto-generate venue_matches from venue_defaults and supported_teams
+    console.log("Auto-generating venue_matches from defaults...");
+
+    const newMatchIds = upsertedMatches?.map(m => m.id) || [];
+
+    if (newMatchIds.length > 0) {
+      const { data: defaults } = await supabaseAdmin
+        .from('venue_defaults')
+        .select('venue_id, league, team');
+
+      const { data: venues } = await supabaseAdmin
+        .from('venues')
+        .select('id, supported_teams');
+
+      const { data: newMatches } = await supabaseAdmin
+        .from('matches')
+        .select('id, league, home_team, away_team')
+        .in('id', newMatchIds);
+
+      const venueMatchesToInsert: any[] = [];
+
+      for (const match of newMatches || []) {
+        const matchingVenueIds = new Set<string>();
+
+        for (const def of defaults || []) {
+          if (def.league === match.league) {
+            matchingVenueIds.add(def.venue_id);
+          }
+        }
+
+        for (const venue of venues || []) {
+          const teams: string[] = venue.supported_teams || [];
+          if (
+            teams.some(t =>
+              match.home_team.includes(t) || match.away_team.includes(t)
+            )
+          ) {
+            matchingVenueIds.add(venue.id);
+          }
+        }
+
+        for (const venueId of matchingVenueIds) {
+          venueMatchesToInsert.push({
+            venue_id: venueId,
+            match_id: match.id,
+            verified_by_owner: false,
+            sound_on: false,
+          });
+        }
+      }
+
+      if (venueMatchesToInsert.length > 0) {
+        const { error: vmError } = await supabaseAdmin
+          .from('venue_matches')
+          .upsert(venueMatchesToInsert, { onConflict: 'venue_id,match_id' });
+
+        if (vmError) {
+          console.warn("Error inserting venue_matches:", vmError);
+        } else {
+          console.log(`Auto-generated ${venueMatchesToInsert.length} venue_matches rows`);
+        }
+      }
+    }
+
     return {
       success: true,
       count: upsertedMatches?.length || 0,

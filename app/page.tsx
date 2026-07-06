@@ -211,6 +211,25 @@ export default function HomePage() {
             <p className="text-gray-400 text-xs">Find bars & official fan zones showing every match →</p>
           </div>
         </Link>
+
+        {/* Saved Bars */}
+        {savedBars.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">❤️ Your Saved Bars</h2>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {savedBars.map(bar => (
+                <Link
+                  key={bar.id}
+                  href={`/venue/${bar.id}`}
+                  className="flex-shrink-0 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition-all"
+                >
+                  {bar.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Search Bar */}
         <div className="mb-6">
           <div className="relative">
@@ -500,6 +519,15 @@ export default function HomePage() {
                           </div>
                         )}
                         <span className="font-bold text-sm sm:text-base text-white truncate">{match.home_team}</span>
+                        {user && (
+                          <button
+                            onClick={(e) => { e.preventDefault(); toggleSavedTeam(match.home_team); }}
+                            title={savedTeams.includes(match.home_team) ? "Remove from favorite teams" : "Save as favorite team"}
+                            className="flex-shrink-0 text-sm opacity-70 hover:opacity-100"
+                          >
+                            {savedTeams.includes(match.home_team) ? '⭐' : '☆'}
+                          </button>
+                        )}
                       </div>
                       
                       {/* VS */}
@@ -508,6 +536,15 @@ export default function HomePage() {
                       {/* Away Team */}
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <span className="font-bold text-sm sm:text-base text-white truncate">{match.away_team}</span>
+                        {user && (
+                          <button
+                            onClick={(e) => { e.preventDefault(); toggleSavedTeam(match.away_team); }}
+                            title={savedTeams.includes(match.away_team) ? "Remove from favorite teams" : "Save as favorite team"}
+                            className="flex-shrink-0 text-sm opacity-70 hover:opacity-100"
+                          >
+                            {savedTeams.includes(match.away_team) ? '⭐' : '☆'}
+                          </button>
+                        )}
                         {match.away_team_crest && (
                           <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0">
                             <img 
@@ -549,23 +586,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Saved Bars */}
-        {savedBars.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">❤️ Your Saved Bars</h2>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {savedBars.map(bar => (
-                <Link
-                  key={bar.id}
-                  href={`/venue/${bar.id}`}
-                  className="flex-shrink-0 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition-all"
-                >
-                  {bar.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
         {/* Partners */}
         <div className="flex items-center justify-center gap-2 mb-6 text-gray-600 text-xs">
           <span>In partnership with</span>

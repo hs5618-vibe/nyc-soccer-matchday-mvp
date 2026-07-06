@@ -1,8 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useState, useMemo } from "react";
 import { fetchAllVenues, type Venue } from "@/lib/venues";
+
+const VenuesMap = dynamic(() => import("@/components/VenuesMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center" style={{ height: "500px" }}>
+      <p className="text-gray-400">Loading map...</p>
+    </div>
+  ),
+});
 
 const TEAM_CRESTS: Record<string, string> = {
   // Premier League
@@ -132,6 +142,7 @@ export default function VenuesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>("all");
   const [selectedBorough, setSelectedBorough] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   useEffect(() => {
     async function loadVenues() {
@@ -257,13 +268,44 @@ export default function VenuesPage() {
           <h2 className="text-xl font-bold text-white uppercase tracking-wide">
             Venues
           </h2>
-          <span className="text-sm text-gray-400">
-            {filteredVenues.length} {filteredVenues.length === 1 ? 'venue' : 'venues'}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-400">
+              {filteredVenues.length} {filteredVenues.length === 1 ? 'venue' : 'venues'}
+            </span>
+            <div className="flex rounded-full border border-white/10 overflow-hidden">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 text-xs font-semibold transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-white/10 text-white'
+                    : 'bg-transparent text-gray-400 hover:text-white'
+                }`}
+              >
+                List
+              </button>
+              <button
+                onClick={() => setViewMode('map')}
+                className={`px-3 py-1.5 text-xs font-semibold transition-all ${
+                  viewMode === 'map'
+                    ? 'bg-white/10 text-white'
+                    : 'bg-transparent text-gray-400 hover:text-white'
+                }`}
+              >
+                Map
+              </button>
+            </div>
+          </div>
         </div>
 
+        {/* Map View */}
+        {viewMode === 'map' && (
+          <div className="mb-6">
+            <VenuesMap venues={filteredVenues} />
+          </div>
+        )}
+
         {/* Venues List */}
-        {filteredVenues.length === 0 ? (
+        {viewMode === 'list' && (filteredVenues.length === 0 ? (
           <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-16 text-center border border-white/10">
             <p className="text-gray-400 text-lg mb-4">
               {searchQuery || selectedNeighborhood !== 'all'
@@ -346,7 +388,7 @@ export default function VenuesPage() {
               </Link>
             ))}
           </div>
-        )}
+        ))}
       </div>
     </div>
   );

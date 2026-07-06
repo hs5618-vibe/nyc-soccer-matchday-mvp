@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { fetchUpcomingMatches, formatMatchTime, type Match } from "@/lib/matches";
 import { supabase } from "@/lib/supabaseClient";
+import { fetchSavedBars } from "@/lib/savedBars";
+import { fetchSavedTeams, saveTeam, unsaveTeam } from "@/lib/savedTeams";
 
 export default function HomePage() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -20,20 +22,9 @@ export default function HomePage() {
   const [userInterested, setUserInterested] = useState<Record<string, boolean>>({});
   const [user, setUser] = useState<any>(null);
   const [savedBars, setSavedBars] = useState<{id: string, name: string}[]>([]);
+  const [savedTeams, setSavedTeams] = useState<string[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
 
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
-    if (saved.length === 0) return;
-    async function loadSavedBars() {
-      const { data } = await supabase
-        .from('venues')
-        .select('id, name')
-        .in('id', saved);
-      setSavedBars(data || []);
-    }
-    loadSavedBars();
-  }, []);
   useEffect(() => {
     async function loadMatches() {
       const data = await fetchUpcomingMatches();
@@ -64,6 +55,12 @@ export default function HomePage() {
           userMap[r.match_id] = true;
         });
         setUserInterested(userMap);
+
+        const bars = await fetchSavedBars(user.id);
+        setSavedBars(bars);
+
+        const teams = await fetchSavedTeams(user.id);
+        setSavedTeams(teams);
       }
 
       setLoading(false);
@@ -156,6 +153,23 @@ export default function HomePage() {
         { match_id: matchId, user_id: user.id },
         { onConflict: 'match_id,user_id' }
       );
+    }
+  }
+
+  async function toggleSavedTeam(team: string) {
+    if (!user) {
+      alert("Please sign in to save favorite teams");
+      return;
+    }
+
+    const isSaved = savedTeams.includes(team);
+
+    if (isSaved) {
+      setSavedTeams(prev => prev.filter(t => t !== team));
+      await unsaveTeam(user.id, team);
+    } else {
+      setSavedTeams(prev => [...prev, team]);
+      await saveTeam(user.id, team);
     }
   }
   return (
@@ -342,21 +356,34 @@ export default function HomePage() {
                   'Turkey':'🇹🇷','United States':'🇺🇸','Uruguay':'🇺🇾','Uzbekistan':'🇺🇿',
                 };
                 return (
-                  <button
-                    key={team}
-                    onClick={() => {
-                      setSelectedTeam(prev => prev === team ? '' : team);
-                      setSelectedLeague('World Cup');
-                    }}
-                    title={team}
-                    className={`flex-shrink-0 text-2xl px-2 py-1 rounded-xl transition-all ${
-                      selectedTeam === team
-                        ? 'bg-white/20 ring-2 ring-white/40'
-                        : 'hover:bg-white/10'
-                    }`}
-                  >
-                    {flags[team] || '🏳️'}
-                  </button>
+                  <div key={team} className="relative flex-shrink-0">
+                    <button
+                      onClick={() => {
+                        setSelectedTeam(prev => prev === team ? '' : team);
+                        setSelectedLeague('World Cup');
+                      }}
+                      title={team}
+                      className={`text-2xl px-2 py-1 rounded-xl transition-all ${
+                        selectedTeam === team
+                          ? 'bg-white/20 ring-2 ring-white/40'
+                          : 'hover:bg-white/10'
+                      }`}
+                    >
+                      {flags[team] || '🏳️'}
+                    </button>
+                    {user && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSavedTeam(team);
+                        }}
+                        title={savedTeams.includes(team) ? "Remove from favorite teams" : "Save as favorite team"}
+                        className="absolute -top-1 -right-1 text-xs leading-none opacity-80 hover:opacity-100"
+                      >
+                        {savedTeams.includes(team) ? '⭐' : '☆'}
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>

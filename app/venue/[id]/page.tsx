@@ -9,6 +9,7 @@ import { fetchVenueById, type Venue } from "@/lib/venues";
 import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
 import { isVenueAdmin, getVenueClaimStatus } from "@/lib/venueAdmin";
 import { isAdmin } from "@/lib/admin";
+import { isBarSaved, saveBar, unsaveBar } from "@/lib/savedBars";
 import ClaimVenueModal from "@/components/ClaimVenueModal";
 
 const TEAM_CRESTS: Record<string, string> = {
@@ -192,20 +193,30 @@ export default function VenuePage() {
   const [isCrawler, setIsCrawler] = useState(false);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
-    setBookmarked(saved.includes(venueId));
+    async function checkSaved() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const saved = await isBarSaved(user.id, venueId);
+        setBookmarked(saved);
+      }
+    }
+    checkSaved();
   }, [venueId]);
 
-  function toggleBookmark() {
-    const saved = JSON.parse(localStorage.getItem('savedBars') || '[]');
-    let updated;
-    if (bookmarked) {
-      updated = saved.filter((id: string) => id !== venueId);
-    } else {
-      updated = [...saved, venueId];
+  async function toggleBookmark() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert("Please sign in to save bars");
+      return;
     }
-    localStorage.setItem('savedBars', JSON.stringify(updated));
-    setBookmarked(!bookmarked);
+
+    if (bookmarked) {
+      const ok = await unsaveBar(user.id, venueId);
+      if (ok) setBookmarked(false);
+    } else {
+      const ok = await saveBar(user.id, venueId);
+      if (ok) setBookmarked(true);
+    }
   }
 
   useEffect(() => {

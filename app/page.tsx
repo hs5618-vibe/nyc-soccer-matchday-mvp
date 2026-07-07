@@ -141,7 +141,7 @@ export default function HomePage() {
     if (selectedTeam) return selectedTeam;
 
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return '';
+    if (query.length < 3) return ''; // avoid firing on very short/ambiguous input
 
     const allTeamNames = new Set<string>();
     matches.forEach(m => {
@@ -149,11 +149,17 @@ export default function HomePage() {
       allTeamNames.add(m.away_team);
     });
 
-    const match = Array.from(allTeamNames).find(
-      name => name.toLowerCase() === query
-    );
+    const namesArray = Array.from(allTeamNames);
 
-    return match || '';
+    // Prefer an exact match if one exists.
+    const exactMatch = namesArray.find(name => name.toLowerCase() === query);
+    if (exactMatch) return exactMatch;
+
+    // Otherwise, allow a partial match (e.g. "Roma" -> "AS Roma"),
+    // but only if it's unambiguous — if multiple teams match, stay silent
+    // rather than guess wrong.
+    const partialMatches = namesArray.filter(name => name.toLowerCase().includes(query));
+    return partialMatches.length === 1 ? partialMatches[0] : '';
   }, [selectedTeam, searchQuery, matches]);
 
   useEffect(() => {

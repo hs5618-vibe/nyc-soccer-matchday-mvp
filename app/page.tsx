@@ -5,6 +5,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { fetchUpcomingMatches, formatMatchTime, type Match } from "@/lib/matches";
+import { fetchVenuesByTeam, type Venue } from "@/lib/venues";
 import { supabase } from "@/lib/supabaseClient";
 import { fetchSavedBars } from "@/lib/savedBars";
 import { fetchSavedTeams, saveTeam, unsaveTeam } from "@/lib/savedTeams";
@@ -24,6 +25,8 @@ export default function HomePage() {
   const [savedBars, setSavedBars] = useState<{id: string, name: string}[]>([]);
   const [savedTeams, setSavedTeams] = useState<string[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [teamVenues, setTeamVenues] = useState<Venue[]>([]);
+  const [teamVenuesLoading, setTeamVenuesLoading] = useState(false);
 
   useEffect(() => {
     async function loadMatches() {
@@ -130,6 +133,42 @@ export default function HomePage() {
 
     return filtered;
   }, [matches, searchQuery, selectedLeague, dateFrom, dateTo, selectedTeam]);
+
+  // The "active" team for the direct bars-lookup feature: either a flag click,
+  // or the search box exactly matching a team name already present in today's matches
+  // (covers club teams like "AS Roma" without needing a separate club-selection UI).
+  const activeTeam = useMemo(() => {
+    if (selectedTeam) return selectedTeam;
+
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return '';
+
+    const allTeamNames = new Set<string>();
+    matches.forEach(m => {
+      allTeamNames.add(m.home_team);
+      allTeamNames.add(m.away_team);
+    });
+
+    const match = Array.from(allTeamNames).find(
+      name => name.toLowerCase() === query
+    );
+
+    return match || '';
+  }, [selectedTeam, searchQuery, matches]);
+
+  useEffect(() => {
+    async function loadTeamVenues() {
+      if (!activeTeam) {
+        setTeamVenues([]);
+        return;
+      }
+      setTeamVenuesLoading(true);
+      const venues = await fetchVenuesByTeam(activeTeam);
+      setTeamVenues(venues);
+      setTeamVenuesLoading(false);
+    }
+    loadTeamVenues();
+  }, [activeTeam]);
 
   async function toggleInterested(matchId: string) {
     if (!user) {
@@ -242,6 +281,37 @@ export default function HomePage() {
             />
           </div>
         </div>
+
+        {/* Bars for selected/searched team */}
+        {activeTeam && (
+          <div className="mb-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
+            <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-3">
+              Bars showing {activeTeam}
+            </p>
+            {teamVenuesLoading ? (
+              <p className="text-gray-400 text-sm">Loading bars...</p>
+            ) : teamVenues.length === 0 ? (
+              <p className="text-gray-400 text-sm">No bars found supporting {activeTeam} yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {teamVenues.map(venue => (
+                  <Link
+                    key={venue.id}
+                    href={`/venue/${venue.id}`}
+                    className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl p-3 hover:bg-white/10 transition-all"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{venue.name}</p>
+                      <p className="text-xs text-gray-400 truncate">{venue.neighborhood}</p>
+                    </div>
+                    <span className="text-blue-400 text-xs flex-shrink-0">View →</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Date Filter */}
         <div className="mb-6">
           <div className="flex gap-2 flex-wrap">

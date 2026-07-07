@@ -62,6 +62,21 @@ export async function fetchVenuesByMatch(matchId: string): Promise<Venue[]> {
   return venues;
 }
 
+export async function fetchVenuesByTeam(team: string): Promise<Venue[]> {
+  const { data, error } = await supabase
+    .from("venues")
+    .select("id, name, neighborhood, address, bar_type, club_name, latitude, longitude, supported_teams")
+    .contains("supported_teams", [team])
+    .order("name");
+
+  if (error) {
+    console.error("Error fetching venues by team:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
 export async function fetchAllVenues(): Promise<Venue[]> {
   const { data, error } = await supabase
     .from("venues")

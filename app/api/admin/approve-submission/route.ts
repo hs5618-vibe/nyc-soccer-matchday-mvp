@@ -60,7 +60,6 @@ export async function POST(req: NextRequest) {
     website: sub.website || null,
     sound_on: sub.sound_on || false,
     outdoor_tv: sub.outdoor_tv || false,
-    is_crawler: sub.is_crawler || false,
     supported_teams: sub.supported_teams || [],
     bar_type: "bar",
     claimed: true,
@@ -89,10 +88,6 @@ export async function POST(req: NextRequest) {
   const leagues: string[] = (sub.leagues || [])
     .map((l: string) => leagueMap[l])
     .filter(Boolean);
-
-  if (sub.show_world_cup && !leagues.includes("World Cup")) {
-    leagues.unshift("World Cup");
-  }
 
   if (leagues.length > 0) {
     const defaults = leagues.map((league: string) => ({

@@ -240,20 +240,28 @@ export default function HomePage() {
             Find Your Sports Bar
           </p>
           <p className="text-base text-gray-400">
-            Find where to watch the World Cup in NYC
+            Find where to watch football in NYC
           </p>
         </div>
 
 
-        {/* World Cup Banner */}
+        {/* Partners */}
+        <div className="flex items-center justify-center gap-2 mb-4 text-gray-600 text-xs">
+          <span>Proud data partner of the</span>
+          <a href="https://nynjfwc26.com/" target="_blank" rel="noopener noreferrer" className="text-gray-500 font-semibold hover:text-gray-300 transition-colors">
+            official NY/NJ World Cup 2026 Concierge
+          </a>
+        </div>
+
+        {/* World Cup Recap Banner */}
         <Link
           href="/worldcup-nyc"
           className="flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 mb-6 hover:bg-yellow-500/20 transition-all"
         >
           <img src="https://crests.football-data.org/wm26.png" className="w-10 h-10 object-contain flex-shrink-0" alt="WC26" />
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-yellow-300 text-sm">FIFA World Cup 2026 is coming to NYC</p>
-            <p className="text-gray-400 text-xs">Find bars & official fan zones showing every match →</p>
+            <p className="font-bold text-yellow-300 text-sm">The World Cup came to NYC — here's the recap</p>
+            <p className="text-gray-400 text-xs">See how NYC watched the tournament →</p>
           </div>
         </Link>
 
@@ -421,77 +429,6 @@ export default function HomePage() {
             List your bar
           </Link>
         </div>
-
-        {/* WC Team Flag Filter */}
-        {(selectedLeague === 'all' || selectedLeague === 'World Cup') && (
-          <div className="mb-6">
-            <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-3">🌍 I'm watching...</p>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {[
-                'Algeria','Argentina','Australia','Austria','Belgium','Bosnia and Herzegovina',
-                'Brazil','Canada','Cape Verde','Colombia','Congo DR','Croatia','Curaçao',
-                'Czechia','Ecuador','Egypt','England','France','Germany','Ghana','Haiti',
-                'Indonesia','Iran','Iraq','Japan','Jordan','Mexico','Morocco','Netherlands',
-                'New Zealand','Norway','Panama','Paraguay','Portugal','Qatar','Saudi Arabia',
-                'Scotland','Senegal','South Africa','South Korea','Spain','Sweden','Switzerland',
-                'Tunisia','Turkey','United States','Uruguay','Uzbekistan'
-              ].map(team => {
-                const flags: Record<string, string> = {
-                  'Algeria':'🇩🇿','Argentina':'🇦🇷','Australia':'🇦🇺','Austria':'🇦🇹',
-                  'Belgium':'🇧🇪','Bosnia and Herzegovina':'🇧🇦','Brazil':'🇧🇷','Canada':'🇨🇦',
-                  'Cape Verde':'🇨🇻','Colombia':'🇨🇴','Congo DR':'🇨🇩','Croatia':'🇭🇷',
-                  'Curaçao':'🇨🇼','Czechia':'🇨🇿','Ecuador':'🇪🇨','Egypt':'🇪🇬',
-                  'England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','France':'🇫🇷','Germany':'🇩🇪','Ghana':'🇬🇭',
-                  'Haiti':'🇭🇹','Indonesia':'🇮🇩','Iran':'🇮🇷','Iraq':'🇮🇶',
-                  'Japan':'🇯🇵','Jordan':'🇯🇴','Mexico':'🇲🇽','Morocco':'🇲🇦',
-                  'Netherlands':'🇳🇱','New Zealand':'🇳🇿','Norway':'🇳🇴','Panama':'🇵🇦',
-                  'Paraguay':'🇵🇾','Portugal':'🇵🇹','Qatar':'🇶🇦','Saudi Arabia':'🇸🇦',
-                  'Scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','Senegal':'🇸🇳','South Africa':'🇿🇦','South Korea':'🇰🇷',
-                  'Spain':'🇪🇸','Sweden':'🇸🇪','Switzerland':'🇨🇭','Tunisia':'🇹🇳',
-                  'Turkey':'🇹🇷','United States':'🇺🇸','Uruguay':'🇺🇾','Uzbekistan':'🇺🇿',
-                };
-                return (
-                  <div key={team} className="relative flex-shrink-0">
-                    <button
-                      onClick={() => {
-                        setSelectedTeam(prev => prev === team ? '' : team);
-                        setSelectedLeague('World Cup');
-                      }}
-                      title={team}
-                      className={`text-2xl px-2 py-1 rounded-xl transition-all ${
-                        selectedTeam === team
-                          ? 'bg-white/20 ring-2 ring-white/40'
-                          : 'hover:bg-white/10'
-                      }`}
-                    >
-                      {flags[team] || '🏳️'}
-                    </button>
-                    {user && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleSavedTeam(team);
-                        }}
-                        title={savedTeams.includes(team) ? "Remove from favorite teams" : "Save as favorite team"}
-                        className="absolute -top-1 -right-1 text-xs leading-none opacity-80 hover:opacity-100"
-                      >
-                        {savedTeams.includes(team) ? '⭐' : '☆'}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            {selectedTeam && (
-              <button
-                onClick={() => setSelectedTeam('')}
-                className="mt-2 text-xs text-red-400 hover:text-red-300"
-              >
-                ✕ Clear team filter
-              </button>
-            )}
-          </div>
-        )}
 
         {/* League Filter Pills */}
         <div className="mb-8">
@@ -662,14 +599,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Partners */}
-        <div className="flex items-center justify-center gap-2 mb-6 text-gray-600 text-xs">
-          <span>In partnership with</span>
-          <a href="https://onelink.to/crawler" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-            <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-5 h-5 rounded-full" alt="Crawler" />
-            <span className="text-gray-500 font-semibold">Crawler</span>
-          </a>
-        </div>
         {/* Social Links - Moved up */}
         <div className="flex justify-center gap-4 mb-8">
           <a 

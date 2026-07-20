@@ -77,10 +77,8 @@ export default function ListYourBarPage() {
     bio: "",
     leagues: [] as string[],
     other_leagues: "",
-    show_world_cup: false,
     sound_on: false,
     outdoor_tv: false,
-    is_crawler: false,
     supported_teams: [] as string[],
     notes: "",
   });
@@ -97,9 +95,6 @@ export default function ListYourBarPage() {
       return {
         ...prev,
         leagues: newLeagues,
-        show_world_cup: league === "World Cup"
-          ? !prev.leagues.includes("World Cup")
-          : prev.show_world_cup,
       };
     });
   }
@@ -137,10 +132,8 @@ export default function ListYourBarPage() {
       bio: form.bio,
       leagues: form.leagues,
       other_leagues: form.other_leagues,
-      show_world_cup: form.show_world_cup,
       sound_on: form.sound_on,
       outdoor_tv: form.outdoor_tv,
-      is_crawler: form.is_crawler,
       supported_teams: form.supported_teams,
       notes: form.notes,
       status: "pending",
@@ -282,25 +275,6 @@ export default function ListYourBarPage() {
                 ))}
               </div>
 
-              <label className="flex items-center gap-3 cursor-pointer mb-3">
-                <input
-                  type="checkbox"
-                  checked={form.show_world_cup || form.leagues.includes("World Cup")}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setForm((prev) => ({
-                      ...prev,
-                      show_world_cup: checked,
-                      leagues: checked
-                        ? prev.leagues.includes("World Cup") ? prev.leagues : ["World Cup", ...prev.leagues]
-                        : prev.leagues.filter((l) => l !== "World Cup"),
-                    }));
-                  }}
-                  className="h-4 w-4"
-                />
-                <span className="text-sm text-yellow-300 font-semibold">⚽ We'll be showing FIFA World Cup 2026</span>
-              </label>
-
               <div className="mb-4">
                 <label className="block text-xs text-gray-400 mb-2">Are you a home bar for any club or national team?</label>
                 <p className="text-xs text-gray-600 mb-3">These badges will appear next to your bar name and fans searching for these teams will find you first. Max 5.</p>
@@ -359,19 +333,6 @@ export default function ListYourBarPage() {
                   className="h-4 w-4"
                 />
                 <span className="text-sm text-white font-semibold">📺 We have an outdoor TV or screen</span>
-              </label>
-
-              <label className="flex items-center gap-3 cursor-pointer mb-3">
-                <input
-                  type="checkbox"
-                  checked={form.is_crawler}
-                  onChange={(e) => update("is_crawler", e.target.checked)}
-                  className="h-4 w-4"
-                />
-                <span className="text-sm text-white font-semibold flex items-center gap-2">
-                  <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-4 h-4 rounded-full" alt="Crawler" />
-                  We are a Crawler partner bar
-                </span>
               </label>
 
               <div>
@@ -494,10 +455,6 @@ export default function ListYourBarPage() {
         </Link>
 
         <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-xs font-bold px-4 py-2 rounded-full mb-6">
-            <img src="https://crests.football-data.org/wm26.png" className="w-4 h-4 object-contain" alt="WC26" />
-            FIFA World Cup 2026 is coming to NYC
-          </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-4 leading-tight">
             Get your bar in front of<br />
             <span className="text-blue-400">every football fan in NYC</span>

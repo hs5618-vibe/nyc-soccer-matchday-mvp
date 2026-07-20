@@ -1,15 +1,14 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
 import { createClient } from "@supabase/supabase-js";
 
 export const metadata: Metadata = {
-  title: "Where to Watch World Cup 2026 in NYC | awaydayz",
-  description: "Find the best NYC bars and official FIFA fan zones showing every World Cup 2026 match. Free, verified, and updated daily. The ultimate guide to watching the World Cup in New York City.",
-  keywords: "World Cup 2026 NYC, where to watch World Cup New York, FIFA World Cup bars NYC, World Cup watch party NYC, soccer bars NYC 2026",
+  title: "How NYC Watched the World Cup 2026 | awaydayz Recap",
+  description: "A recap of how New York City watched the FIFA World Cup 2026 — the bars, the boroughs, and the fans. Presented by awaydayz, official data partner of the NY/NJ World Cup 2026 Concierge.",
+  keywords: "World Cup 2026 NYC recap, where NYC watched the World Cup, FIFA World Cup bars NYC, World Cup NYC recap",
   openGraph: {
-    title: "Where to Watch World Cup 2026 in NYC",
-    description: "Find verified NYC bars and official FIFA fan zones showing every World Cup 2026 match. Free and updated daily.",
+    title: "How NYC Watched the World Cup 2026",
+    description: "A recap of how New York City watched the FIFA World Cup 2026, presented by awaydayz.",
     url: "https://awaydayz.co/worldcup-nyc",
     siteName: "awaydayz",
     type: "website",
@@ -29,13 +28,11 @@ const FAN_ZONES = [
   { id: 'wc-fan-zone-bronx', name: 'Bronx Fan Zone', location: 'Bronx Terminal Market', dates: 'June 13–14', borough: 'Bronx' },
 ];
 
-async function getWCData() {
+async function getRecapData() {
   const { data: matches } = await supabaseAdmin
     .from('matches')
     .select('*')
     .eq('league', 'World Cup')
-    .eq('status', 'upcoming')
-    .gte('kickoff_time', new Date().toISOString())
     .order('kickoff_time', { ascending: true });
 
   const { data: countData } = await supabaseAdmin
@@ -44,18 +41,10 @@ async function getWCData() {
   return { matches: matches || [], venueCount: countData || 0 };
 }
 
-export default async function WorldCupNYCPage() {
-  const { matches, venueCount } = await getWCData();
-
-  const groupStage = matches.filter(m => {
-    const d = new Date(m.kickoff_time);
-    return d < new Date('2026-07-05');
-  });
-
-  const knockout = matches.filter(m => {
-    const d = new Date(m.kickoff_time);
-    return d >= new Date('2026-07-05');
-  });
+export default async function WorldCupRecapPage() {
+  const { matches, venueCount } = await getRecapData();
+  const totalMatches = matches.length;
+  const totalVenues = venueCount + FAN_ZONES.length;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
@@ -71,19 +60,53 @@ export default async function WorldCupNYCPage() {
             />
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-4">
-            Where to Watch the<br />
-            <span className="text-yellow-400">World Cup 2026 in NYC</span>
+            How NYC Watched<br />
+            <span className="text-yellow-400">The World Cup 2026</span>
           </h1>
           <p className="text-lg text-gray-300 mb-6 max-w-2xl mx-auto">
-            The complete guide to watching every FIFA World Cup 2026 match in New York City.
-            Official fan zones, verified sports bars, and matchday updates — all free, all in one place.
+            For six weeks, New York City turned into a home away from home for every team in the tournament.
+            Here's a look back at how the city watched it all.
           </p>
           <Link
-            href="/?league=World+Cup"
+            href="/venues"
             className="inline-block bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-8 py-3 rounded-full transition-all text-lg"
           >
-            Find a Bar for Your Match →
+            Browse Venues →
           </Link>
+        </div>
+
+        {/* Recap Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+            <p className="text-3xl font-black text-yellow-400 mb-1">{totalVenues}+</p>
+            <p className="text-gray-400 text-sm">Verified bars & fan zones across NYC</p>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+            <p className="text-3xl font-black text-yellow-400 mb-1">5</p>
+            <p className="text-gray-400 text-sm">Boroughs covered, no borough left out</p>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+            <p className="text-3xl font-black text-yellow-400 mb-1">{totalMatches}</p>
+            <p className="text-gray-400 text-sm">World Cup matches tracked start to finish</p>
+          </div>
+        </div>
+
+        {/* Concierge Partnership Credit */}
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 mb-12 text-center">
+          <p className="text-white font-semibold mb-2">
+            awaydayz was proud to be the official data partner of the NY/NJ World Cup 2026 Concierge
+          </p>
+          <p className="text-gray-400 text-sm mb-4">
+            Our verified venue data helped power the official fan guide for the region, alongside Neurun.
+          </p>
+          <a
+            href="https://nynjfwc26.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-yellow-300 font-semibold text-sm hover:text-yellow-200 transition-colors"
+          >
+            View the official Concierge →
+          </a>
         </div>
 
         {/* Official Fan Zones */}
@@ -92,10 +115,9 @@ export default async function WorldCupNYCPage() {
           <p className="text-gray-400 mb-6">Free official events across all five NYC boroughs, hosted by the NYNJ 2026 Host Committee.</p>
           <div className="space-y-3">
             {FAN_ZONES.map(zone => (
-              <Link
+              <div
                 key={zone.id}
-                href={`/venue/${zone.id}`}
-                className="block bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5 hover:bg-yellow-500/20 transition-all"
+                className="block bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -108,113 +130,44 @@ export default async function WorldCupNYCPage() {
                   </div>
                   <span className="text-yellow-300 text-sm font-semibold flex-shrink-0">{zone.dates}</span>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
 
         {/* Sports Bars */}
         <div className="mb-12">
-          <h2 className="text-2xl font-black text-white mb-2">⚽ NYC Sports Bars Showing the World Cup</h2>
-          <p className="text-gray-400 mb-4">{venueCount + 5} bars and fan zones across NYC confirmed to show World Cup 2026 matches — updated daily.</p>
+          <h2 className="text-2xl font-black text-white mb-2">⚽ The Bars That Showed Up</h2>
+          <p className="text-gray-400 mb-4">{totalVenues} bars and fan zones across NYC confirmed to show World Cup 2026 matches, verified one by one.</p>
           <Link
-            href="/results"
-            className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all mb-3"
+            href="/venues"
+            className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all"
           >
             <div>
-              <p className="font-bold text-white text-lg">{venueCount + 5} verified venues</p>
-              <p className="text-gray-400 text-sm">Browse the full list, filter by neighborhood, and find your match →</p>
+              <p className="font-bold text-white text-lg">Browse every venue</p>
+              <p className="text-gray-400 text-sm">See the full list, filter by neighborhood, or view the map →</p>
             </div>
             <svg className="w-6 h-6 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
-          <Link
-            href="/crawler"
-            className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all"
-          >
-            <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-10 h-10 rounded-xl flex-shrink-0" alt="Crawler" />
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-white text-sm">Awaydayz × Crawler — Team USA Watch Party Series</p>
-              <p className="text-gray-400 text-xs">Official watch parties for all 3 USA group stage games →</p>
-            </div>
-            <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
         </div>
-
-        {/* Group Stage Matches */}
-        {groupStage.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-black text-white mb-2">📅 Group Stage Matches</h2>
-            <p className="text-gray-400 mb-6">June 11 – July 2, 2026 · {groupStage.length} matches</p>
-            <div className="space-y-2">
-              {groupStage.map((match: any) => (
-                <Link
-                  key={match.id}
-                  href={`/results?match=${match.id}`}
-                  className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl p-3 hover:bg-white/10 transition-all"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {match.home_team_crest && <img src={match.home_team_crest} className="w-6 h-6 object-contain flex-shrink-0" />}
-                    <span className="text-sm font-semibold text-white truncate">{match.home_team}</span>
-                    <span className="text-gray-500 text-xs">vs</span>
-                    <span className="text-sm font-semibold text-white truncate">{match.away_team}</span>
-                    {match.away_team_crest && <img src={match.away_team_crest} className="w-6 h-6 object-contain flex-shrink-0" />}
-                  </div>
-                  <span className="text-xs text-gray-400 flex-shrink-0">
-                    {new Date(match.kickoff_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Knockout Matches */}
-        {knockout.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-black text-white mb-2">🏆 Knockout Stage</h2>
-            <p className="text-gray-400 mb-6">July 5–19, 2026 · Teams TBD after group stage</p>
-            <div className="space-y-2">
-              {knockout.map((match: any) => (
-                <Link
-                  key={match.id}
-                  href={`/results?match=${match.id}`}
-                  className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl p-3 hover:bg-white/10 transition-all"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {match.home_team_crest && <img src={match.home_team_crest} className="w-6 h-6 object-contain flex-shrink-0" />}
-                    <span className="text-sm font-semibold text-white truncate">{match.home_team}</span>
-                    <span className="text-gray-500 text-xs">vs</span>
-                    <span className="text-sm font-semibold text-white truncate">{match.away_team}</span>
-                    {match.away_team_crest && <img src={match.away_team_crest} className="w-6 h-6 object-contain flex-shrink-0" />}
-                  </div>
-                  <span className="text-xs text-gray-400 flex-shrink-0">
-                    {new Date(match.kickoff_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* CTA */}
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-3xl p-8 text-center">
-          <h2 className="text-2xl font-black text-white mb-3">Ready to find your spot?</h2>
-          <p className="text-gray-300 mb-6">Search any World Cup match and instantly see which NYC bars are showing it.</p>
+          <h2 className="text-2xl font-black text-white mb-3">The World Cup may be over, but we're not going anywhere</h2>
+          <p className="text-gray-300 mb-6">Premier League, Champions League, and every other match — we'll help you find your bar.</p>
           <Link
-            href="/?league=World+Cup"
+            href="/"
             className="inline-block bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-8 py-3 rounded-full transition-all text-lg"
           >
-            Find World Cup Bars →
+            Find Your Bar →
           </Link>
         </div>
 
         <div className="mt-8 text-center">
           <Link href="/" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
-            ← Back to all matches
+            ← Back to home
           </Link>
         </div>
 

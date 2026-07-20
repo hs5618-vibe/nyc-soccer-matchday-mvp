@@ -190,7 +190,6 @@ export default function VenuePage() {
   const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
   const [matchSoundOn, setMatchSoundOn] = useState(false);
   const [outdoorTv, setOutdoorTv] = useState(false);
-  const [isCrawler, setIsCrawler] = useState(false);
 
   useEffect(() => {
     async function checkSaved() {
@@ -232,7 +231,6 @@ export default function VenuePage() {
         if (venueData) setBio((venueData as any).bio || "");
         if (venueData) setImageUrl((venueData as any).image_url || "");
         if (venueData) setOutdoorTv((venueData as any).outdoor_tv || false);
-        if (venueData) setIsCrawler((venueData as any).is_crawler || false);
 
         if (venueData && matchId) {
           await loadUpdates();
@@ -593,16 +591,9 @@ export default function VenuePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
             </button>
-            
-            {/* FIFA Fan Zone Badge */}
-            {venueId?.startsWith('wc-fan-zone') && (
-              <div className="flex items-center gap-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 px-3 py-1 rounded-full text-xs font-bold flex-shrink-0">
-                <img src="https://crests.football-data.org/wm26.png" className="w-5 h-5 object-contain" alt="World Cup 2026" />
-                Official Fan Zone
-              </div>
-            )}
+
             {/* Claim button - show if not owner and no pending claim */}
-            {user && !isOwner && !claimStatus && !isClaimed && !venueId?.startsWith('wc-fan-zone') && (
+            {user && !isOwner && !claimStatus && !isClaimed && (
               <button
                 onClick={() => setShowClaimModal(true)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-blue-700 transition-all flex-shrink-0"
@@ -759,17 +750,6 @@ export default function VenuePage() {
                 <span className="inline-flex items-center gap-1.5 bg-blue-600/20 border border-blue-500/30 text-blue-300 px-3 py-1.5 rounded-full text-xs font-bold">
                   📺 Outdoor TV
                 </span>
-              )}
-              {isCrawler && (
-                <a
-                href="https://onelink.to/crawler"  
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 bg-purple-600/20 border border-purple-500/30 text-purple-300 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-purple-600/30 transition-all"
-                >
-                  <img src="https://dvtqvuolzemazkyawrup.supabase.co/storage/v1/object/public/venue-images/Crawler.png" className="w-4 h-4 rounded-full" alt="Crawler" />
-                  Crawler partner
-                </a>
               )}
               <button
                 onClick={handleGoing}

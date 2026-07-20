@@ -50,8 +50,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <title>awaydayz - Where to Watch the World Cup in NYC</title>
-        <meta name="description" content="Find the best sports bars showing every World Cup 2026 match in NYC. Free, instant, verified." />
+        <title>awaydayz - Find Your Sports Bar in NYC</title>
+        <meta name="description" content="Find verified NYC sports bars showing your team's match, any league, any night. Free, instant, verified." />
       </head>
       <body>
         <header className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-lg border-b border-white/10">

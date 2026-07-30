@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { isAdmin } from "@/lib/admin";
 import {
   fetchGroupById,
   fetchMemberCount,
@@ -13,12 +14,14 @@ import {
   fetchGroupVenues,
   linkVenueToGroup,
   unlinkVenueFromGroup,
+  deleteGroup,
   type Group,
 } from "@/lib/groups";
 import { fetchAllVenues, type Venue } from "@/lib/venues";
 
 export default function GroupDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const groupId = params.id as string;
 
   const [loading, setLoading] = useState(true);
@@ -26,6 +29,8 @@ export default function GroupDetailPage() {
   const [memberCount, setMemberCount] = useState(0);
   const [user, setUser] = useState<any>(null);
   const [isMember, setIsMember] = useState(false);
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [linkedVenues, setLinkedVenues] = useState<{ id: string; name: string; neighborhood: string }[]>([]);
 
   // Owner-only venue linking
@@ -52,8 +57,12 @@ export default function GroupDetailPage() {
         setLinkedVenues(venues);
 
         if (currentUser) {
-          const member = await isGroupMember(groupId, currentUser.id);
+          const [member, adminCheck] = await Promise.all([
+            isGroupMember(groupId, currentUser.id),
+            isAdmin(currentUser.id),
+          ]);
           setIsMember(member);
+          setIsUserAdmin(adminCheck);
         }
       }
 
@@ -97,6 +106,20 @@ export default function GroupDetailPage() {
   async function handleUnlinkVenue(venueId: string) {
     setLinkedVenues(prev => prev.filter(v => v.id !== venueId));
     await unlinkVenueFromGroup(groupId, venueId);
+  }
+
+  async function handleDeleteGroup() {
+    if (!confirm(`Delete "${group?.name}"? This can't be undone.`)) return;
+
+    setDeleting(true);
+    const ok = await deleteGroup(groupId);
+    setDeleting(false);
+
+    if (ok) {
+      router.push("/groups");
+    } else {
+      alert("Something went wrong deleting the group. Please try again.");
+    }
   }
 
   const isOwner = user && group && user.id === group.created_by;
@@ -174,6 +197,18 @@ export default function GroupDetailPage() {
             >
               {group.instagram} on Instagram →
             </a>
+          )}
+
+          {(isOwner || isUserAdmin) && (
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <button
+                onClick={handleDeleteGroup}
+                disabled={deleting}
+                className="text-red-400 hover:text-red-300 text-xs font-semibold disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : "Delete this group"}
+              </button>
+            </div>
           )}
         </div>
 

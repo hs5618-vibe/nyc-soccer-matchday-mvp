@@ -75,6 +75,19 @@ export async function createGroup({
   return data;
 }
 
+export async function deleteGroup(groupId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("groups")
+    .delete()
+    .eq("id", groupId);
+
+  if (error) {
+    console.error("Error deleting group:", error);
+    return false;
+  }
+
+  return true;
+}
 export async function fetchMemberCount(groupId: string): Promise<number> {
   const { count, error } = await supabase
     .from("group_members")

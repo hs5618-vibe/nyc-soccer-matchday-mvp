@@ -166,7 +166,7 @@ export default function GroupDetailPage() {
           )}
 
           {group.instagram && (
-            
+            <a
               href={`https://instagram.com/${group.instagram.replace("@", "")}`}
               target="_blank"
               rel="noopener noreferrer"

@@ -10,6 +10,7 @@ import { fetchMatchById, formatMatchTime, type Match } from "@/lib/matches";
 import { isVenueAdmin, getVenueClaimStatus } from "@/lib/venueAdmin";
 import { isAdmin } from "@/lib/admin";
 import { isBarSaved, saveBar, unsaveBar } from "@/lib/savedBars";
+import { fetchGroupsByVenue, type Group } from "@/lib/groups";
 import ClaimVenueModal from "@/components/ClaimVenueModal";
 
 const TEAM_CRESTS: Record<string, string> = {
@@ -190,6 +191,15 @@ export default function VenuePage() {
   const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
   const [matchSoundOn, setMatchSoundOn] = useState(false);
   const [outdoorTv, setOutdoorTv] = useState(false);
+  const [venueGroups, setVenueGroups] = useState<Group[]>([]);
+
+  useEffect(() => {
+    async function loadGroups() {
+      const groups = await fetchGroupsByVenue(venueId);
+      setVenueGroups(groups);
+    }
+    if (venueId) loadGroups();
+  }, [venueId]);
 
   useEffect(() => {
     async function checkSaved() {
@@ -665,6 +675,24 @@ export default function VenuePage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+          {/* Supporter Groups that call this venue home */}
+          {venueGroups.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs text-gray-500 uppercase font-bold tracking-wide mb-2">Home to</p>
+              <div className="flex flex-wrap gap-2">
+                {venueGroups.map(group => (
+                  <Link
+                    key={group.id}
+                    href={`/groups/${group.id}`}
+                    className="flex items-center gap-1.5 bg-brand-green/10 border border-brand-green-600/30 px-3 py-1.5 rounded-full hover:bg-brand-green/20 transition-all"
+                  >
+                    <span className="text-white text-xs font-bold">{group.name}</span>
+                    <span className="text-brand-green-400 text-xs">· {group.team_name}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
           {/* Supported Teams */}

@@ -244,27 +244,6 @@ export default function HomePage() {
           </p>
         </div>
 
-
-        {/* Partners */}
-        <div className="flex items-center justify-center gap-2 mb-4 text-gray-600 text-xs">
-          <span>Proud data partner of the</span>
-          <a href="https://nynjfwc26.com/" target="_blank" rel="noopener noreferrer" className="text-gray-500 font-semibold hover:text-gray-300 transition-colors">
-            official NY/NJ World Cup 2026 Concierge
-          </a>
-        </div>
-
-        {/* World Cup Recap Banner */}
-        <Link
-          href="/worldcup-nyc"
-          className="flex items-center gap-3 bg-brand-green/10 border border-brand-green-600/30 rounded-2xl p-4 mb-6 hover:bg-brand-green/20 transition-all"
-        >
-          <img src="https://crests.football-data.org/wm26.png" className="w-10 h-10 object-contain flex-shrink-0" alt="WC26" />
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-brand-green-400 text-sm">The World Cup came to NYC — here's the recap</p>
-            <p className="text-gray-400 text-xs">See how NYC watched the tournament →</p>
-          </div>
-        </Link>
-
         {/* Saved Bars */}
         {savedBars.length > 0 && (
           <div className="mb-6">
@@ -428,6 +407,26 @@ export default function HomePage() {
             </svg>
             List your bar
           </Link>
+        </div>
+
+        {/* World Cup Recap Banner - kept as a proof point, no longer the homepage lead */}
+        <Link
+          href="/worldcup-nyc"
+          className="flex items-center gap-3 bg-brand-green/10 border border-brand-green-600/30 rounded-2xl p-4 mb-4 hover:bg-brand-green/20 transition-all"
+        >
+          <img src="https://crests.football-data.org/wm26.png" className="w-10 h-10 object-contain flex-shrink-0" alt="WC26" />
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-brand-green-400 text-sm">The World Cup came to NYC — here's the recap</p>
+            <p className="text-gray-400 text-xs">See how NYC watched the tournament →</p>
+          </div>
+        </Link>
+
+        {/* Partners */}
+        <div className="flex items-center justify-center gap-2 mb-6 text-gray-600 text-xs">
+          <span>Proud data partner of the</span>
+          <a href="https://nynjfwc26.com/" target="_blank" rel="noopener noreferrer" className="text-gray-500 font-semibold hover:text-gray-300 transition-colors">
+            official NY/NJ World Cup 2026 Concierge
+          </a>
         </div>
 
         {/* League Filter Pills */}

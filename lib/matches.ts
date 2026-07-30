@@ -48,6 +48,29 @@ export async function fetchMatchById(matchId: string): Promise<Match | null> {
   return data;
 }
 
+// Recently finished matches, used on the profile page so a user can mark
+// which ones they actually attended. Kept to a 30-day window so the list
+// stays short and relevant rather than showing the entire match history.
+export async function fetchRecentPastMatches(): Promise<Match[]> {
+  const now = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(now.getDate() - 30);
+
+  const { data, error } = await supabase
+    .from("matches")
+    .select("*")
+    .lt("kickoff_time", now.toISOString())
+    .gte("kickoff_time", thirtyDaysAgo.toISOString())
+    .order("kickoff_time", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching past matches:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
 export function formatMatchTime(kickoffTime: string): string {
   const date = new Date(kickoffTime);
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

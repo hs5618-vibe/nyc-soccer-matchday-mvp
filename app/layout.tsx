@@ -63,6 +63,15 @@ export default function RootLayout({
             </Link>
 
             <div className="flex items-center gap-4">
+              {userId && (
+                <Link 
+                  href="/profile" 
+                  className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                >
+                  Profile
+                </Link>
+              )}
+
               {isVenueOwner && (
                 <Link 
                   href="/manage" 

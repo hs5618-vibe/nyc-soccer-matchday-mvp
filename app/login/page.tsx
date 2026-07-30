@@ -33,7 +33,7 @@ export default function LoginPage() {
       
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="w-full">
-          <Link href="/" className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1 mb-8">
+          <Link href="/" className="text-sm text-brand-green-600 hover:text-brand-green-700 font-medium inline-flex items-center gap-1 mb-8">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -56,7 +56,7 @@ export default function LoginPage() {
                 <input
                   id="email"
                   type="email"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -67,7 +67,7 @@ export default function LoginPage() {
               <button
                 onClick={sendLink}
                 disabled={!email || loading}
-                className="w-full bg-blue-600 text-white px-6 py-3 text-base font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full bg-brand-green text-white px-6 py-3 text-base font-medium rounded-lg hover:bg-brand-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {loading ? "Sending..." : "Send magic link"}
               </button>

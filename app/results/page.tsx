@@ -175,13 +175,13 @@ function barTypeTag(barType: string | null | undefined) {
   if (!barType) return null;
   const styles: Record<string, string> = {
     'Irish Pub':  'bg-emerald-700/30 border border-emerald-500/30 text-emerald-300',
-    'Soccer Bar': 'bg-blue-700/30 border border-blue-500/30 text-blue-300',
+    'Soccer Bar': 'bg-brand-green-600/30 border border-brand-green/30 text-brand-green-400',
     'Sports Bar': 'bg-orange-700/30 border border-orange-500/30 text-orange-300',
     'Rooftop':    'bg-purple-700/30 border border-purple-500/30 text-purple-300',
-    'Brewery':    'bg-amber-700/30 border border-amber-500/30 text-amber-300',
+    'Brewery':    'bg-brand-green-700/30 border border-brand-green-600/30 text-brand-green-400',
     'Restaurant': 'bg-rose-700/30 border border-rose-500/30 text-rose-300',
     'Bar':        'bg-slate-700/30 border border-slate-500/30 text-slate-300',
-    'Fan Zone':   'bg-yellow-700/30 border border-yellow-500/30 text-yellow-300',
+    'Fan Zone':   'bg-brand-green-700/30 border border-brand-green-600/30 text-brand-green-400',
   };
   const cls = styles[barType] ?? 'bg-white/10 border border-white/20 text-gray-300';
   return (
@@ -563,7 +563,7 @@ function ResultsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
           <p className="text-gray-400">Loading...</p>
@@ -574,10 +574,10 @@ function ResultsContent() {
 
   if (!match && matchId) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-400 mb-4">Match not found</p>
-          <Link href="/" className="text-blue-400 hover:text-blue-300">
+          <Link href="/" className="text-brand-green-400 hover:text-brand-green-400">
             ← Back to matches
           </Link>
         </div>
@@ -586,7 +586,7 @@ function ResultsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
+    <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* Back Button */}
         <Link
@@ -610,10 +610,10 @@ function ResultsContent() {
         {match?.league === 'World Cup' && (
           <Link
             href="/worldcup-nyc"
-            className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2 mb-6 hover:bg-yellow-500/20 transition-all inline-flex"
+            className="flex items-center gap-2 bg-brand-green/10 border border-brand-green-600/30 rounded-xl px-4 py-2 mb-6 hover:bg-brand-green/20 transition-all inline-flex"
           >
             <img src="https://crests.football-data.org/wm26.png" className="w-5 h-5 object-contain" alt="WC26" />
-            <span className="text-yellow-300 text-sm font-semibold">Full World Cup NYC guide →</span>
+            <span className="text-brand-green-400 text-sm font-semibold">Full World Cup NYC guide →</span>
           </Link>
         )}
 
@@ -675,7 +675,7 @@ function ResultsContent() {
                 onClick={toggleInterested}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
                   isInterested
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-brand-green text-white'
                     : 'bg-white/10 text-gray-300 hover:bg-white/20'
                 }`}
               >
@@ -810,12 +810,12 @@ function ResultsContent() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col gap-1 mb-2 min-w-0">
-                        <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors break-words w-full">
+                        <h3 className="font-bold text-lg text-white group-hover:text-brand-green-400 transition-colors break-words w-full">
                           {venue.name}
                         </h3>
                         <div className="flex flex-wrap items-center gap-1.5">
                         {venue.verified_by_owner && (
-                          <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1">
+                          <span className="bg-brand-green text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1">
                             ✓ Verified
                           </span>
                         )}
@@ -929,7 +929,7 @@ export default function ResultsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
             <p className="text-gray-400">Loading...</p>

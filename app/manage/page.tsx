@@ -335,7 +335,7 @@ export default function ManagePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
           <p className="text-gray-400">Loading...</p>
@@ -345,11 +345,11 @@ export default function ManagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
+    <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <Link 
           href="/" 
-          className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-brand-green-400 hover:text-brand-green-400 mb-6 transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -368,7 +368,7 @@ export default function ManagePage() {
             placeholder="Search for a team..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green"
           />
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {leagues.map(league => (
@@ -409,13 +409,13 @@ export default function ManagePage() {
                           value={bioInput}
                           onChange={(e) => setBioInput(e.target.value.slice(0, 500))}
                           placeholder="Tell fans about your bar..."
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green mb-2 text-sm"
                           rows={3}
                           maxLength={500}
                         />
                         <p className="text-xs text-gray-500 text-right mb-2">{bioInput.length}/500</p>
                         <div className="flex gap-2">
-                          <button onClick={() => handleSaveBio(venue.id)} disabled={savingBio} className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all">
+                          <button onClick={() => handleSaveBio(venue.id)} disabled={savingBio} className="bg-brand-green text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-brand-green-600 disabled:opacity-50 transition-all">
                             {savingBio ? 'Saving...' : 'Save'}
                           </button>
                           <button onClick={() => setEditingBio(null)} className="bg-white/10 text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-white/20 transition-all">Cancel</button>
@@ -424,7 +424,7 @@ export default function ManagePage() {
                     ) : (
                       <div className="flex items-start gap-2">
                         <p className="text-sm text-gray-300 flex-1">{venueBios[venue.id] || <span className="text-gray-500 italic">No description yet</span>}</p>
-                        <button onClick={() => { setEditingBio(venue.id); setBioInput(venueBios[venue.id] || ''); }} className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0">
+                        <button onClick={() => { setEditingBio(venue.id); setBioInput(venueBios[venue.id] || ''); }} className="text-xs text-brand-green-400 hover:text-brand-green-400 flex-shrink-0">
                           {venueBios[venue.id] ? 'Edit' : 'Add description'}
                         </button>
                       </div>
@@ -450,7 +450,7 @@ export default function ManagePage() {
                             }}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                               selected
-                                ? 'bg-blue-600 border-blue-500 text-white'
+                                ? 'bg-brand-green border-brand-green text-white'
                                 : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                             }`}
                           >
@@ -475,7 +475,7 @@ export default function ManagePage() {
                             }}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                               selected
-                                ? 'bg-blue-600 border-blue-500 text-white'
+                                ? 'bg-brand-green border-brand-green text-white'
                                 : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                             }`}
                           >
@@ -553,7 +553,7 @@ export default function ManagePage() {
                         {!allFilteredTicked && (
                           <button
                             onClick={() => tickAll(venue.id, venueMatchIds)}
-                            className="text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                            className="text-sm font-semibold text-brand-green-400 hover:text-brand-green-400 transition-colors"
                           >
                             ✓ Tick all
                           </button>
@@ -569,7 +569,7 @@ export default function ManagePage() {
                         {(selectedLeague === 'World Cup' || selectedLeague === 'all') && venueMatchIds.some(id => filteredMatches.filter(m => m.league === 'World Cup').map(m => m.id).includes(id)) && (
                           <button
                             onClick={() => soundOnAll(venue.id, venueMatchIds)}
-                            className="text-sm font-semibold text-yellow-400 hover:text-yellow-300 transition-colors"
+                            className="text-sm font-semibold text-brand-green-400 hover:text-brand-green-400 transition-colors"
                           >
                             🔊 Sound on all WC
                           </button>
@@ -618,7 +618,7 @@ export default function ManagePage() {
                                   checked={isShowing}
                                   disabled={isSaving}
                                   onChange={() => toggleMatch(venue.id, match.id, isShowing)}
-                                  className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="w-5 h-5 rounded border-white/20 bg-white/5 text-brand-green-600 focus:ring-brand-green focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                               </label>
                             </div>

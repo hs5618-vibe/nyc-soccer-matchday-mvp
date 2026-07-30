@@ -14,7 +14,7 @@ const venueIcon = L.divIcon({
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #3b82f6;
+    background: #00BF63;
     border: 2px solid white;
     box-shadow: 0 0 4px rgba(0,0,0,0.5);
   "></div>`,
@@ -63,7 +63,7 @@ export default function VenuesMap({ venues }: VenuesMapProps) {
                 </p>
                 <Link
                   href={`/venue/${venue.id}`}
-                  style={{ fontSize: "13px", color: "#2563eb", fontWeight: 600 }}
+                  style={{ fontSize: "13px", color: "#00A254", fontWeight: 600 }}
                 >
                   View details →
                 </Link>

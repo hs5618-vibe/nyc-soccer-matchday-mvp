@@ -22,7 +22,7 @@ export default function Button({
   const baseClasses = "font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variantClasses = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700 disabled:hover:bg-blue-600",
+    primary: "bg-brand-green text-white hover:bg-brand-green-600 disabled:hover:bg-brand-green",
     secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 disabled:hover:bg-gray-100",
     ghost: "bg-transparent text-gray-700 hover:bg-gray-100 disabled:hover:bg-transparent",
   };

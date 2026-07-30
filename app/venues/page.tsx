@@ -183,7 +183,7 @@ export default function VenuesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
           <p className="text-gray-400">Loading...</p>
@@ -193,7 +193,7 @@ export default function VenuesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
+    <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* Back Button */}
         <Link
@@ -222,7 +222,7 @@ export default function VenuesPage() {
               placeholder="Search venues by name, neighborhood, or address..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-5 py-4 text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-5 py-4 text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent"
             />
           </div>
         </div>
@@ -319,7 +319,7 @@ export default function VenuesPage() {
                   setSearchQuery("");
                   setSelectedNeighborhood("all");
                 }}
-                className="text-blue-400 hover:text-blue-300 text-sm font-semibold"
+                className="text-brand-green-400 hover:text-brand-green-400 text-sm font-semibold"
               >
                 Clear filters
               </button>
@@ -336,7 +336,7 @@ export default function VenuesPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors truncate">
+                      <h3 className="font-bold text-lg text-white group-hover:text-brand-green-400 transition-colors truncate">
                         {venue.name}
                       </h3>
                       {(venue as any).supported_teams?.slice(0, 5).map((team: string) => {
@@ -369,7 +369,7 @@ export default function VenuesPage() {
 
                     {venue.bar_type && (
                       <div className="mt-2">
-                        <span className="inline-block bg-blue-600/20 border border-blue-600/30 text-blue-300 text-xs font-semibold px-2 py-1 rounded">
+                        <span className="inline-block bg-brand-green/20 border border-brand-green-600/30 text-brand-green-400 text-xs font-semibold px-2 py-1 rounded">
                           {venue.bar_type === 'general' ? 'General Sports Bar' : `${venue.club_name || ''} Bar`.trim()}
                         </span>
                       </div>

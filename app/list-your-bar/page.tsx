@@ -151,14 +151,14 @@ export default function ListYourBarPage() {
 
   if (step === "success") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <div className="text-5xl mb-6">⚽</div>
           <h1 className="text-3xl font-black text-white mb-3">You're on the list!</h1>
           <p className="text-gray-400 mb-6">
             Thanks for submitting <span className="text-white font-semibold">{form.bar_name}</span>. We'll review your details and get your bar live within 48 hours. We'll reach out to <span className="text-white font-semibold">{form.contact_email}</span> once you're set up.
           </p>
-          <Link href="/" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition-all">
+          <Link href="/" className="inline-block bg-brand-green text-white px-8 py-3 rounded-full font-bold hover:bg-brand-green-600 transition-all">
             Back to awaydayz
           </Link>
         </div>
@@ -168,7 +168,7 @@ export default function ListYourBarPage() {
 
   if (step === "form") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12]">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
           <button
             onClick={() => setStep("landing")}
@@ -196,7 +196,7 @@ export default function ListYourBarPage() {
                     value={form.bar_name}
                     onChange={(e) => update("bar_name", e.target.value)}
                     placeholder="e.g. The Grafton"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                   />
                 </div>
                 <div>
@@ -206,7 +206,7 @@ export default function ListYourBarPage() {
                     value={form.address}
                     onChange={(e) => update("address", e.target.value)}
                     placeholder="e.g. 126 W 13th St, New York, NY 10011"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -215,7 +215,7 @@ export default function ListYourBarPage() {
                     <select
                       value={form.neighborhood}
                       onChange={(e) => update("neighborhood", e.target.value)}
-                      className="w-full bg-[#1a1d2e] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-[#10141C] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                     >
                       <option value="">Select...</option>
                       {NEIGHBORHOODS.map((n) => (
@@ -228,7 +228,7 @@ export default function ListYourBarPage() {
                     <select
                       value={form.borough}
                       onChange={(e) => update("borough", e.target.value)}
-                      className="w-full bg-[#1a1d2e] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-[#10141C] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                     >
                       <option value="">Select...</option>
                       <option>Manhattan</option>
@@ -246,7 +246,7 @@ export default function ListYourBarPage() {
                     onChange={(e) => update("bio", e.target.value.slice(0, 300))}
                     placeholder="Atmosphere, number of screens, specials on matchdays..."
                     rows={3}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                   />
                   <p className="text-xs text-gray-600 text-right mt-1">{form.bio.length}/300</p>
                 </div>
@@ -266,7 +266,7 @@ export default function ListYourBarPage() {
                     onClick={() => toggleLeague(league)}
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                       form.leagues.includes(league)
-                        ? "bg-blue-600 border-blue-500 text-white"
+                        ? "bg-brand-green border-brand-green text-white"
                         : "bg-white/5 border-white/10 text-gray-400 hover:border-white/20"
                     }`}
                   >
@@ -287,7 +287,7 @@ export default function ListYourBarPage() {
                       onClick={() => toggleTeam(team)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                         form.supported_teams.includes(team)
-                          ? 'bg-blue-600 border-blue-500 text-white'
+                          ? 'bg-brand-green border-brand-green text-white'
                           : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                       }`}
                     >
@@ -304,7 +304,7 @@ export default function ListYourBarPage() {
                       onClick={() => toggleTeam(team)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                         form.supported_teams.includes(team)
-                          ? 'bg-blue-600 border-blue-500 text-white'
+                          ? 'bg-brand-green border-brand-green text-white'
                           : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                       }`}
                     >
@@ -342,7 +342,7 @@ export default function ListYourBarPage() {
                   value={form.other_leagues}
                   onChange={(e) => update("other_leagues", e.target.value)}
                   placeholder="e.g. Real Madrid matches, rugby, Formula 1..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                 />
               </div>
             </div>
@@ -359,7 +359,7 @@ export default function ListYourBarPage() {
                       value={form.contact_name}
                       onChange={(e) => update("contact_name", e.target.value)}
                       placeholder="First name"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                     />
                   </div>
                   <div>
@@ -369,7 +369,7 @@ export default function ListYourBarPage() {
                       value={form.contact_email}
                       onChange={(e) => update("contact_email", e.target.value)}
                       placeholder="you@yourbar.com"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                     />
                   </div>
                 </div>
@@ -381,7 +381,7 @@ export default function ListYourBarPage() {
                       value={form.contact_phone}
                       onChange={(e) => update("contact_phone", e.target.value)}
                       placeholder="212-555-0100"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                     />
                   </div>
                   <div>
@@ -391,7 +391,7 @@ export default function ListYourBarPage() {
                       value={form.instagram}
                       onChange={(e) => update("instagram", e.target.value)}
                       placeholder="@yourbar"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                     />
                   </div>
                 </div>
@@ -402,7 +402,7 @@ export default function ListYourBarPage() {
                     value={form.website}
                     onChange={(e) => update("website", e.target.value)}
                     placeholder="https://yourbar.com"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                   />
                 </div>
                 <div>
@@ -412,7 +412,7 @@ export default function ListYourBarPage() {
                     onChange={(e) => update("notes", e.target.value)}
                     placeholder="Private events, big screens, capacity, specials..."
                     rows={2}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
                   />
                 </div>
               </div>
@@ -427,7 +427,7 @@ export default function ListYourBarPage() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="w-full bg-blue-600 text-white px-6 py-4 rounded-2xl font-black text-base hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full bg-brand-green text-white px-6 py-4 rounded-2xl font-black text-base hover:bg-brand-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {submitting ? "Submitting..." : "Submit your bar →"}
             </button>
@@ -442,7 +442,7 @@ export default function ListYourBarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
+    <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
         <Link
           href="/"
@@ -457,7 +457,7 @@ export default function ListYourBarPage() {
         <div className="text-center mb-14">
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-4 leading-tight">
             Get your bar in front of<br />
-            <span className="text-blue-400">every football fan in NYC</span>
+            <span className="text-brand-green-400">every football fan in NYC</span>
           </h1>
           <p className="text-gray-400 text-lg max-w-xl mx-auto">
             awaydayz helps fans find the right bar for every match. List your venue free — takes 2 minutes.
@@ -512,7 +512,7 @@ export default function ListYourBarPage() {
               { n: "3", text: "You get a login link to manage your page, update matches, and add photos anytime." },
             ].map(({ n, text }) => (
               <div key={n} className="flex items-start gap-4">
-                <div className="w-7 h-7 rounded-full bg-blue-600/20 border border-blue-500/30 text-blue-300 text-xs font-black flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-7 h-7 rounded-full bg-brand-green/20 border border-brand-green/30 text-brand-green-400 text-xs font-black flex items-center justify-center flex-shrink-0 mt-0.5">
                   {n}
                 </div>
                 <p className="text-gray-300 text-sm leading-relaxed">{text}</p>
@@ -523,7 +523,7 @@ export default function ListYourBarPage() {
 
         <button
           onClick={() => setStep("form")}
-          className="w-full bg-blue-600 text-white px-6 py-4 rounded-2xl font-black text-lg hover:bg-blue-700 transition-all mb-4"
+          className="w-full bg-brand-green text-white px-6 py-4 rounded-2xl font-black text-lg hover:bg-brand-green-600 transition-all mb-4"
         >
           List your bar — it's free →
         </button>

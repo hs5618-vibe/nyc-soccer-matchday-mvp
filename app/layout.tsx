@@ -102,7 +102,7 @@ export default function RootLayout({
               <div className="flex justify-center gap-4 text-sm">
                 <Link 
                   href="/venues" 
-                  className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+                  className="text-brand-green-400 hover:text-brand-green-400 font-semibold transition-colors"
                 >
                   Browse All Venues
                 </Link>

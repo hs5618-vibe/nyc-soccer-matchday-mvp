@@ -47,7 +47,7 @@ export default async function WorldCupRecapPage() {
   const totalVenues = venueCount + FAN_ZONES.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
+    <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
 
         {/* Hero */}
@@ -61,7 +61,7 @@ export default async function WorldCupRecapPage() {
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-4">
             How NYC Watched<br />
-            <span className="text-yellow-400">The World Cup 2026</span>
+            <span className="text-brand-green-400">The World Cup 2026</span>
           </h1>
           <p className="text-lg text-gray-300 mb-6 max-w-2xl mx-auto">
             For six weeks, New York City turned into a home away from home for every team in the tournament.
@@ -69,7 +69,7 @@ export default async function WorldCupRecapPage() {
           </p>
           <Link
             href="/venues"
-            className="inline-block bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-8 py-3 rounded-full transition-all text-lg"
+            className="inline-block bg-brand-green hover:bg-brand-green-400 text-black font-bold px-8 py-3 rounded-full transition-all text-lg"
           >
             Browse Venues →
           </Link>
@@ -78,21 +78,21 @@ export default async function WorldCupRecapPage() {
         {/* Recap Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
-            <p className="text-3xl font-black text-yellow-400 mb-1">{totalVenues}+</p>
+            <p className="text-3xl font-black text-brand-green-400 mb-1">{totalVenues}+</p>
             <p className="text-gray-400 text-sm">Verified bars & fan zones across NYC</p>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
-            <p className="text-3xl font-black text-yellow-400 mb-1">5</p>
+            <p className="text-3xl font-black text-brand-green-400 mb-1">5</p>
             <p className="text-gray-400 text-sm">Boroughs covered, no borough left out</p>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
-            <p className="text-3xl font-black text-yellow-400 mb-1">{totalMatches}</p>
+            <p className="text-3xl font-black text-brand-green-400 mb-1">{totalMatches}</p>
             <p className="text-gray-400 text-sm">World Cup matches tracked start to finish</p>
           </div>
         </div>
 
         {/* Concierge Partnership Credit */}
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 mb-12 text-center">
+        <div className="bg-brand-green/10 border border-brand-green-600/30 rounded-2xl p-6 mb-12 text-center">
           <p className="text-white font-semibold mb-2">
             awaydayz was proud to be the official data partner of the NY/NJ World Cup 2026 Concierge
           </p>
@@ -103,7 +103,7 @@ export default async function WorldCupRecapPage() {
             href="https://nynjfwc26.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block text-yellow-300 font-semibold text-sm hover:text-yellow-200 transition-colors"
+            className="inline-block text-brand-green-400 font-semibold text-sm hover:text-brand-green-100 transition-colors"
           >
             View the official Concierge →
           </a>
@@ -117,18 +117,18 @@ export default async function WorldCupRecapPage() {
             {FAN_ZONES.map(zone => (
               <div
                 key={zone.id}
-                className="block bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5"
+                className="block bg-brand-green/10 border border-brand-green-600/30 rounded-2xl p-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <img src="https://crests.football-data.org/wm26.png" className="w-5 h-5 object-contain" alt="WC26" />
                       <h3 className="font-bold text-white">{zone.name}</h3>
-                      <span className="bg-yellow-500/20 text-yellow-300 text-xs font-bold px-2 py-0.5 rounded-full">{zone.borough}</span>
+                      <span className="bg-brand-green/20 text-brand-green-400 text-xs font-bold px-2 py-0.5 rounded-full">{zone.borough}</span>
                     </div>
                     <p className="text-gray-400 text-sm">{zone.location}</p>
                   </div>
-                  <span className="text-yellow-300 text-sm font-semibold flex-shrink-0">{zone.dates}</span>
+                  <span className="text-brand-green-400 text-sm font-semibold flex-shrink-0">{zone.dates}</span>
                 </div>
               </div>
             ))}
@@ -154,12 +154,12 @@ export default async function WorldCupRecapPage() {
         </div>
 
         {/* CTA */}
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-3xl p-8 text-center">
+        <div className="bg-brand-green/10 border border-brand-green-600/30 rounded-3xl p-8 text-center">
           <h2 className="text-2xl font-black text-white mb-3">The World Cup may be over, but we're not going anywhere</h2>
           <p className="text-gray-300 mb-6">Premier League, Champions League, and every other match — we'll help you find your bar.</p>
           <Link
             href="/"
-            className="inline-block bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-8 py-3 rounded-full transition-all text-lg"
+            className="inline-block bg-brand-green hover:bg-brand-green-400 text-black font-bold px-8 py-3 rounded-full transition-all text-lg"
           >
             Find Your Bar →
           </Link>

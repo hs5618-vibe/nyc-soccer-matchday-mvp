@@ -218,7 +218,7 @@ export default function HomePage() {
     }
   }
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] font-sans">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* Header - Centered */}
         <div className="text-center mb-8">
@@ -236,7 +236,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <p className="text-xl text-blue-300 font-semibold mb-1">
+          <p className="text-xl text-brand-green-400 font-semibold mb-1">
             Find Your Sports Bar
           </p>
           <p className="text-base text-gray-400">
@@ -256,11 +256,11 @@ export default function HomePage() {
         {/* World Cup Recap Banner */}
         <Link
           href="/worldcup-nyc"
-          className="flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 mb-6 hover:bg-yellow-500/20 transition-all"
+          className="flex items-center gap-3 bg-brand-green/10 border border-brand-green-600/30 rounded-2xl p-4 mb-6 hover:bg-brand-green/20 transition-all"
         >
           <img src="https://crests.football-data.org/wm26.png" className="w-10 h-10 object-contain flex-shrink-0" alt="WC26" />
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-yellow-300 text-sm">The World Cup came to NYC — here's the recap</p>
+            <p className="font-bold text-brand-green-400 text-sm">The World Cup came to NYC — here's the recap</p>
             <p className="text-gray-400 text-xs">See how NYC watched the tournament →</p>
           </div>
         </Link>
@@ -291,7 +291,7 @@ export default function HomePage() {
               placeholder="Search for teams..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-5 py-4 text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-5 py-4 text-base text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent"
             />
           </div>
         </div>
@@ -318,7 +318,7 @@ export default function HomePage() {
                       <p className="text-sm font-semibold text-white truncate">{venue.name}</p>
                       <p className="text-xs text-gray-400 truncate">{venue.neighborhood}</p>
                     </div>
-                    <span className="text-blue-400 text-xs flex-shrink-0">View →</span>
+                    <span className="text-brand-green-400 text-xs flex-shrink-0">View →</span>
                   </Link>
                 ))}
               </div>
@@ -388,7 +388,7 @@ export default function HomePage() {
                 startDate={dateFrom}
                 endDate={dateTo}
                 placeholderText="From date"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green"
                 wrapperClassName="w-full"
                 calendarClassName="bg-gray-900 border border-white/10 text-white"
               />
@@ -400,7 +400,7 @@ export default function HomePage() {
                 endDate={dateTo}
                 minDate={dateFrom || undefined}
                 placeholderText="To date"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green"
                 wrapperClassName="w-full"
                 calendarClassName="bg-gray-900 border border-white/10 text-white"
               />
@@ -421,7 +421,7 @@ export default function HomePage() {
           </Link>
           <Link
             href="/list-your-bar"
-            className="flex-1 flex items-center justify-center gap-2 bg-blue-600/20 border border-blue-500/30 rounded-xl px-4 py-3 text-sm font-semibold text-blue-300 hover:bg-blue-600/30 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 bg-brand-green/20 border border-brand-green/30 rounded-xl px-4 py-3 text-sm font-semibold text-brand-green-400 hover:bg-brand-green/30 transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -479,7 +479,7 @@ export default function HomePage() {
                   setSearchQuery("");
                   setSelectedLeague("all");
                 }}
-                className="text-blue-400 hover:text-blue-300 text-sm font-semibold"
+                className="text-brand-green-400 hover:text-brand-green-400 text-sm font-semibold"
               >
                 Clear filters
               </button>
@@ -579,13 +579,13 @@ export default function HomePage() {
                         onClick={(e) => { e.preventDefault(); toggleInterested(match.id); }}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                           userInterested[match.id]
-                            ? 'bg-blue-600 text-white'
+                            ? 'bg-brand-green text-white'
                             : 'bg-white/10 text-gray-300 hover:bg-white/20'
                         }`}
                       >
                         ⚡ Interested{(interestedCounts[match.id] || 0) >= 5 ? ` · ${interestedCounts[match.id]}` : ''}
                       </button>
-                      <div className="flex items-center gap-2 text-blue-400 font-semibold">
+                      <div className="flex items-center gap-2 text-brand-green-400 font-semibold">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                         </svg>

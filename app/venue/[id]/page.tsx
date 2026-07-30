@@ -509,7 +509,7 @@ export default function VenuePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
           <p className="text-gray-400">Loading...</p>
@@ -520,10 +520,10 @@ export default function VenuePage() {
 
   if (!venue) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-400 mb-4">Venue not found</p>
-          <Link href="/" className="text-blue-400 hover:text-blue-300">
+          <Link href="/" className="text-brand-green-400 hover:text-brand-green-400">
             ← Back to matches
           </Link>
         </div>
@@ -532,7 +532,7 @@ export default function VenuePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
+    <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <Link
           href={matchId ? `/results?match=${matchId}` : "/"}
@@ -596,7 +596,7 @@ export default function VenuePage() {
             {user && !isOwner && !claimStatus && !isClaimed && (
               <button
                 onClick={() => setShowClaimModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-blue-700 transition-all flex-shrink-0"
+                className="bg-brand-green text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-brand-green-600 transition-all flex-shrink-0"
               >
                 Own this bar?
               </button>
@@ -604,7 +604,7 @@ export default function VenuePage() {
 
             {/* Show pending status */}
             {claimStatus?.status === "pending" && (
-              <div className="bg-yellow-600/20 border border-yellow-600/30 text-yellow-300 px-4 py-2 rounded-full text-sm font-bold flex-shrink-0">
+              <div className="bg-brand-green-600/20 border border-brand-green-700/30 text-brand-green-400 px-4 py-2 rounded-full text-sm font-bold flex-shrink-0">
                 Claim pending review
               </div>
             )}
@@ -631,7 +631,7 @@ export default function VenuePage() {
                   {isOwner && (
                     <button
                       onClick={() => { setEditingBio(true); setBioInput(bio); }}
-                      className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0"
+                      className="text-xs text-brand-green-400 hover:text-brand-green-400 flex-shrink-0"
                     >
                       {bio ? "Edit" : "Add description"}
                     </button>
@@ -643,7 +643,7 @@ export default function VenuePage() {
                     value={bioInput}
                     onChange={(e) => setBioInput(e.target.value.slice(0, 500))}
                     placeholder="Tell fans about your bar — atmosphere, screens, specials..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green mb-2 text-sm"
                     rows={3}
                     maxLength={500}
                   />
@@ -652,7 +652,7 @@ export default function VenuePage() {
                     <button
                       onClick={handleSaveBio}
                       disabled={savingBio}
-                      className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all"
+                      className="bg-brand-green text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-brand-green-600 disabled:opacity-50 transition-all"
                     >
                       {savingBio ? "Saving..." : "Save"}
                     </button>
@@ -715,7 +715,7 @@ export default function VenuePage() {
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-blue-400 transition-colors"
+                  className="hover:text-brand-green-400 transition-colors"
                 >
                   {venue.address}
                 </a>
@@ -747,7 +747,7 @@ export default function VenuePage() {
                 </span>
               )}
               {outdoorTv && (
-                <span className="inline-flex items-center gap-1.5 bg-blue-600/20 border border-blue-500/30 text-blue-300 px-3 py-1.5 rounded-full text-xs font-bold">
+                <span className="inline-flex items-center gap-1.5 bg-brand-green/20 border border-brand-green/30 text-brand-green-400 px-3 py-1.5 rounded-full text-xs font-bold">
                   📺 Outdoor TV
                 </span>
               )}
@@ -756,7 +756,7 @@ export default function VenuePage() {
                 disabled={goingLoading}
                 className={`px-6 py-3 rounded-full font-bold transition-all ${
                   going
-                    ? "bg-blue-600 text-white"
+                    ? "bg-brand-green text-white"
                     : "bg-white/10 text-white border border-white/20 hover:bg-white/20"
                 } ${goingLoading ? "opacity-70 cursor-not-allowed" : ""}`}
               >
@@ -835,19 +835,19 @@ export default function VenuePage() {
           <h2 className="text-lg font-bold text-white mb-4 uppercase tracking-wide">Live Updates</h2>
 
           {isOwner && user && match && (
-            <div className="mb-6 p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl">
-              <p className="text-sm text-blue-300 mb-3 font-semibold">Bar staff can post updates</p>
+            <div className="mb-6 p-4 bg-brand-green/10 border border-brand-green/20 rounded-2xl">
+              <p className="text-sm text-brand-green-400 mb-3 font-semibold">Bar staff can post updates</p>
               <textarea
                 value={newUpdate}
                 onChange={(e) => setNewUpdate(e.target.value)}
                 placeholder="Post an update (e.g., 'Great atmosphere!', 'Food specials today')"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green mb-3"
                 rows={3}
               />
               <button
                 onClick={handlePostUpdate}
                 disabled={!newUpdate.trim()}
-                className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="bg-brand-green text-white px-6 py-2 rounded-full font-bold hover:bg-brand-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 Post Update
               </button>
@@ -865,7 +865,7 @@ export default function VenuePage() {
   <div className="text-center py-8">
     <p className="text-gray-300 font-semibold mb-1">Matchday Updates</p>
     <p className="text-gray-500 text-sm">Check back on matchday — this bar posts live updates closer to kick-off.</p>
-    <Link href="/login" className="inline-block mt-3 text-sm text-blue-400 hover:text-blue-300">
+    <Link href="/login" className="inline-block mt-3 text-sm text-brand-green-400 hover:text-brand-green-400">
       Sign in to follow along →
     </Link>
   </div>
@@ -883,7 +883,7 @@ export default function VenuePage() {
               {updates.map((update) => (
                 <div key={update.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">Staff</span>
+                    <span className="bg-brand-green text-white text-xs font-bold px-2 py-1 rounded">Staff</span>
                     <span className="text-xs text-gray-500">{new Date(update.created_at).toLocaleString()}</span>
                   </div>
                   <p className="text-white">{update.content}</p>

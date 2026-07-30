@@ -261,7 +261,7 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
           <p className="text-gray-400">Loading...</p>
@@ -271,9 +271,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
+    <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition-colors">
+        <Link href="/" className="inline-flex items-center gap-2 text-brand-green-400 hover:text-brand-green-400 mb-6 transition-colors">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -292,7 +292,7 @@ export default function AdminPage() {
           </div>
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
             <p className="text-sm text-gray-400 mb-1">Pending Claims</p>
-            <p className="text-3xl font-black text-blue-400">{stats.pendingClaims}</p>
+            <p className="text-3xl font-black text-brand-green-400">{stats.pendingClaims}</p>
           </div>
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
             <p className="text-sm text-gray-400 mb-1">Venue Admins</p>
@@ -387,11 +387,11 @@ export default function AdminPage() {
             <div className="space-y-4 mb-6">
               <div>
                 <label className="text-sm text-gray-400 mb-2 block">Bar owner email</label>
-                <input type="email" value={onboardEmail} onChange={(e) => setOnboardEmail(e.target.value)} placeholder="owner@theirbar.com" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="email" value={onboardEmail} onChange={(e) => setOnboardEmail(e.target.value)} placeholder="owner@theirbar.com" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green" />
               </div>
               <div>
                 <label className="text-sm text-gray-400 mb-2 block">Select bar</label>
-                <select value={onboardVenueId} onChange={(e) => setOnboardVenueId(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select value={onboardVenueId} onChange={(e) => setOnboardVenueId(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-green">
                   <option value="">Select a venue...</option>
                   {allVenues.map(v => <option key={v.id} value={v.id} className="bg-gray-900">{v.name} — {v.neighborhood}</option>)}
                 </select>
@@ -404,7 +404,7 @@ export default function AdminPage() {
             <div className="border-t border-white/10 pt-6">
               <h3 className="text-lg font-bold text-white mb-4">Manage Matches for Any Bar</h3>
               <p className="text-gray-400 text-sm mb-4">Select a bar and tick matches on their behalf.</p>
-              <select onChange={(e) => window.location.href = `/admin/manage-venue?venue=${e.target.value}`} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select onChange={(e) => window.location.href = `/admin/manage-venue?venue=${e.target.value}`} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-green">
                 <option value="">Select a venue to manage...</option>
                 {allVenues.map(v => <option key={v.id} value={v.id} className="bg-gray-900">{v.name} — {v.neighborhood}</option>)}
               </select>
@@ -419,7 +419,7 @@ export default function AdminPage() {
                   const { data } = await supabase.from('venues').select('supported_teams').eq('id', venueId).single();
                   setSupportedTeamsMap(prev => ({ ...prev, [venueId]: data?.supported_teams || [] }));
                 }}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-green mb-4"
               >
                 <option value="">Select a venue...</option>
                 {allVenues.map(v => <option key={v.id} value={v.id} className="bg-gray-900">{v.name} — {v.neighborhood}</option>)}
@@ -438,7 +438,7 @@ export default function AdminPage() {
                             const next = selected ? current.filter(t => t !== team) : [...current, team];
                             saveTeams(venueId, next);
                           }}
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${selected ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'}`}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${selected ? 'bg-brand-green border-brand-green text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'}`}
                         >{team}</button>
                       );
                     })}
@@ -455,7 +455,7 @@ export default function AdminPage() {
                             const next = selected ? current.filter(t => t !== team) : [...current, team];
                             saveTeams(venueId, next);
                           }}
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${selected ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'}`}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${selected ? 'bg-brand-green border-brand-green text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'}`}
                         >{team}</button>
                       );
                     })}
@@ -476,13 +476,13 @@ export default function AdminPage() {
             ) : (
               <div className="space-y-4">
                 {submissions.map((sub) => (
-                  <div key={sub.id} className={`bg-white/5 border rounded-2xl p-5 ${sub.status === "pending" ? "border-yellow-500/30" : sub.status === "approved" ? "border-green-500/30" : "border-white/10"}`}>
+                  <div key={sub.id} className={`bg-white/5 border rounded-2xl p-5 ${sub.status === "pending" ? "border-brand-green-600/30" : sub.status === "approved" ? "border-green-500/30" : "border-white/10"}`}>
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <h3 className="font-bold text-lg text-white">{sub.bar_name}</h3>
                         <p className="text-sm text-gray-400">{sub.address} · {sub.neighborhood}, {sub.borough}</p>
                       </div>
-                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${sub.status === "pending" ? "bg-yellow-500/20 text-yellow-300" : sub.status === "approved" ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}`}>
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${sub.status === "pending" ? "bg-brand-green/20 text-brand-green-400" : sub.status === "approved" ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}`}>
                         {sub.status}
                       </span>
                     </div>
@@ -494,7 +494,7 @@ export default function AdminPage() {
                       {sub.leagues?.length > 0 && <p className="text-gray-300"><span className="text-gray-500">Leagues:</span> {sub.leagues.join(", ")}</p>}
                       {sub.other_leagues && <p className="text-gray-300"><span className="text-gray-500">Other:</span> {sub.other_leagues}</p>}
 {sub.sound_on && <p className="text-green-300 text-xs font-semibold">🔊 Sound on</p>}
-{sub.outdoor_tv && <p className="text-blue-300 text-xs font-semibold">📺 Outdoor TV</p>}
+{sub.outdoor_tv && <p className="text-brand-green-400 text-xs font-semibold">📺 Outdoor TV</p>}
                       {sub.notes && <p className="text-gray-300"><span className="text-gray-500">Notes:</span> {sub.notes}</p>}
                       <p className="text-gray-600 text-xs">{new Date(sub.created_at).toLocaleString()}</p>
                     </div>

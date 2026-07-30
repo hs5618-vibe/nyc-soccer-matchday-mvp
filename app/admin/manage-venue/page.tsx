@@ -257,7 +257,7 @@ function ManageVenueContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
           <p className="text-gray-400">Loading...</p>
@@ -269,11 +269,11 @@ function ManageVenueContent() {
   const allFilteredTicked = filteredMatches.every(m => venueMatchIds.includes(m.id));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117]">
+    <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <Link
           href="/admin"
-          className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-brand-green-400 hover:text-brand-green-400 mb-6 transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -352,7 +352,7 @@ function ManageVenueContent() {
                   }}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                     selected
-                      ? 'bg-blue-600 border-blue-500 text-white'
+                      ? 'bg-brand-green border-brand-green text-white'
                       : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                   }`}
                 >
@@ -389,7 +389,7 @@ function ManageVenueContent() {
                   }}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                     selected
-                      ? 'bg-blue-600 border-blue-500 text-white'
+                      ? 'bg-brand-green border-brand-green text-white'
                       : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                   }`}
                 >
@@ -407,7 +407,7 @@ function ManageVenueContent() {
             {!editingBio && (
               <button
                 onClick={() => { setEditingBio(true); setBioInput(bio); }}
-                className="text-xs text-blue-400 hover:text-blue-300"
+                className="text-xs text-brand-green-400 hover:text-brand-green-400"
               >
                 {bio ? "Edit" : "Add description"}
               </button>
@@ -421,7 +421,7 @@ function ManageVenueContent() {
                 value={bioInput}
                 onChange={(e) => setBioInput(e.target.value.slice(0, 500))}
                 placeholder="Tell fans about this bar..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green mb-2 text-sm"
                 rows={3}
                 maxLength={500}
               />
@@ -430,7 +430,7 @@ function ManageVenueContent() {
                 <button
                   onClick={handleSaveBio}
                   disabled={savingBio}
-                  className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all"
+                  className="bg-brand-green text-white px-4 py-1.5 rounded-full text-sm font-bold hover:bg-brand-green-600 disabled:opacity-50 transition-all"
                 >
                   {savingBio ? "Saving..." : "Save"}
                 </button>
@@ -452,7 +452,7 @@ function ManageVenueContent() {
             placeholder="Search for a team..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green"
           />
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {leagues.map(league => (
@@ -499,7 +499,7 @@ function ManageVenueContent() {
                     );
                   })() : null}
                   {!allFilteredTicked && (
-                    <button onClick={tickAll} className="text-sm font-semibold text-blue-400 hover:text-blue-300">
+                    <button onClick={tickAll} className="text-sm font-semibold text-brand-green-400 hover:text-brand-green-400">
                       ✓ Tick all
                     </button>
                   )}
@@ -511,7 +511,7 @@ function ManageVenueContent() {
                   {(selectedLeague === 'World Cup' || selectedLeague === 'all') && venueMatchIds.some(id => filteredMatches.filter(m => m.league === 'World Cup').map(m => m.id).includes(id)) && (
                     <button
                       onClick={() => soundOnAll()}
-                      className="text-sm font-semibold text-yellow-400 hover:text-yellow-300"
+                      className="text-sm font-semibold text-brand-green-400 hover:text-brand-green-400"
                     >
                       🔊 Sound on all WC
                     </button>
@@ -556,7 +556,7 @@ function ManageVenueContent() {
                             checked={isShowing}
                             disabled={isSaving}
                             onChange={() => toggleMatch(match.id, isShowing)}
-                            className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:opacity-50"
+                            className="w-5 h-5 rounded border-white/20 bg-white/5 text-brand-green-600 focus:ring-brand-green cursor-pointer disabled:opacity-50"
                           />
                         </label>
                       </div>
@@ -575,7 +575,7 @@ function ManageVenueContent() {
 export default function AdminManageVenuePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-b from-[#1a1d2e] to-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#10141C] to-[#0A0D12] flex items-center justify-center">
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white"></div>
       </div>
     }>

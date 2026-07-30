@@ -71,7 +71,7 @@ export default function UsernameModal({ userId, onComplete }: UsernameModalProps
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !loading && handleSubmit()}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent"
               placeholder="e.g., soccerfan123"
               autoFocus
             />
@@ -86,7 +86,7 @@ export default function UsernameModal({ userId, onComplete }: UsernameModalProps
           <button
             onClick={handleSubmit}
             disabled={loading || !username.trim()}
-            className="w-full bg-blue-600 text-white px-6 py-3 text-base font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full bg-brand-green text-white px-6 py-3 text-base font-medium rounded-lg hover:bg-brand-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {loading ? "Creating..." : "Continue"}
           </button>

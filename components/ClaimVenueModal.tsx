@@ -52,7 +52,7 @@ export default function ClaimVenueModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-[#1a1d2e] border border-white/10 rounded-3xl p-8 max-w-md w-full">
+      <div className="bg-[#10141C] border border-white/10 rounded-3xl p-8 max-w-md w-full">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">Claim This Venue</h2>
           <button
@@ -79,7 +79,7 @@ export default function ClaimVenueModal({
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               placeholder="e.g., The Red Lion NYC LLC"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green"
             />
           </div>
 
@@ -92,7 +92,7 @@ export default function ClaimVenueModal({
               value={businessEmail}
               onChange={(e) => setBusinessEmail(e.target.value)}
               placeholder="manager@theredlion.com"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green"
             />
           </div>
 
@@ -105,7 +105,7 @@ export default function ClaimVenueModal({
               value={businessPhone}
               onChange={(e) => setBusinessPhone(e.target.value)}
               placeholder="(212) 555-0123"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-green"
             />
           </div>
 
@@ -115,8 +115,8 @@ export default function ClaimVenueModal({
             </div>
           )}
 
-          <div className="bg-blue-600/10 border border-blue-600/20 rounded-xl p-4">
-            <p className="text-xs text-blue-300">
+          <div className="bg-brand-green/10 border border-brand-green-600/20 rounded-xl p-4">
+            <p className="text-xs text-brand-green-400">
               Your claim will be reviewed by our team. You'll be notified via email once approved.
             </p>
           </div>
@@ -131,7 +131,7 @@ export default function ClaimVenueModal({
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-full font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex-1 bg-brand-green text-white px-6 py-3 rounded-full font-bold hover:bg-brand-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {loading ? "Submitting..." : "Submit Claim"}
             </button>
